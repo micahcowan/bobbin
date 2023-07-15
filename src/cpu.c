@@ -249,6 +249,31 @@ static inline void do_bit(byte val)
     PPUT(PZERO, band == 0);
 }
 
+static inline void do_adc(byte val)
+{
+    if (PTEST(PDEC)) {
+        // BCD. Implementation based on description
+        //  from https://www.nesdev.org/6502_cpu.txt
+        byte sumL = (ACC & 0xF) + (val & 0xF) + PGET(PCARRY);
+        byte sumH = (ACC >> 4) + (val >> 4) + (sumL & 0x10);
+        if (sumL > 9) sumL += 6;
+        PPUT(PZERO, ((ACC + val + PGET(PCARRY)) & 0xFF) == 0);
+        PPUT(PNEG, (sumH & 0x8) != 0);
+        PPUT(POVERFL, (((sumH << 4) ^ ACC) & 0x80)
+                        && !((ACC ^ val) & 0x80));
+        if (sumH > 9) sumH += 6;
+        PPUT(PCARRY, sumH > 0xF);
+        ACC = LO(((sumH << 4) | (sumL & 0xF)));
+    } else {
+        word sum = ACC + val + PGET(PCARRY);
+        PPUT(PNEG, sum & 0x80);
+        PPUT(POVERFL, (val & 0x80) != (sum & 0x80));
+        PPUT(PZERO, LO(sum) == 0);
+        PPUT(PCARRY, sum & 0x100);
+        ACC = LO(sum);
+    }
+}
+
 void cpu_step(void)
 {
     /* Cycle references taken from https://www.nesdev.org/6502_cpu.txt. */
@@ -337,12 +362,14 @@ void cpu_step(void)
             OP_RMW_ZP(val = do_rol(val));
             break;
         case 0x28: // PLP (impl.)
-            cycle();
-            stack_dec();
-            cycle();
-            immed = mem_get_byte(STACK);
-            // Leave BRK flag alone; always set UNUSED
-            PFLAGS = (immed & 0xCF) | PMASK(PUNUSED);
+            {
+                cycle();
+                stack_dec();
+                cycle();
+                byte p = mem_get_byte(STACK);
+                // Leave BRK flag alone; always set UNUSED
+                PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
+            }
             break;
         case 0x29: // AND, imm
             OP_READ_IMM(ACC &= val);
@@ -384,6 +411,26 @@ void cpu_step(void)
             OP_RMW_ABS_IDX(XREG, ACC &= val);
             break;
 
+
+        case 0x60: // RTI
+            {
+                cycle(); // end 2
+                byte p = stack_pop();
+                cycle(); // 3
+                PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
+                byte lo = stack_pop();
+                cycle(); // 4
+                PC = WORD(lo, HI(PC));
+                byte hi = stack_pop();
+                cycle(); // 5
+                PC = WORD(lo, hi);
+                (void) mem_get_byte(STACK);
+                cycle(); // 6
+            }
+            break;
+        case 0x61: // ADC, (MEM,x)
+            OP_READ_INDX(do_adc(val));
+            break;
 
         default: // BRK
             {
