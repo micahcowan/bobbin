@@ -58,10 +58,11 @@ extern Cpu theCpu;
 #define POVERFL 6
 #define PNEG    7
 
-#define PGET(flag)      (!!(PFLAGS & (1 << flag)))
-#define PPUT(flag, val) ((void)(PFLAGS = ((PFLAGS & ~(1 << flag)) \
+#define PMASK(flag)     (1 << flag)
+#define PGET(flag)      (!!(PFLAGS & PMASK(flag)))
+#define PPUT(flag, val) ((void)(PFLAGS = ((PFLAGS & ~PMASK(flag)) \
                                    | (!!(val) << flag))))
-#define PTEST(flag)     (!!(PFLAGS & (1 << flag)))
+#define PTEST(flag)     (!!(PFLAGS & PMASK(flag)))
 
 extern void cpu_reset(void);
 extern void cpu_step(void);
@@ -85,6 +86,11 @@ static inline void stack_put(byte val)
     mem_put_byte(STACK, val);
 }
 
+static inline byte stack_inc(void)
+{
+    return ++SP;
+}
+
 static inline byte stack_dec(void)
 {
     return --SP;
@@ -99,6 +105,12 @@ static inline void stack_push(byte val)
 static inline void stack_push_flags_or(byte val)
 {
     stack_push(PFLAGS | (1 << PUNUSED) | val);
+}
+
+static inline byte stack_pop(void)
+{
+    (void) stack_inc();
+    return stack_get();
 }
 
 static inline byte pc_get_adv(void)

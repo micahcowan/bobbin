@@ -133,6 +133,92 @@ void cpu_reset(void)
         } \
     } while (0)
 
+#define OP_READ_INDY(exec) \
+    do { \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        byte lo = mem_get_byte(immed); \
+        cycle(); /* 3 */ \
+        byte hi = mem_get_byte(immed + 1); \
+        word addr = WORD(lo, hi) + YREG; \
+        word wrAddr = WORD(LO(lo + YREG), hi); \
+        cycle(); /* 4 */ \
+        byte val = mem_get_byte(wrAddr); \
+        if (addr == wrAddr) { \
+            exec; \
+        } else { \
+            cycle(); /* 5 */ \
+            val = mem_get_byte(addr); \
+            exec; \
+        } \
+        cycle(); /* 5 or 6 */ \
+    } while (0)
+
+#define OP_READ_ZP_IDX(reg, exec) \
+    do { \
+        PC_ADV; \
+        cycle(); \
+        (void) mem_get_byte(immed); \
+        cycle(); \
+        byte val = mem_get_byte(LO(immed + reg)); \
+        exec; \
+    } while (0)
+
+#define OP_RMW_ZP_IDX(reg, exec) \
+    do { \
+        PC_ADV; \
+        cycle(); \
+        (void) mem_get_byte(immed); \
+        cycle(); \
+        byte addr = LO(immed + reg); \
+        byte val = mem_get_byte(addr); \
+        cycle(); \
+        mem_put_byte(addr, val); \
+        cycle(); \
+        exec; \
+        mem_put_byte(addr, val); \
+        cycle(); /* 6 */ \
+    } while (0)
+
+#define OP_READ_ABS_IDX(reg, exec) \
+    do { \
+        PC_ADV; \
+        cycle(); \
+        byte lo = immed; \
+        byte hi = pc_get_adv(); \
+        word addr = WORD(lo, hi) + reg; \
+        word wrAddr = WORD(LO(lo + reg), hi); \
+        cycle(); /* 3 */ \
+        byte val = mem_get_byte(wrAddr); \
+        if (addr == wrAddr) { \
+            exec; \
+        } else { \
+            cycle(); \
+            val = mem_get_byte(addr); \
+            exec; \
+        } \
+    } while (0)
+
+#define OP_RMW_ABS_IDX(reg, exec) \
+    do { \
+        PC_ADV; \
+        cycle(); \
+        byte lo = immed; \
+        byte hi = pc_get_adv(); \
+        word addr = WORD(lo, hi) + reg; \
+        word wrAddr = WORD(LO(lo + reg), hi); \
+        cycle(); /* 3 */ \
+        byte val = mem_get_byte(wrAddr); \
+        cycle(); /* 4 */ \
+        val = mem_get_byte(addr); \
+        cycle(); /* 5 */ \
+        mem_put_byte(addr, val); \
+        cycle(); /* 6 */ \
+        exec; \
+        mem_put_byte(addr, val); \
+        cycle(); /* 7 */ \
+    } while (0)
+
 static inline void carry_from_msb(byte val)
 {
     PPUT(PCARRY, val & 0x80);
@@ -147,6 +233,20 @@ static inline byte do_asl(byte val)
 {
     carry_from_msb(val);
     return val << 1;
+}
+
+static inline byte do_rol(byte val)
+{
+    carry_from_msb(val);
+    return val << 1 | PTEST(PCARRY);
+}
+
+static inline void do_bit(byte val)
+{
+    byte band = ACC & val;
+    PPUT(PNEG, val & 0x80);
+    PPUT(POVERFL, val & 0x40);
+    PPUT(PZERO, band == 0);
 }
 
 void cpu_step(void)
@@ -168,7 +268,7 @@ void cpu_step(void)
             break;
         case 0x08: // PHP (impl.)
             cycle();
-            stack_push_flags_or(1 << PCARRY);
+            stack_push_flags_or(1 << PBRK);
             cycle();
             break;
         case 0x09: // ORA, immed.
@@ -186,24 +286,125 @@ void cpu_step(void)
         case 0x10: // BPL
             OP_BRANCH(!PTEST(PNEG));
             break;
+        case 0x11: // ORA, (MEM),y
+            OP_READ_INDY(ACC |= val);
+            break;
+        case 0x15: // ORA, ZP,x
+            OP_READ_ZP_IDX(XREG, ACC |= val);
+            break;
+        case 0x16: // ASL, ZP,x
+            OP_RMW_ZP_IDX(XREG, val = do_asl(val));
+            break;
+        case 0x18: // CLC (impl.)
+            OP_RMW_IMPL(PPUT(PCARRY, 0));
+            break;
+        case 0x19: // ORA, MEM,y
+            OP_READ_ABS_IDX(YREG, ACC |= val);
+            break;
+        case 0x1D: // ORA, MEM,x
+            OP_READ_ABS_IDX(XREG, ACC |= val);
+            break;
+        case 0x1E: // ASL, MEM,x
+            OP_RMW_ABS_IDX(XREG, ACC |= val);
+            break;
+
+
+        case 0x20: // JSR
+            {
+                byte lo = immed;
+                PC_ADV;
+                cycle();
+                (void) stack_get();
+                cycle();
+                stack_push(HI(PC));
+                cycle();
+                stack_push(LO(PC));
+                cycle();
+                go_to(WORD(lo, mem_get_byte(PC)));
+                cycle();
+            }
+            break;
+        case 0x21: // AND, (MEM,x)
+            OP_READ_INDX(ACC &= val);
+            break;
+        case 0x24: // BIT, ZP
+            OP_READ_ZP(do_bit(val));
+            break;
+        case 0x25: // AND, ZP
+            OP_READ_ZP(ACC &= val);
+            break;
+        case 0x26: // ROL, ZP
+            OP_RMW_ZP(val = do_rol(val));
+            break;
+        case 0x28: // PLP (impl.)
+            cycle();
+            stack_dec();
+            cycle();
+            immed = mem_get_byte(STACK);
+            // Leave BRK flag alone; always set UNUSED
+            PFLAGS = (immed & 0xCF) | PMASK(PUNUSED);
+            break;
+        case 0x29: // AND, imm
+            OP_READ_IMM(ACC &= val);
+            break;
+        case 0x2A: // ROL, impl.
+            OP_RMW_IMPL(ACC = do_rol(ACC));
+            break;
+        case 0x2C: // BIT, abs
+            OP_READ_ABS(do_bit(val));
+            break;
+        case 0x2D: // AND, abs
+            OP_READ_ABS(ACC &= val);
+            break;
+        case 0x2E: // ROL, abs
+            OP_RMW_ABS(val = do_rol(val));
+            break;
+        case 0x30: // BMI
+            OP_BRANCH(PTEST(PNEG));
+            break;
+        case 0x31: // AND, (MEM),y
+            OP_READ_INDY(ACC &= val);
+            break;
+        case 0x35: // AND, ZP,x
+            OP_READ_ZP_IDX(XREG, ACC &= val);
+            break;
+        case 0x36: // ROL, ZP,x
+            OP_RMW_ZP_IDX(XREG, val = do_rol(val));
+            break;
+        case 0x38: // SEC (impl.)
+            OP_RMW_IMPL(PPUT(PCARRY, 1));
+            break;
+        case 0x39: // AND, MEM,y
+            OP_READ_ABS_IDX(YREG, ACC &= val);
+            break;
+        case 0x3D: // AND, MEM,x
+            OP_READ_ABS_IDX(XREG, ACC &= val);
+            break;
+        case 0x3E: // ROL, MEM,x
+            OP_RMW_ABS_IDX(XREG, ACC &= val);
+            break;
+
+
         default: // BRK
-            // XXX cycles and behavior not realistic
-            //  for non-break unsupported op-codes
-            PC_ADV;
-            cycle(); // end 2
+            {
+                // XXX cycles and behavior not realistic
+                //  for non-break unsupported op-codes
+                PC_ADV;
+                cycle(); // end 2
 
-            stack_push(HI(PC));
-            cycle(); // 3
-            stack_push(LO(PC));
-            cycle(); // 4
-            stack_push_flags_or(0);
-            cycle(); // 5
+                stack_push(HI(PC));
+                cycle(); // 3
+                stack_push(LO(PC));
+                cycle(); // 4
+                stack_push_flags_or(0);
+                cycle(); // 5
 
-            byte pcL = mem_get_byte(LOC_BRK);
-            cycle(); // 6
-            byte pcH = mem_get_byte(LOC_BRK + 1);
-            go_to(WORD(pcL, pcH));
-            cycle(); // 7
+                byte pcL = mem_get_byte(LOC_BRK);
+                cycle(); // 6
+                byte pcH = mem_get_byte(LOC_BRK + 1);
+                go_to(WORD(pcL, pcH));
+                cycle(); // 7
+            }
             break;
     }
 }
