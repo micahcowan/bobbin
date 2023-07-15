@@ -241,6 +241,18 @@ static inline byte do_rol(byte val)
     return val << 1 | PTEST(PCARRY);
 }
 
+static inline byte do_lsr(byte val)
+{
+    carry_from_lsb(val);
+    return val >> 1;
+}
+
+static inline byte do_ror(byte val)
+{
+    carry_from_lsb(val);
+    return val >> 1 | (PTEST(PCARRY) << 7);
+}
+
 static inline void do_bit(byte val)
 {
     byte band = ACC & val;
@@ -271,6 +283,39 @@ static inline void do_adc(byte val)
         PPUT(PZERO, LO(sum) == 0);
         PPUT(PCARRY, sum & 0x100);
         ACC = LO(sum);
+    }
+}
+
+static inline void do_sbc(byte val)
+{
+    if (PTEST(PDEC)) {
+        // BCD. Implementation based on description
+        //  from https://www.nesdev.org/6502_cpu.txt
+        byte diffL = (ACC & 0xF) - (val & 0xF) - !PGET(PCARRY);
+        if (diffL & 0x10) diffL -= 6;
+        byte diffH = (ACC >> 4) - (val >> 4) - (diffL & 0x10);
+        if (diffH & 0x10) diffH += 6;
+
+        PPUT(PZERO, ((ACC + val + PGET(PCARRY)) & 0xFF) == 0);
+        PPUT(PNEG, (diffH & 0x8) != 0);
+        PPUT(POVERFL, (((diffH << 4) ^ ACC) & 0x80)
+                        && !((ACC ^ val) & 0x80));
+        if (diffH > 9) diffH += 6;
+
+        word diff = ACC - val - !PGET(PCARRY);
+        PPUT(PNEG, diff & 0x80);
+        PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
+        PPUT(PZERO, LO(diff) == 0);
+        PPUT(PCARRY, diff & 0x100);
+
+        ACC = LO(((diffH << 4) | (diffL & 0xF)));
+    } else {
+        word diff = ACC - val - !PGET(PCARRY);
+        PPUT(PNEG, diff & 0x80);
+        PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
+        PPUT(PZERO, LO(diff) == 0);
+        PPUT(PCARRY, diff & 0x100);
+        ACC = LO(diff);
     }
 }
 
@@ -369,6 +414,7 @@ void cpu_step(void)
                 byte p = mem_get_byte(STACK);
                 // Leave BRK flag alone; always set UNUSED
                 PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
+                cycle();
             }
             break;
         case 0x29: // AND, imm
@@ -412,7 +458,7 @@ void cpu_step(void)
             break;
 
 
-        case 0x60: // RTI
+        case 0x40: // RTI
             {
                 cycle(); // end 2
                 byte p = stack_pop();
@@ -423,14 +469,156 @@ void cpu_step(void)
                 PC = WORD(lo, HI(PC));
                 byte hi = stack_pop();
                 cycle(); // 5
-                PC = WORD(lo, hi);
+                go_to(WORD(lo, hi));
                 (void) mem_get_byte(STACK);
+                cycle(); // 6
+            }
+            break;
+        case 0x41: // EOR, (MEM,x)
+            OP_READ_INDX(ACC ^= val);
+            break;
+        case 0x45: // EOR, ZP
+            OP_READ_ZP(ACC ^= val);
+            break;
+        case 0x46: // LSR, ZP
+            OP_RMW_ZP(val = do_lsr(val));
+            break;
+        case 0x48: // PHA
+            cycle();
+            stack_push(ACC);
+            cycle();
+            break;
+        case 0x49: // EOR, imm
+            OP_READ_IMM(ACC ^= val);
+            break;
+        case 0x4A: // LSR, impl.
+            OP_RMW_IMPL(ACC = do_lsr(ACC));
+            break;
+        case 0x4C: // JMP
+            {
+                byte lo = immed;
+                PC_ADV;
+                cycle();
+                byte hi = pc_get_adv();
+                go_to(WORD(lo, hi));
+                cycle();
+            }
+            break;
+        case 0x4D: // EOR, abs
+            OP_READ_ABS(ACC ^= val);
+            break;
+        case 0x4E: // LSR, abs
+            OP_RMW_ABS(val = do_lsr(val));
+            break;
+        case 0x50: // BVC
+            OP_BRANCH(!PTEST(POVERFL));
+            break;
+        case 0x51: // EOR, (MEM),y
+            OP_READ_INDY(ACC ^= val);
+            break;
+        case 0x55: // EOR, ZP,x
+            OP_READ_ZP_IDX(XREG, ACC ^= val);
+            break;
+        case 0x56: // LSR, ZP,x
+            OP_RMW_ZP_IDX(XREG, ACC ^= val);
+            break;
+        case 0x58: // CLI
+            OP_RMW_IMPL(PPUT(PINT, 0));
+            break;
+        case 0x59: // EOR, MEM,y
+            OP_READ_ABS_IDX(YREG, ACC ^= val);
+            break;
+        case 0x5D: // EOR, MEM,x
+            OP_READ_ABS_IDX(XREG, ACC ^= val);
+            break;
+        case 0x5E: // LSR, MEM,x
+            OP_RMW_ABS_IDX(XREG, val = do_lsr(val));
+            break;
+
+
+        case 0x60: // RTS
+            {
+                cycle(); // end 2
+                byte lo = stack_pop();
+                cycle(); // 3
+                PC = WORD(lo, HI(PC));
+                (void) stack_pop();
+                cycle(); // 4
+                byte hi = mem_get_byte(STACK);
+                go_to(WORD(lo, hi));
+                cycle(); // 5
+                PC_ADV;
                 cycle(); // 6
             }
             break;
         case 0x61: // ADC, (MEM,x)
             OP_READ_INDX(do_adc(val));
             break;
+        case 0x65: // ADC, ZP
+            OP_READ_ZP(do_adc(val));
+            break;
+        case 0x66: // ROR, ZP
+            OP_RMW_ZP(val = do_ror(val));
+            break;
+        case 0x68: // PLA
+            cycle();
+            (void) stack_pop();
+            cycle();
+            ACC = mem_get_byte(STACK);
+            cycle();
+            break;
+        case 0x69: // ADC, imm
+            OP_READ_IMM(do_adc(val));
+            break;
+        case 0x6A: // ROR, impl.
+            OP_RMW_IMPL(ACC = do_ror(ACC));
+            break;
+        case 0x6C: // JMP ()
+            {
+                byte lo = immed;
+                PC_ADV;
+                cycle(); // 2
+                byte hi = pc_get_adv();
+                word addr = WORD(lo,hi);
+                cycle(); // 3
+                lo = mem_get_byte(addr);
+                cycle(); // 4
+                hi = mem_get_byte(WORD(HI(addr),LO(addr+1)));
+                go_to(WORD(lo, hi));
+                cycle(); // 5
+            }
+            break;
+        case 0x6D: // ADC, abs
+            OP_READ_ABS(do_adc(val));
+            break;
+        case 0x6E: // ROR, abs
+            OP_RMW_ABS(val = do_ror(val));
+            break;
+        case 0x70: // BVS
+            OP_BRANCH(PTEST(POVERFL));
+            break;
+        case 0x71: // ADC, (MEM),y
+            OP_READ_INDY(do_adc(val));
+            break;
+        case 0x75: // ADC, ZP,x
+            OP_READ_ZP_IDX(XREG, do_adc(val));
+            break;
+        case 0x76: // ROR, ZP,x
+            OP_RMW_ZP_IDX(XREG, val = do_ror(val));
+            break;
+        case 0x78: // SEI
+            OP_RMW_IMPL(PPUT(PINT, 1));
+            break;
+        case 0x79: // ADC MEM,y
+            OP_READ_ABS_IDX(YREG, do_adc(val));
+            break;
+        case 0x7D: // ADC, MEM,x
+            OP_READ_ABS_IDX(XREG, do_adc(val));
+            break;
+        case 0x7E: // ROR, MEM,x
+            OP_RMW_ABS_IDX(XREG, val = do_ror(val));
+            break;
+
 
         default: // BRK
             {
