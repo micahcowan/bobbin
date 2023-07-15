@@ -219,6 +219,14 @@ void cpu_reset(void)
         cycle(); /* 7 */ \
     } while (0)
 
+// Fix up flags
+static inline byte ff(byte val)
+{
+    PPUT(PZERO, val == 0);
+    PPUT(PNEG, val & 0x80);
+    return val;
+}
+
 static inline void carry_from_msb(byte val)
 {
     PPUT(PCARRY, val & 0x80);
@@ -328,10 +336,10 @@ void cpu_step(void)
 
     switch (op) {
         case 0x01: // ORA, (MEM,x).
-            OP_READ_INDX(ACC |= val);
+            OP_READ_INDX(ff(ACC |= val));
             break;
         case 0x05: // ORA, ZP
-            OP_READ_ZP(ACC |= val);
+            OP_READ_ZP(ff(ACC |= val));
             break;
         case 0x06: // ASL, ZP
             OP_RMW_ZP(val = do_asl(val));
@@ -342,13 +350,13 @@ void cpu_step(void)
             cycle();
             break;
         case 0x09: // ORA, immed.
-            OP_READ_IMM(ACC |= immed);
+            OP_READ_IMM(ff(ACC |= immed));
             break;
         case 0x0A: // ASL, impl.
             OP_RMW_IMPL(ACC = do_asl(ACC));
             break;
         case 0x0D: // ORA, abs
-            OP_READ_ABS(ACC |= val);
+            OP_READ_ABS(ff(ACC |= val));
             break;
         case 0x0E: // ASL, abs
             OP_RMW_ABS(val = do_asl(val));
@@ -357,10 +365,10 @@ void cpu_step(void)
             OP_BRANCH(!PTEST(PNEG));
             break;
         case 0x11: // ORA, (MEM),y
-            OP_READ_INDY(ACC |= val);
+            OP_READ_INDY(ff(ACC |= val));
             break;
         case 0x15: // ORA, ZP,x
-            OP_READ_ZP_IDX(XREG, ACC |= val);
+            OP_READ_ZP_IDX(XREG, ff(ACC |= val));
             break;
         case 0x16: // ASL, ZP,x
             OP_RMW_ZP_IDX(XREG, val = do_asl(val));
@@ -369,13 +377,13 @@ void cpu_step(void)
             OP_RMW_IMPL(PPUT(PCARRY, 0));
             break;
         case 0x19: // ORA, MEM,y
-            OP_READ_ABS_IDX(YREG, ACC |= val);
+            OP_READ_ABS_IDX(YREG, ff(ACC |= val));
             break;
         case 0x1D: // ORA, MEM,x
-            OP_READ_ABS_IDX(XREG, ACC |= val);
+            OP_READ_ABS_IDX(XREG, ff(ACC |= val));
             break;
         case 0x1E: // ASL, MEM,x
-            OP_RMW_ABS_IDX(XREG, ACC |= val);
+            OP_RMW_ABS_IDX(XREG, ff(ACC |= val));
             break;
 
 
@@ -395,13 +403,13 @@ void cpu_step(void)
             }
             break;
         case 0x21: // AND, (MEM,x)
-            OP_READ_INDX(ACC &= val);
+            OP_READ_INDX(ff(ACC &= val));
             break;
         case 0x24: // BIT, ZP
             OP_READ_ZP(do_bit(val));
             break;
         case 0x25: // AND, ZP
-            OP_READ_ZP(ACC &= val);
+            OP_READ_ZP(ff(ACC &= val));
             break;
         case 0x26: // ROL, ZP
             OP_RMW_ZP(val = do_rol(val));
@@ -418,7 +426,7 @@ void cpu_step(void)
             }
             break;
         case 0x29: // AND, imm
-            OP_READ_IMM(ACC &= val);
+            OP_READ_IMM(ff(ACC &= val));
             break;
         case 0x2A: // ROL, impl.
             OP_RMW_IMPL(ACC = do_rol(ACC));
@@ -427,7 +435,7 @@ void cpu_step(void)
             OP_READ_ABS(do_bit(val));
             break;
         case 0x2D: // AND, abs
-            OP_READ_ABS(ACC &= val);
+            OP_READ_ABS(ff(ACC &= val));
             break;
         case 0x2E: // ROL, abs
             OP_RMW_ABS(val = do_rol(val));
@@ -436,10 +444,10 @@ void cpu_step(void)
             OP_BRANCH(PTEST(PNEG));
             break;
         case 0x31: // AND, (MEM),y
-            OP_READ_INDY(ACC &= val);
+            OP_READ_INDY(ff(ACC &= val));
             break;
         case 0x35: // AND, ZP,x
-            OP_READ_ZP_IDX(XREG, ACC &= val);
+            OP_READ_ZP_IDX(XREG, ff(ACC &= val));
             break;
         case 0x36: // ROL, ZP,x
             OP_RMW_ZP_IDX(XREG, val = do_rol(val));
@@ -448,13 +456,13 @@ void cpu_step(void)
             OP_RMW_IMPL(PPUT(PCARRY, 1));
             break;
         case 0x39: // AND, MEM,y
-            OP_READ_ABS_IDX(YREG, ACC &= val);
+            OP_READ_ABS_IDX(YREG, ff(ACC &= val));
             break;
         case 0x3D: // AND, MEM,x
-            OP_READ_ABS_IDX(XREG, ACC &= val);
+            OP_READ_ABS_IDX(XREG, ff(ACC &= val));
             break;
         case 0x3E: // ROL, MEM,x
-            OP_RMW_ABS_IDX(XREG, ACC &= val);
+            OP_RMW_ABS_IDX(XREG, ff(ACC &= val));
             break;
 
 
@@ -475,10 +483,10 @@ void cpu_step(void)
             }
             break;
         case 0x41: // EOR, (MEM,x)
-            OP_READ_INDX(ACC ^= val);
+            OP_READ_INDX(ff(ACC ^= val));
             break;
         case 0x45: // EOR, ZP
-            OP_READ_ZP(ACC ^= val);
+            OP_READ_ZP(ff(ACC ^= val));
             break;
         case 0x46: // LSR, ZP
             OP_RMW_ZP(val = do_lsr(val));
@@ -489,7 +497,7 @@ void cpu_step(void)
             cycle();
             break;
         case 0x49: // EOR, imm
-            OP_READ_IMM(ACC ^= val);
+            OP_READ_IMM(ff(ACC ^= val));
             break;
         case 0x4A: // LSR, impl.
             OP_RMW_IMPL(ACC = do_lsr(ACC));
@@ -505,7 +513,7 @@ void cpu_step(void)
             }
             break;
         case 0x4D: // EOR, abs
-            OP_READ_ABS(ACC ^= val);
+            OP_READ_ABS(ff(ACC ^= val));
             break;
         case 0x4E: // LSR, abs
             OP_RMW_ABS(val = do_lsr(val));
@@ -514,22 +522,22 @@ void cpu_step(void)
             OP_BRANCH(!PTEST(POVERFL));
             break;
         case 0x51: // EOR, (MEM),y
-            OP_READ_INDY(ACC ^= val);
+            OP_READ_INDY(ff(ACC ^= val));
             break;
         case 0x55: // EOR, ZP,x
-            OP_READ_ZP_IDX(XREG, ACC ^= val);
+            OP_READ_ZP_IDX(XREG, ff(ACC ^= val));
             break;
         case 0x56: // LSR, ZP,x
-            OP_RMW_ZP_IDX(XREG, ACC ^= val);
+            OP_RMW_ZP_IDX(XREG, ff(ACC ^= val));
             break;
         case 0x58: // CLI
             OP_RMW_IMPL(PPUT(PINT, 0));
             break;
         case 0x59: // EOR, MEM,y
-            OP_READ_ABS_IDX(YREG, ACC ^= val);
+            OP_READ_ABS_IDX(YREG, ff(ACC ^= val));
             break;
         case 0x5D: // EOR, MEM,x
-            OP_READ_ABS_IDX(XREG, ACC ^= val);
+            OP_READ_ABS_IDX(XREG, ff(ACC ^= val));
             break;
         case 0x5E: // LSR, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_lsr(val));
