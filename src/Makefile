@@ -1,6 +1,6 @@
 CC=gcc
 LD=gcc
-CFLAGS=-Wall -Werror -std=c99 -pedantic
+CFLAGS=-Wall -Werror -std=c99 -pedantic -Wno-unused
 OBJECTS=main.o bobbin.o cpu.o mem.o
 BOBBIN=bobbin
 
