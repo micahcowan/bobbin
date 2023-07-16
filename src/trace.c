@@ -14,15 +14,9 @@ void trace_instr(void)
     current_instruction = PC;
 
     if (traceon)
-        util_print_state();
+        util_print_state(stderr);
 
     iface_simple_instr_hook();
-
-    if (sigterm_received) {
-        putchar('\n');
-        exit(0);
-        debugger();
-    }
 }
 
 int trace_mem_get_byte(word loc)

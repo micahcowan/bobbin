@@ -5,6 +5,7 @@
 
 #include <signal.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef uint16_t    word;
 typedef uint8_t     byte;
@@ -137,13 +138,13 @@ extern void debugger(void);
 
 /********** UTIL **********/
 
-extern void util_print_state(void);
+extern void util_print_state(FILE *f);
 extern int util_toascii(int c);
 extern int util_fromascii(int c);
 extern int util_isprint(int c);
 
 /* TBD */
-extern word print_disasm(word pos, Registers *regs);
+extern word print_disasm(FILE *f, word pos, Registers *regs);
 static inline void cycle(void) {}
 extern sig_atomic_t sigterm_received;
 

@@ -343,20 +343,21 @@ static const char *get_op_mnem(byte op)
 static const char n_oprnd[]
     = {0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 1, 2};
 
-#define RP  return printf
-int pr_none(byte a[2]) { return 0; }
-int pr_indx(byte a[2]) { RP("($%02X,x)", a[0]); }
-int pr_zp(byte a[2]) { RP("$%02X", a[0]); }
-int pr_imm(byte a[2]) { RP("#$%02X", a[0]); }
-int pr_abs(byte a[2]) { RP("$%04X", WORD(a[0],a[1])); }
-int pr_indy(byte a[2]) { RP("($%02X),y", a[0]); }
-int pr_zp_x(byte a[2]) { RP("$%02X,x", a[0]); }
-int pr_zp_y(byte a[2]) { RP("$%02X,y", a[0]); }
-int pr_abs_x(byte a[2]) { RP("$%04X,x", WORD(a[0],a[1])); }
-int pr_abs_y(byte a[2]) { RP("$%04X,y", WORD(a[0],a[1])); }
-int pr_jmp_ind(byte a[2]) { RP("($%04X)", WORD(a[0],a[1])); }
+#define PRA FILE *f, byte a[2]
+#define RP  return fprintf
+int pr_none(PRA) { return 0; }
+int pr_indx(PRA) { RP(f, "($%02X,x)", a[0]); }
+int pr_zp(PRA) { RP(f, "$%02X", a[0]); }
+int pr_imm(PRA) { RP(f, "#$%02X", a[0]); }
+int pr_abs(PRA) { RP(f, "$%04X", WORD(a[0],a[1])); }
+int pr_indy(PRA) { RP(f, "($%02X),y", a[0]); }
+int pr_zp_x(PRA) { RP(f, "$%02X,x", a[0]); }
+int pr_zp_y(PRA) { RP(f, "$%02X,y", a[0]); }
+int pr_abs_x(PRA) { RP(f, "$%04X,x", WORD(a[0],a[1])); }
+int pr_abs_y(PRA) { RP(f, "$%04X,y", WORD(a[0],a[1])); }
+int pr_jmp_ind(PRA) { RP(f, "($%04X)", WORD(a[0],a[1])); }
 
-int (* const handlers[])(byte a[2]) = {
+int (* const handlers[])(FILE *f, byte a[2]) = {
     pr_none,
     pr_none,
     pr_indx,
@@ -448,7 +449,7 @@ static int get_op_type(byte op)
     }
 }
 
-word print_disasm(word ci, Registers *regs)
+word print_disasm(FILE *f, word ci, Registers *regs)
 {
     byte m[3];
     for (int i=0; i != (sizeof m); ++i) {
@@ -459,20 +460,20 @@ word print_disasm(word ci, Registers *regs)
     int t = get_op_type(m[0]);
     int n = n_oprnd[t];
 
-    printf("%04X:  ", ci);
+    fprintf(f, "%04X:  ", ci);
     for (int i=0; i != (sizeof m); ++i) {
         if (i > n) {
-            printf("   ");
+            fprintf(f, "   ");
         } else {
-            printf(" %02X", m[i]);
+            fprintf(f, " %02X", m[i]);
         }
     }
 
     // print mnemonic
-    printf("    %s ", mnem);
+    fprintf(f, "    %s ", mnem);
 
-    int cnt = handlers[t](&m[1]);
-    putchar('\n');
+    int cnt = handlers[t](f, &m[1]);
+    fputc('\n', f);
 
     return ci;
 }
