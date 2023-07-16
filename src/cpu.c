@@ -665,7 +665,7 @@ void cpu_step(void)
             cycle();
             (void) stack_pop();
             cycle();
-            ACC = mem_get_byte(STACK);
+            ff(ACC = mem_get_byte(STACK));
             cycle();
             break;
         case 0x69: // ADC, imm
@@ -818,7 +818,7 @@ void cpu_step(void)
             OP_BRANCH(PTEST(PCARRY));
             break;
         case 0xB1: // LDA, (MEM),y
-            OP_READ_ABS_IDX(YREG, ff(ACC = val));
+            OP_READ_INDY(ff(ACC = val));
             break;
         case 0xB4: // LDY, ZP,x
             OP_READ_ZP_IDX(XREG, ff(YREG = val));
