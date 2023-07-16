@@ -50,7 +50,7 @@ void util_print_state(FILE *f)
     byte sp = SP+1;
     for (int i=0; i != 13; ++i) {
         if (!sp) fprintf(f, "  |");
-        fprintf(f, "  %02X", mem_get_byte_nobus(sp++));
+        fprintf(f, "  %02X", mem_get_byte_nobus(WORD(sp++,0x1)));
     }
     fputc('\n', f);
 
