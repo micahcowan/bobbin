@@ -980,13 +980,14 @@ void cpu_step(void)
                 cycle(); // 3
                 stack_push(LO(PC));
                 cycle(); // 4
-                stack_push_flags_or(0);
+                stack_push_flags_or(PMASK(PBRK));
                 cycle(); // 5
 
                 byte pcL = mem_get_byte(LOC_BRK);
                 cycle(); // 6
                 byte pcH = mem_get_byte(LOC_BRK + 1);
                 go_to(WORD(pcL, pcH));
+                PPUT(PINT,1);
                 cycle(); // 7
             }
             break;
