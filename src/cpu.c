@@ -1,6 +1,7 @@
 #include "bobbin-internal.h"
 
-#include <stdio.h>
+#include <stdio.h> // XXX foo
+#include <stdlib.h> // XXX foo
 
 Cpu theCpu;
 
@@ -117,18 +118,23 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
+        word orig = PC; \
         (void) mem_get_byte(PC); \
         if (test) { \
             word addr = PC + immed; \
-            PC = WORD(HI(PC), LO(addr)); \
+            go_to(WORD(HI(PC), LO(addr))); \
             cycle(); /* 3 */\
             (void) mem_get_byte(PC); \
             if (PC != addr) { \
                 cycle(); /* 4 */ \
-                PC = addr; \
+                go_to(addr); \
                 (void) mem_get_byte(PC); \
             } \
             cycle(); /* 4 or 5 */ \
+            /* XXX foo */ \
+            fprintf(stderr, "BRANCH ($%02X) from $%04X to $%04X.\n", \
+                    (unsigned int)op, \
+                    (unsigned int)orig, (unsigned int)addr); \
         } else { \
             PC_ADV; \
             cycle(); /* 3 */ \
@@ -480,7 +486,11 @@ void cpu_step(void)
                 cycle();
                 stack_push(LO(PC));
                 cycle();
-                go_to(WORD(lo, mem_get_byte(PC)));
+                word dest = WORD(lo, mem_get_byte(PC));
+                // XXX foo
+                fprintf(stderr, "JSR from $%04X to $%04X.\n",
+                        (unsigned int)PC, (unsigned int)dest);
+                go_to(dest);
                 cycle();
             }
             break;
@@ -556,7 +566,7 @@ void cpu_step(void)
                 PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
                 byte lo = stack_pop();
                 cycle(); // 4
-                PC = WORD(lo, HI(PC));
+                go_to(WORD(lo, HI(PC)));
                 byte hi = stack_pop();
                 cycle(); // 5
                 go_to(WORD(lo, hi));
@@ -590,7 +600,10 @@ void cpu_step(void)
                 PC_ADV;
                 cycle();
                 byte hi = pc_get_adv();
-                go_to(WORD(lo, hi));
+                word dest = WORD(lo, hi);
+                fprintf(stderr, "JMP from $%04X to $%04X.\n",
+                        (unsigned int)PC, (unsigned int)dest);
+                go_to(dest);
                 cycle();
             }
             break;
@@ -628,14 +641,19 @@ void cpu_step(void)
 
         case 0x60: // RTS
             {
+                word orig = PC;
                 cycle(); // end 2
                 byte lo = stack_pop();
                 cycle(); // 3
-                PC = WORD(lo, HI(PC));
+                go_to(WORD(lo, HI(PC)));
                 (void) stack_pop();
                 cycle(); // 4
                 byte hi = mem_get_byte(STACK);
-                go_to(WORD(lo, hi));
+                word dest = WORD(lo, hi);
+                // XXX foo
+                fprintf(stderr, "RTS from $%04X to $%04X.\n",
+                        (unsigned int)orig, (unsigned int)(dest+1));
+                go_to(dest);
                 cycle(); // 5
                 PC_ADV;
                 cycle(); // 6
@@ -674,7 +692,11 @@ void cpu_step(void)
                 lo = mem_get_byte(addr);
                 cycle(); // 4
                 hi = mem_get_byte(WORD(HI(addr),LO(addr+1)));
-                go_to(WORD(lo, hi));
+                word dest = WORD(lo, hi);
+                // XXX foo
+                fprintf(stderr, "JMP () from $%04X to $%04X.\n",
+                        (unsigned int)PC, (unsigned int)dest);
+                go_to(dest);
                 cycle(); // 5
             }
             break;
@@ -957,6 +979,11 @@ void cpu_step(void)
 
         default: // BRK
             {
+                // XXX foo
+                fprintf(stderr, "BRK ($%02X) at $%04X.\n", (unsigned int)op,
+                        (unsigned int)PC);
+                exit(1);
+
                 // XXX cycles and behavior not realistic
                 //  for non-break unsupported op-codes
                 PC_ADV;
