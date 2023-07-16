@@ -1,22 +1,26 @@
 #include "bobbin-internal.h"
 
-// XXX
+/* For the ROM file, and error handling */
 #include <fcntl.h>
 #include <sys/mman.h>
-// XXX foo
 #include <stdio.h>
 #include <stdlib.h>
 
+// Enough of a RAM buffer to provide 128k
 static byte membuf[128 * 1024];
+
+// Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
 
 void mem_init(void)
 {
+    /* Immitate the on-boot memory pattern. */
     for (size_t z=0; z != ((sizeof membuf)/(sizeof membuf[0])); ++z) {
         if (z & 0x2)
             membuf[z] = 0xFF;
     }
-    // XXX
+
+    /* Load a 12l rom file into place (not provided; get your own!) */
     int fd = open("apple2.rom", O_RDONLY);
     if (fd < 0) {
         perror("Couldn't open ROM file");
@@ -32,12 +36,6 @@ void mem_init(void)
 
 byte mem_get_byte(word loc)
 {
-    // XXX foo
-    if ((loc & 0xFFF0) == 0xC000) {
-        fprintf(stderr, "KBD checked at %04X. Done.\n", (unsigned int)PC);
-        exit(0);
-    }
-    // XXX
     if (loc < 0xC000) {
         return membuf[loc];
     }

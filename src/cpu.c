@@ -1,10 +1,6 @@
 #include "bobbin-internal.h"
 
-#include <stdio.h> // XXX foo
-#include <stdlib.h> // XXX foo
-
 Cpu theCpu;
-static int trace = 0;
 
 void cpu_reset(void)
 {
@@ -134,10 +130,6 @@ void cpu_reset(void)
                 (void) mem_get_byte(PC); \
             } \
             cycle(); /* 4 or 5 */ \
-            /* XXX foo */ \
-            fprintf(stderr, "BRANCH ($%02X) from $%04X to $%04X.\n", \
-                    (unsigned int)op, \
-                    (unsigned int)orig, (unsigned int)addr); \
         } else { \
             /* https://www.nesdev.org/6502_cpu.txt
                 says "else increment PC", but that's
@@ -422,17 +414,9 @@ static inline void do_cmp(byte a, byte b)
 
 void cpu_step(void)
 {
-    // XXX foo
-    //if (PC == 0xFBC1) trace = 1;
-
     /* Cycle references taken from https://www.nesdev.org/6502_cpu.txt. */
     byte op = pc_get_adv();
     cycle(); // end 1
-
-    // XXX foo
-    if (trace) {
-        fprintf(stderr, ":%04X: $%02X\n", (unsigned int)PC-1, (unsigned int)op);
-    }
 
     byte immed = mem_get_byte(PC);
 
@@ -501,9 +485,6 @@ void cpu_step(void)
                 stack_push(LO(PC));
                 cycle();
                 word dest = WORD(lo, mem_get_byte(PC));
-                // XXX foo
-                fprintf(stderr, "JSR from $%04X to $%04X.\n",
-                        (unsigned int)PC, (unsigned int)dest);
                 go_to(dest);
                 cycle();
             }
@@ -615,8 +596,6 @@ void cpu_step(void)
                 cycle();
                 byte hi = pc_get_adv();
                 word dest = WORD(lo, hi);
-                fprintf(stderr, "JMP from $%04X to $%04X.\n",
-                        (unsigned int)PC, (unsigned int)dest);
                 go_to(dest);
                 cycle();
             }
@@ -664,9 +643,6 @@ void cpu_step(void)
                 cycle(); // 4
                 byte hi = mem_get_byte(STACK);
                 word dest = WORD(lo, hi);
-                // XXX foo
-                fprintf(stderr, "RTS from $%04X to $%04X.\n",
-                        (unsigned int)orig, (unsigned int)(dest+1));
                 go_to(dest);
                 cycle(); // 5
                 PC_ADV;
@@ -707,10 +683,6 @@ void cpu_step(void)
                 cycle(); // 4
                 hi = mem_get_byte(WORD(LO(addr+1),HI(addr)));
                 word dest = WORD(lo, hi);
-                // XXX foo
-                fprintf(stderr, "JMP ($%04X) from $%04X to $%04X.\n",
-                        (unsigned int)addr,
-                        (unsigned int)PC, (unsigned int)dest);
                 go_to(dest);
                 cycle(); // 5
             }
@@ -994,11 +966,6 @@ void cpu_step(void)
 
         default: // BRK
             {
-                // XXX foo
-                fprintf(stderr, "BRK ($%02X) at $%04X.\n", (unsigned int)op,
-                        (unsigned int)PC);
-                exit(1);
-
                 // XXX cycles and behavior not realistic
                 //  for non-break unsupported op-codes
                 PC_ADV;

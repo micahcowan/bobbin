@@ -4,8 +4,6 @@
 #define _XOPEN_SOURCE   700
 
 #include <stdint.h>
-#include <stdio.h> // XXX foo
-#include <stdlib.h> // XXX foo
 
 typedef uint16_t    word;
 typedef uint8_t     byte;
@@ -71,11 +69,6 @@ extern void cpu_step(void);
 
 static inline void go_to(word w) {
     theCpu.regs.pc = w;
-    // XXX foo
-    if (w == 0xFD6A) {
-        fprintf(stderr, "REACHED $FD6A.\n");
-        exit(0);
-    }
 }
 
 /********** MEMORY **********/
