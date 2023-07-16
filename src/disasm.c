@@ -456,6 +456,67 @@ static int get_op_type(byte op)
     }
 }
 
+static void pracc_abs(FILE *f, word addr)
+{
+    fprintf(f, "%04X: ", addr);
+    for (int i=0; i!=5; ++i) {
+        byte b = mem_get_byte_nobus(addr++);
+        fprintf(f, " %02X", b);
+    }
+}
+
+static void pracc_zp(FILE *f, byte addr)
+{
+    fprintf(f, "%02X: %02X %02X   ",
+            addr,
+            mem_get_byte_nobus(addr),
+            mem_get_byte_nobus(LO(addr+1)));
+}
+
+static void print_access(FILE *f, word pc, Registers *regs,
+                         int type, byte m[2])
+{
+    switch (type) {
+        case T_ZP:
+            pracc_abs(f, WORD(m[0], 0));
+            break;
+        case T_ABSOLUTE:
+            pracc_abs(f, WORD(m[0], m[1]));
+            break;
+        case T_ZP_X:
+            pracc_abs(f, WORD(LO(m[0] + regs->x), 0));
+            break;
+        case T_ZP_Y:
+            pracc_abs(f, WORD(LO(m[0] + regs->y), 0));
+            break;
+        case T_ABS_X:
+            pracc_abs(f, WORD(m[0], m[1]) + regs->x);
+            break;
+        case T_ABS_Y:
+            pracc_abs(f, WORD(m[0], m[1]) + regs->y);
+            break;
+
+        case T_INDY:
+            {
+                pracc_zp(f, m[0]);
+                byte lo = mem_get_byte_nobus(m[0]);
+                byte hi = mem_get_byte_nobus(m[0]+1);
+                pracc_abs(f, WORD(lo, hi) + regs->y);
+            }
+            break;
+        case T_INDX:
+            {
+                pracc_zp(f, LO(m[0] + regs->x));
+                byte lo = mem_get_byte_nobus(m[0]);
+                byte hi = mem_get_byte_nobus(m[0]+1);
+                pracc_abs(f, WORD(lo, hi));
+            }
+            break;
+        default:
+            ;
+    }
+}
+
 word print_disasm(FILE *f, word pc, Registers *regs)
 {
     byte m[3];
@@ -480,7 +541,19 @@ word print_disasm(FILE *f, word pc, Registers *regs)
     fprintf(f, "    %s ", mnem);
 
     int cnt = handlers[t](f, pc, &m[1]);
+
+    // pad out the disassembly
+    const int pad = 10; // how much space the args should take up,
+                        //  *after* the mnemonic.
+    if (pad > cnt) {
+        for (int i=cnt; i != pad; ++i) {
+            fputc(' ', f);
+        }
+    }
+
+    // put extra information about any memory we're accessing
+    print_access(f, pc, regs, t, &m[1]);
     fputc('\n', f);
 
-    return pc;
+    return pc + 1 + n;
 }
