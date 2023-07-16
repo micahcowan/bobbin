@@ -33,7 +33,9 @@ static void bobbin_hooks(void)
             fputs("*** REPORT ERROR ***\n", stderr);
             fprintf(stderr, "Failed testcase: %02X\n",
                     mem_get_byte_nobus(0x200));
-            do_rts(); current_instruction = PC;
+            do_rts();
+            PC -= 3;
+            current_instruction = PC;
             util_print_state(stderr);
             exit(3);
             break;
