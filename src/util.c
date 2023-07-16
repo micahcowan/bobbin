@@ -45,6 +45,15 @@ void util_print_state(FILE *f)
     }
     fputc('\n', f);
 
+    // Print stack
+    fprintf(f, "STK: $1%02X:  (%02X)", SP, mem_get_byte_nobus(STACK));
+    byte sp = SP+1;
+    for (int i=0; i != 13; ++i) {
+        if (!sp) fprintf(f, "  |");
+        fprintf(f, "  %02X", mem_get_byte_nobus(sp++));
+    }
+    fputc('\n', f);
+
     // Print current location and instruction
     (void) print_disasm(f, current_instruction, &theCpu.regs);
 }

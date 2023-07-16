@@ -23,6 +23,16 @@ watch:
 	    inotifywait -e modify . ; \
 	done
 
+.PHONY: check test
+check: $(BOBBIN) 6502_functional_test.bin
+	BOBBIN_TEST=6502_functional_test.bin ./bobbin
+
+6502_functional_test.bin:
+	$(MAKE) -C ../test/tests6502/
+	cp  ../test/tests6502/$@ ./$@
+
+test: check
+
 bobbin: $(OBJECTS)
 	$(LD) -o bobbin $(OBJECTS)
 

@@ -75,6 +75,8 @@ static inline void go_to(word w) {
 
 /********** MEMORY **********/
 
+extern const char *bobbin_test;
+
 extern void mem_init(void);
 extern byte mem_get_byte(word loc);
 extern byte mem_get_byte_nobus(word loc);

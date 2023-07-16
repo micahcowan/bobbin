@@ -1,5 +1,7 @@
 #include "bobbin-internal.h"
 
+#include <stdlib.h>
+
 Cpu theCpu;
 
 void cpu_reset(void)
@@ -967,7 +969,7 @@ void cpu_step(void)
             break;
             
 
-        default: // BRK
+        case 0x00: // BRK
             {
                 // XXX cycles and behavior not realistic
                 //  for non-break unsupported op-codes
@@ -988,5 +990,11 @@ void cpu_step(void)
                 cycle(); // 7
             }
             break;
+        default: // UNKNOWN INSTRUCTION!
+            {
+                fprintf(stderr, "UNKNOWN OPCODE ($%02X) AT $%04X. EXITING.\n",
+                        op, current_instruction);
+                exit(1);
+            }
     }
 }

@@ -18,6 +18,9 @@ void bobbin_run(void)
     }
 
     cpu_reset();
+    if (bobbin_test) {
+        PC = 0x400;
+    }
 
     for (;;) /* ever */ {
         trace_instr();
