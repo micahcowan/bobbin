@@ -343,7 +343,7 @@ static const char *get_op_mnem(byte op)
 static const char n_oprnd[]
     = {0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 1, 2};
 
-#define PRA FILE *f, byte a[2]
+#define PRA FILE *f, word pc, byte a[2]
 #define RP  return fprintf
 int pr_none(PRA) { return 0; }
 int pr_indx(PRA) { RP(f, "($%02X,x)", a[0]); }
@@ -357,14 +357,21 @@ int pr_abs_x(PRA) { RP(f, "$%04X,x", WORD(a[0],a[1])); }
 int pr_abs_y(PRA) { RP(f, "$%04X,y", WORD(a[0],a[1])); }
 int pr_jmp_ind(PRA) { RP(f, "($%04X)", WORD(a[0],a[1])); }
 
-int (* const handlers[])(FILE *f, byte a[2]) = {
+int pr_rel(PRA) {
+    word offset = a[0];
+    if (offset & 0x80) offset |= 0xFF00;
+
+    RP(f, "$%04X", (unsigned int)((pc + offset + 2) & 0xFFFF));
+}
+
+int (* const handlers[])(PRA) = {
     pr_none,
     pr_none,
     pr_indx,
     pr_zp,
     pr_imm,
     pr_abs,
-    pr_none,
+    pr_rel,
     pr_indy,
     pr_zp_x,
     pr_abs_y,
@@ -449,18 +456,18 @@ static int get_op_type(byte op)
     }
 }
 
-word print_disasm(FILE *f, word ci, Registers *regs)
+word print_disasm(FILE *f, word pc, Registers *regs)
 {
     byte m[3];
     for (int i=0; i != (sizeof m); ++i) {
-        m[i] = mem_get_byte_nobus(ci+i);
+        m[i] = mem_get_byte_nobus(pc+i);
     }
 
     const char *mnem = get_op_mnem(m[0]);
     int t = get_op_type(m[0]);
     int n = n_oprnd[t];
 
-    fprintf(f, "%04X:  ", ci);
+    fprintf(f, "%04X:  ", pc);
     for (int i=0; i != (sizeof m); ++i) {
         if (i > n) {
             fprintf(f, "   ");
@@ -472,8 +479,8 @@ word print_disasm(FILE *f, word ci, Registers *regs)
     // print mnemonic
     fprintf(f, "    %s ", mnem);
 
-    int cnt = handlers[t](f, &m[1]);
+    int cnt = handlers[t](f, pc, &m[1]);
     fputc('\n', f);
 
-    return ci;
+    return pc;
 }
