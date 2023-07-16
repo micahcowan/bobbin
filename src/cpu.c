@@ -1,5 +1,7 @@
 #include "bobbin-internal.h"
 
+#include <stdio.h>
+
 Cpu theCpu;
 
 void cpu_reset(void)
@@ -397,6 +399,14 @@ static inline void do_sbc(byte val)
         PPUT(PCARRY, diff & 0x100);
         ACC = LO(diff);
     }
+}
+
+static inline void do_cmp(byte a, byte b)
+{
+    byte diff = a - b;
+    PPUT(PNEG, diff & 0x80);
+    PPUT(PZERO, diff == 0);
+    PPUT(PCARRY, a >= b);
 }
 
 void cpu_step(void)
@@ -826,6 +836,124 @@ void cpu_step(void)
             OP_READ_ABS_IDX(YREG, ff(XREG = val));
             break;
 
+
+        case 0xC0: // CPY, immed.
+            OP_READ_IMM(do_cmp(YREG, val));
+            break;
+        case 0xC1: // CMP, (MEM,x)
+            OP_READ_INDX(do_cmp(ACC, val));
+            break;
+        case 0xC4: // CPY, ZP
+            OP_READ_ZP(do_cmp(YREG, val));
+            break;
+        case 0xC5: // CMP, ZP
+            OP_READ_ZP(do_cmp(ACC, val));
+            break;
+        case 0xC6: // DEC, ZP
+            OP_RMW_ZP(ff(--val));
+            break;
+        case 0xC8: // INY, impl.
+            OP_RMW_IMPL(ff(++YREG));
+            break;
+        case 0xC9: // CMP, immed.
+            OP_READ_IMM(do_cmp(ACC, val));
+            break;
+        case 0xCA: // DEX, immed.
+            OP_RMW_IMPL(ff(--XREG));
+            break;
+        case 0xCC: // CPY, abs.
+            OP_READ_ABS(do_cmp(YREG, val));
+            break;
+        case 0xCD: // CMP, abs.
+            OP_READ_ABS(do_cmp(ACC, val));
+            break;
+        case 0xCE: // DEC, abs.
+            OP_RMW_ABS(ff(--val));
+            break;
+        case 0xD0: // BNE
+            OP_BRANCH(!PTEST(PZERO));
+            break;
+        case 0xD1: // CMP, (MEM),y
+            OP_READ_INDY(do_cmp(ACC, val));
+            break;
+        case 0xD5: // CMP, ZP,x
+            OP_READ_ZP_IDX(XREG, do_cmp(ACC, val));
+            break;
+        case 0xD6: // DEC, ZP,x
+            OP_RMW_ZP_IDX(XREG, ff(--val));
+            break;
+        case 0xD8: // CLD
+            OP_RMW_IMPL(PPUT(PDEC, 0));
+            break;
+        case 0xD9: // CMP, MEM,y
+            OP_READ_ABS_IDX(YREG, do_cmp(ACC, val));
+            break;
+        case 0xDD: // CMP, MEM,x
+            OP_READ_ABS_IDX(XREG, do_cmp(ACC, val));
+            break;
+        case 0xDE: // DEC, MEM,x
+            OP_RMW_ABS_IDX(XREG, ff(--val));
+            break;
+
+
+        case 0xE0: // CPX, immed.
+            OP_READ_IMM(do_cmp(XREG, val));
+            break;
+        case 0xE1: // SBC, (MEM,x)
+            OP_READ_INDX(do_sbc(val));
+            break;
+        case 0xE4: // CPX, ZP
+            OP_READ_ZP(do_cmp(XREG, val));
+            break;
+        case 0xE5: // SBC, ZP
+            OP_READ_ZP(do_sbc(val));
+            break;
+        case 0xE6: // INC, ZP
+            OP_RMW_ZP(ff(++val));
+            break;
+        case 0xE8: // INX (impl.)
+            OP_RMW_IMPL(ff(++XREG));
+            break;
+        case 0xE9: // SBC, immed.
+            OP_READ_IMM(do_sbc(val));
+            break;
+        case 0xEA: // NOP
+            OP_RMW_IMPL(); // empty statement
+            break;
+        case 0xEC: // CPX, abs.
+            OP_READ_ABS(do_cmp(XREG, val));
+            break;
+        case 0xED: // SBC, abs.
+            OP_READ_ABS(do_sbc(val));
+            break;
+        case 0xEE: // INC, abs.
+            OP_RMW_ABS(ff(++val));
+            break;
+        case 0xF0: // BEQ
+            OP_BRANCH(PTEST(PZERO));
+            break;
+        case 0xF1: // SBC, (MEM),y
+            OP_READ_INDY(do_sbc(val));
+            break;
+        case 0xF5: // SBC, ZP,x
+            OP_READ_ZP_IDX(XREG, do_sbc(val));
+            break;
+        case 0xF6: // INC, ZP,x
+            OP_RMW_ZP_IDX(XREG, ff(++val));
+            break;
+        case 0xF8: // SED
+            OP_RMW_IMPL(PPUT(PDEC, 1));
+            break;
+        case 0xF9: // SBC, MEM,y
+            OP_READ_ABS_IDX(YREG, do_sbc(val));
+            break;
+        case 0xFD: // SBC, MEM,x
+            OP_READ_ABS_IDX(XREG, do_sbc(val));
+            break;
+        case 0xFE: // INC, MEM,x
+            OP_RMW_ABS_IDX(XREG, ff(++val));
+            break;
+            
 
         default: // BRK
             {
