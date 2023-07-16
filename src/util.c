@@ -8,10 +8,18 @@ int util_toascii(int c)
     return c & 0x7F;
 }
 
+int util_fromascii(int c)
+{
+    if (c == '\n') return 0x8D; // RETURN char
+    if (c >= 0x60)
+        c &= 0x5F; // make uppercase (~ some punctuation changes)
+    return c | 0x80;
+}
+
 int util_isprint(int c)
 {
     if (c < 0) return c;
-    return c > 0x20 && c < 0x7F;
+    return c >= 0x20 && c < 0x7F;
 }
 
 void util_print_state(void)

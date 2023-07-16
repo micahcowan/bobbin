@@ -2,6 +2,7 @@
 #include "iface-simple.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 word current_instruction = 0;
 
@@ -18,6 +19,8 @@ void trace_instr(void)
     iface_simple_instr_hook();
 
     if (sigterm_received) {
+        putchar('\n');
+        exit(0);
         debugger();
     }
 }

@@ -63,6 +63,11 @@ byte mem_get_byte_nobus(word loc)
 
 void mem_put_byte(word loc, byte val)
 {
+    mem_put_byte_nobus(loc, val);
+}
+
+void mem_put_byte_nobus(word loc, byte val)
+{
     // XXX
     membuf[loc] = val;
 }

@@ -78,6 +78,7 @@ extern void mem_init(void);
 extern byte mem_get_byte(word loc);
 extern byte mem_get_byte_nobus(word loc);
 extern void mem_put_byte(word loc, byte val);
+extern void mem_put_byte_nobus(word loc, byte val);
 
 static inline byte stack_get(void)
 {
@@ -138,6 +139,7 @@ extern void debugger(void);
 
 extern void util_print_state(void);
 extern int util_toascii(int c);
+extern int util_fromascii(int c);
 extern int util_isprint(int c);
 
 /* TBD */
