@@ -219,6 +219,78 @@ void cpu_reset(void)
         cycle(); /* 7 */ \
     } while (0)
 
+#define OP_WRITE_INDX(valReg) \
+    do { \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        (void) mem_get_byte(immed); \
+        cycle(); /* 3 */ \
+        immed += XREG; \
+        byte lo = mem_get_byte(immed); \
+        cycle(); /* 4 */ \
+        immed += 1; \
+        byte hi = mem_get_byte(immed); \
+        cycle(); /* 5 */ \
+        mem_put_byte(WORD(lo, hi), valReg); \
+        cycle(); /* 6 */ \
+    } while (0)
+
+#define OP_WRITE_ZP(reg) \
+    do { \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        mem_put_byte(immed, reg); \
+        cycle(); /* 3 */ \
+    } while (0)
+
+#define OP_WRITE_ZP_IDX(idxReg, valReg) \
+    do { \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        (void) mem_get_byte(immed); \
+        cycle(); /* 3 */ \
+        mem_put_byte(LO(immed + idxReg), valReg); \
+        cycle();  /* 4 */ \
+    } while (0)
+
+#define OP_WRITE_ABS_IDX(idxReg, valReg) \
+    do { \
+        byte lo = immed; \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        byte hi = pc_get_adv(); \
+        cycle(); /* 3 */ \
+        (void) mem_get_byte(WORD(LO(lo + idxReg), hi)); \
+        cycle(); /* 4 */ \
+        mem_put_byte(WORD(lo, hi) + idxReg, valReg); \
+        cycle(); /* 5 */ \
+    } while (0)
+
+#define OP_WRITE_INDY(valReg) \
+    do { \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        byte lo = mem_get_byte(immed); \
+        cycle(); /* 3 */ \
+        byte hi = mem_get_byte(LO(immed + 1)); \
+        cycle(); /* 4 */ \
+        (void) mem_get_byte(WORD(LO(lo+YREG), hi)); \
+        cycle(); /* 5 */ \
+        mem_put_byte(WORD(lo, hi)+YREG, valReg); \
+        cycle(); /* 6 */ \
+    } while (0)
+
+#define OP_WRITE_ABS(valReg) \
+    do { \
+        byte lo = immed; \
+        PC_ADV; \
+        cycle(); /* 2 */ \
+        byte hi = pc_get_adv(); \
+        cycle(); /* 3 */ \
+        mem_put_byte(WORD(lo, hi), valReg); \
+        cycle(); /* 4 */ \
+    } while (0)
+
 // Fix up flags
 static inline byte ff(byte val)
 {
@@ -625,6 +697,62 @@ void cpu_step(void)
             break;
         case 0x7E: // ROR, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_ror(val));
+            break;
+
+
+        case 0x81: // STA, (MEM,x)
+            OP_WRITE_INDX(ACC);
+            break;
+        case 0x84: // STY, ZP
+            OP_WRITE_ZP(YREG);
+            break;
+        case 0x85: // STA, ZP
+            OP_WRITE_ZP(ACC);
+            break;
+        case 0x86: // STX, ZP
+            OP_WRITE_ZP(XREG);
+            break;
+        case 0x88: // DEY
+            OP_RMW_IMPL(ff(--YREG));
+            break;
+        case 0x8A: // TXA
+            OP_RMW_IMPL(ff(ACC = XREG));
+            break;
+        case 0x8C: // STY, abs
+            OP_WRITE_ABS(YREG);
+            break;
+        case 0x8D: // STA, abs
+            OP_WRITE_ABS(ACC);
+            break;
+        case 0x8E: // STX, abs
+            OP_WRITE_ABS(XREG);
+            break;
+        case 0x90: // BCC
+            OP_BRANCH(!PTEST(PCARRY));
+            break;
+        case 0x91: // STA, (MEM),y
+            OP_WRITE_INDY(ACC);
+            break;
+        case 0x94: // STY, ZP,x
+            OP_WRITE_ZP_IDX(XREG, YREG);
+            break;
+        case 0x95: // STA, ZP,x
+            OP_WRITE_ZP_IDX(XREG, ACC);
+            break;
+        case 0x96: // STX, ZP,y
+            OP_WRITE_ZP_IDX(YREG, XREG);
+            break;
+        case 0x98: // TYA
+            OP_RMW_IMPL(ff(ACC = YREG));
+            break;
+        case 0x99: // STA, MEM,y
+            OP_WRITE_ABS_IDX(YREG, ACC);
+            break;
+        case 0x9A: // TXS
+            OP_RMW_IMPL(SP = XREG); // No flag changes!
+            break;
+        case 0x9D: // STA, MEM,x
+            OP_WRITE_ABS_IDX(XREG, ACC);
             break;
 
 
