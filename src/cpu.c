@@ -756,6 +756,77 @@ void cpu_step(void)
             break;
 
 
+        case 0xA0: // LDY, immed.
+            OP_READ_IMM(ff(YREG = val));
+            break;
+        case 0xA1: // LDA, (MEM,x)
+            OP_READ_INDX(ff(ACC = val));
+            break;
+        case 0xA2: // LDX, immed.
+            OP_READ_IMM(ff(XREG = val));
+            break;
+        case 0xA4: // LDY, ZP
+            OP_READ_ZP(ff(YREG = val));
+            break;
+        case 0xA5: // LDA, ZP
+            OP_READ_ZP(ff(ACC = val));
+            break;
+        case 0xA6: // LDX, ZP
+            OP_READ_ZP(ff(XREG = val));
+            break;
+        case 0xA8: // TAY
+            OP_RMW_IMPL(ff(YREG = ACC));
+            break;
+        case 0xA9: // LDA, immed.
+            OP_READ_IMM(ff(ACC = val));
+            break;
+        case 0xAA: // TAX
+            OP_RMW_IMPL(ff(XREG = ACC));
+            break;
+        case 0xAC: // LDY, abs
+            OP_READ_ABS(ff(YREG = val));
+            break;
+        case 0xAD: // LDA, abs
+            OP_READ_ABS(ff(ACC = val));
+            break;
+        case 0xAE: // LDX, abs
+            OP_READ_ABS(ff(XREG = val));
+            break;
+        case 0xB0: // BCS
+            OP_BRANCH(PTEST(PCARRY));
+            break;
+        case 0xB1: // LDA, (MEM),y
+            OP_READ_ABS_IDX(YREG, ff(ACC = val));
+            break;
+        case 0xB4: // LDY, ZP,x
+            OP_READ_ZP_IDX(XREG, ff(YREG = val));
+            break;
+        case 0xB5: // LDA, ZP,x
+            OP_READ_ZP_IDX(XREG, ff(ACC = val));
+            break;
+        case 0xB6: // LDX, ZP,y
+            OP_READ_ZP_IDX(YREG, ff(XREG = val));
+            break;
+        case 0xB8: // CLV
+            OP_RMW_IMPL(PPUT(POVERFL, 0));
+            break;
+        case 0xB9: // LDA, MEM,y
+            OP_READ_ABS_IDX(YREG, ff(ACC = val));
+            break;
+        case 0xBA: // TSX
+            OP_RMW_IMPL(ff(XREG = SP));
+            break;
+        case 0xBC: // LDY MEM,x
+            OP_READ_ABS_IDX(XREG, ff(YREG = val));
+            break;
+        case 0xBD: // LDA MEM,x
+            OP_READ_ABS_IDX(XREG, ff(ACC = val));
+            break;
+        case 0xBE: // LDX MEM,y
+            OP_READ_ABS_IDX(YREG, ff(XREG = val));
+            break;
+
+
         default: // BRK
             {
                 // XXX cycles and behavior not realistic
