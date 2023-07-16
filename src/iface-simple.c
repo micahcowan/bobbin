@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int end_of_file = 0;
-
 void iface_simple_instr_init(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -34,16 +32,20 @@ void getln(void)
     char *s;
     word bufloc = 0x200;
 
-    if (end_of_file) {
-        putchar('\n');
+    if (tracing()) {
+        trace_off();
+        printf("[EXIT]\n");
         exit(0);
+    }
+    else {
+        //trace_on("BETWEEN LINE INPUTS");
     }
 
     // Something wants to read a line of text, so do that
     s = fgets((char *)linebuf, sizeof linebuf, stdin);
     if (s == NULL) {
-        // Delay program exit until next input prompt
-        ++end_of_file;
+        putchar('\n');
+        exit(0);
     }
     else {
         // Put it into $200, as GETLN would

@@ -127,7 +127,13 @@ static inline byte pc_get_adv(void)
 
 /********** TRACE **********/
 
+extern FILE *trfile;
+
 extern word current_instruction;
+
+extern void trace_on(char *format, ...);
+extern void trace_off(void);
+extern int  tracing(void);
 
 extern void trace_instr(void);
 extern int  trace_mem_get_byte(word loc);
