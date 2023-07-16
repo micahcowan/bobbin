@@ -4,6 +4,7 @@
 #include <stdlib.h> // XXX foo
 
 Cpu theCpu;
+static int trace = 0;
 
 void cpu_reset(void)
 {
@@ -121,7 +122,9 @@ void cpu_reset(void)
         word orig = PC; \
         (void) mem_get_byte(PC); \
         if (test) { \
-            word addr = PC + immed; \
+            word offset = immed; \
+            if (offset & 0x80) offset |= 0xFF00; \
+            word addr = PC + offset; \
             go_to(WORD(HI(PC), LO(addr))); \
             cycle(); /* 3 */\
             (void) mem_get_byte(PC); \
@@ -136,7 +139,9 @@ void cpu_reset(void)
                     (unsigned int)op, \
                     (unsigned int)orig, (unsigned int)addr); \
         } else { \
-            PC_ADV; \
+            /* https://www.nesdev.org/6502_cpu.txt
+                says "else increment PC", but that's
+                clearly an error. */ \
             cycle(); /* 3 */ \
         } \
     } while (0)
@@ -417,9 +422,18 @@ static inline void do_cmp(byte a, byte b)
 
 void cpu_step(void)
 {
+    // XXX foo
+    //if (PC == 0xFBC1) trace = 1;
+
     /* Cycle references taken from https://www.nesdev.org/6502_cpu.txt. */
     byte op = pc_get_adv();
     cycle(); // end 1
+
+    // XXX foo
+    if (trace) {
+        fprintf(stderr, ":%04X: $%02X\n", (unsigned int)PC-1, (unsigned int)op);
+    }
+
     byte immed = mem_get_byte(PC);
 
     switch (op) {
@@ -691,10 +705,11 @@ void cpu_step(void)
                 cycle(); // 3
                 lo = mem_get_byte(addr);
                 cycle(); // 4
-                hi = mem_get_byte(WORD(HI(addr),LO(addr+1)));
+                hi = mem_get_byte(WORD(LO(addr+1),HI(addr)));
                 word dest = WORD(lo, hi);
                 // XXX foo
-                fprintf(stderr, "JMP () from $%04X to $%04X.\n",
+                fprintf(stderr, "JMP ($%04X) from $%04X to $%04X.\n",
+                        (unsigned int)addr,
                         (unsigned int)PC, (unsigned int)dest);
                 go_to(dest);
                 cycle(); // 5
