@@ -507,7 +507,7 @@ void cpu_step(void)
         case 0x28: // PLP (impl.)
             {
                 cycle();
-                stack_dec();
+                stack_inc();
                 cycle();
                 byte p = mem_get_byte(STACK);
                 // Leave BRK flag alone; always set UNUSED
