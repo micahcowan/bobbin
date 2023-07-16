@@ -36,6 +36,20 @@ void mem_init(void)
 
 byte mem_get_byte(word loc)
 {
+    int t = trace_mem_get_byte(loc);
+    if (t >= 0) {
+        return (byte) t;
+    }
+
+    return mem_get_byte_nobus(loc);
+}
+
+byte mem_get_byte_nobus(word loc)
+{
+    int t = -1; // trace_mem_get_byte_nobus(loc);
+    if (t >= 0) {
+        return (byte) t;
+    }
     if (loc < 0xC000) {
         return membuf[loc];
     }

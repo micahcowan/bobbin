@@ -3,6 +3,7 @@
 
 #define _XOPEN_SOURCE   700
 
+#include <signal.h>
 #include <stdint.h>
 
 typedef uint16_t    word;
@@ -75,6 +76,7 @@ static inline void go_to(word w) {
 
 extern void mem_init(void);
 extern byte mem_get_byte(word loc);
+extern byte mem_get_byte_nobus(word loc);
 extern void mem_put_byte(word loc, byte val);
 
 static inline byte stack_get(void)
@@ -121,7 +123,25 @@ static inline byte pc_get_adv(void)
     return op;
 }
 
+/********** TRACE **********/
+
+extern word current_instruction;
+
+extern void trace_instr(void);
+extern int  trace_mem_get_byte(word loc);
+
+/********** DEBUG **********/
+
+extern void debugger(void);
+
+/********** UTIL **********/
+
+extern void util_print_state(void);
+extern int util_toascii(int c);
+extern int util_isprint(int c);
+
 /* TBD */
 static inline void cycle(void) {}
+extern sig_atomic_t sigterm_received;
 
 #endif /* BOBBIN_INTERNAL_H */

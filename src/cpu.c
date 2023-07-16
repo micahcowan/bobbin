@@ -4,6 +4,7 @@ Cpu theCpu;
 
 void cpu_reset(void)
 {
+    PFLAGS |= PMASK(PUNUSED);
     /* Cycle details taken from https://www.pagetable.com/?p=410 */
     /* Cycles here are counted from 0 to match the source (for
        comparison purposes), but elsewhere counted from 1. */
