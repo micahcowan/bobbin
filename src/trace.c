@@ -52,8 +52,10 @@ void trace_instr(void)
 {
     current_instruction = PC;
 
-    if (traceon)
+    if (traceon) {
+        fputc('\n', trfile);
         util_print_state(trfile);
+    }
 
     if (bobbin_test)
         bobbin_hooks();
