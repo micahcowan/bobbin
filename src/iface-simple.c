@@ -14,9 +14,7 @@ void iface_simple_instr_hook(void)
     if (PC != 0xFDF0) return;
 
     // Output a character when COUT1 is called
-    printf("%02X\n", (unsigned int)ACC);
     int c = util_toascii(ACC);
-    printf("%d\n", c);
     if (c < 0) return;
 
     if (util_isprint(c)
@@ -33,7 +31,9 @@ int iface_simple_getb_hook(word loc)
 {
     if (current_instruction == 0xFB7C) return -1;
     if ((loc & 0xFFF0) == 0xC000) {
-        printf("KEYIN at $%04X. Done.\n",
+        putchar('\n');
+        util_print_state();
+        printf("\nKEYIN at $%04X. Done.\n",
                (unsigned int)current_instruction);
         exit(0);
     }

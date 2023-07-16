@@ -392,7 +392,8 @@ static inline void do_sbc(byte val)
         PPUT(PNEG, diff & 0x80);
         PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
         PPUT(PZERO, LO(diff) == 0);
-        PPUT(PCARRY, diff & 0x100);
+        int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
+        PPUT(PCARRY, !borrow);
 
         ACC = LO(((diffH << 4) | (diffL & 0xF)));
     } else {
@@ -400,7 +401,8 @@ static inline void do_sbc(byte val)
         PPUT(PNEG, diff & 0x80);
         PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
         PPUT(PZERO, LO(diff) == 0);
-        PPUT(PCARRY, diff & 0x100);
+        int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
+        PPUT(PCARRY, !borrow);
         ACC = LO(diff);
     }
 }
