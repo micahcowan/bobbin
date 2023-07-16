@@ -1,7 +1,8 @@
 CC=gcc
 LD=gcc
-CFLAGS=-Wall -Werror -std=c99 -pedantic -Wno-unused
-OBJECTS=main.o bobbin.o cpu.o mem.o trace.o iface-simple.o util.o signal.o debug.o
+WARNINGS=-Wall -Werror -Wno-unused
+CFLAGS=$(WARNINGS) -std=c99 -pedantic
+OBJECTS=main.o bobbin.o cpu.o mem.o trace.o iface-simple.o util.o signal.o debug.o disasm.o
 HEADERS=$(wildcard *.h)
 BOBBIN=bobbin
 

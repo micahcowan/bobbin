@@ -141,6 +141,7 @@ extern int util_toascii(int c);
 extern int util_isprint(int c);
 
 /* TBD */
+extern word print_disasm(word pos, Registers *regs);
 static inline void cycle(void) {}
 extern sig_atomic_t sigterm_received;
 

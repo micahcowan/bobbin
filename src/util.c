@@ -38,9 +38,5 @@ void util_print_state(void)
     putchar('\n');
 
     // Print current location and instruction
-    word ci = current_instruction;
-    printf("%04X:  %02X %02X %02X\n", ci,
-           mem_get_byte_nobus(ci),
-           mem_get_byte_nobus(ci + 1),
-           mem_get_byte_nobus(ci + 2));
+    (void) print_disasm(current_instruction, &theCpu.regs);
 }
