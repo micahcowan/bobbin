@@ -543,7 +543,7 @@ word print_disasm(FILE *f, word pc, Registers *regs)
     int cnt = handlers[t](f, pc, &m[1]);
 
     // pad out the disassembly
-    const int pad = 10; // how much space the args should take up,
+    const int pad = 13; // how much space the args should take up,
                         //  *after* the mnemonic.
     if (pad > cnt) {
         for (int i=cnt; i != pad; ++i) {

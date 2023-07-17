@@ -320,25 +320,27 @@ static inline void carry_from_lsb(byte val)
 static inline byte do_asl(byte val)
 {
     carry_from_msb(val);
-    return val << 1;
+    return ff(LO(val << 1));
 }
 
 static inline byte do_rol(byte val)
 {
+    byte c = PTEST(PCARRY);
     carry_from_msb(val);
-    return val << 1 | PTEST(PCARRY);
+    return ff(LO(val << 1 | c));
 }
 
 static inline byte do_lsr(byte val)
 {
     carry_from_lsb(val);
-    return val >> 1;
+    return ff(LO(val >> 1));
 }
 
 static inline byte do_ror(byte val)
 {
+    byte c = PTEST(PCARRY);
     carry_from_lsb(val);
-    return val >> 1 | (PTEST(PCARRY) << 7);
+    return ff(LO(val >> 1 | (c << 7)));
 }
 
 static inline void do_bit(byte val)

@@ -24,7 +24,7 @@ int util_isprint(int c)
 
 void util_print_state(FILE *f)
 {
-    static const char fnams[] = "CZIDB@VN";
+    static const char fnams[] = "CZIDBUVN";
     // printf("\n12345678901234567890123456789012345678901234567890\n");
 
     // Print registers
@@ -34,7 +34,7 @@ void util_print_state(FILE *f)
 
     // Print status flags
     for (int i=7; i != -1; --i) {
-        if (i == PUNUSED) continue;
+        //if (i == PUNUSED) continue;
         fputc(' ', f);
         char c = fnams[i];
         if (PTEST(i)) {
