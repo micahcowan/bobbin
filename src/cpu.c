@@ -476,7 +476,7 @@ void cpu_step(void)
             OP_READ_ABS_IDX(XREG, ff(ACC |= val));
             break;
         case 0x1E: // ASL, MEM,x
-            OP_RMW_ABS_IDX(XREG, ff(ACC |= val));
+            OP_RMW_ABS_IDX(XREG, val = do_asl(val));
             break;
 
 
@@ -556,7 +556,7 @@ void cpu_step(void)
             OP_READ_ABS_IDX(XREG, ff(ACC &= val));
             break;
         case 0x3E: // ROL, MEM,x
-            OP_RMW_ABS_IDX(XREG, ff(ACC &= val));
+            OP_RMW_ABS_IDX(XREG, val = do_rol(val));
             break;
 
 
@@ -623,7 +623,7 @@ void cpu_step(void)
             OP_READ_ZP_IDX(XREG, ff(ACC ^= val));
             break;
         case 0x56: // LSR, ZP,x
-            OP_RMW_ZP_IDX(XREG, ff(ACC ^= val));
+            OP_RMW_ZP_IDX(XREG, val = do_lsr(val));
             break;
         case 0x58: // CLI
             OP_RMW_IMPL(PPUT(PINT, 0));
