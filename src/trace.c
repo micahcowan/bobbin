@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 word current_instruction = 0;
+unsigned long long cycle_count = 0;
 
 FILE *trfile;
 
@@ -20,9 +21,10 @@ static void do_rts(void)
 
 static void bobbin_hooks(void)
 {
-#define BTRACE 1
-    if (BTRACE && !traceon)
+#if 0
+    if (!traceon && (cycle_count + 256) > 47888692)
         trace_on("6502 TESTS");
+#endif
 
     switch (current_instruction) {
         case 0:
@@ -31,6 +33,7 @@ static void bobbin_hooks(void)
             break;
         case 1:
             fputs("*** REPORT ERROR ***\n", stderr);
+            fprintf(stderr, "Cycle count: %llu\n", cycle_count);
             fprintf(stderr, "Failed testcase: %02X\n",
                     mem_get_byte_nobus(0x200));
             do_rts();

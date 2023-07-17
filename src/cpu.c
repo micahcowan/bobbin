@@ -34,6 +34,11 @@ void cpu_reset(void)
     cycle(); /* end of cycle 7 (8th); read vector high byte */
 }
 
+// Sign extend
+#define SE(v)  (((v) & 0x80)? ((v) | 0xFF00) : (v))
+// "Negation"
+#define NEG(v) (~(((v) - 1) & 0xFFFF))
+
 #define OP_READ_INDX(exec) \
     do { \
         PC_ADV; \
@@ -121,8 +126,7 @@ void cpu_reset(void)
         word orig = PC; \
         (void) mem_get_byte(PC); \
         if (test) { \
-            word offset = immed; \
-            if (offset & 0x80) offset |= 0xFF00; \
+            word offset = SE(immed); \
             word addr = PC + offset; \
             go_to(WORD(HI(PC), LO(addr))); \
             cycle(); /* 3 */\
@@ -369,7 +373,8 @@ static inline void do_adc(byte val)
     } else {
         word sum = ACC + val + PGET(PCARRY);
         PPUT(PNEG, sum & 0x80);
-        PPUT(POVERFL, (val & 0x80) != (sum & 0x80));
+        int v = ((0x80 & ACC) == (0x80 & val)) && ((0x80 & ACC) != (0x80 & sum));
+        PPUT(POVERFL, v);
         PPUT(PZERO, LO(sum) == 0);
         PPUT(PCARRY, sum & 0x100);
         ACC = LO(sum);
@@ -394,7 +399,8 @@ static inline void do_sbc(byte val)
 
         word diff = ACC - val - !PGET(PCARRY);
         PPUT(PNEG, diff & 0x80);
-        PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
+        int v = ((0x80 & ACC) == (0x80 & NEG(val))) && ((0x80 & ACC) != (0x80 & diff));
+        PPUT(POVERFL, v);
         PPUT(PZERO, LO(diff) == 0);
         int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
         PPUT(PCARRY, !borrow);
@@ -403,7 +409,9 @@ static inline void do_sbc(byte val)
     } else {
         word diff = ACC - val - !PGET(PCARRY);
         PPUT(PNEG, diff & 0x80);
-        PPUT(POVERFL, (val & 0x80) != (diff & 0x80));
+        //int v = ((0x80 & ACC) == (0x80 & NEG(val))) && ((0x80 & ACC) != (0x80 & diff));
+        int v = ((0x80 & ACC) != (0x80 & val)) && ((0x80 & ACC) != (0x80 & diff));
+        PPUT(POVERFL, v);
         PPUT(PZERO, LO(diff) == 0);
         int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
         PPUT(PCARRY, !borrow);
