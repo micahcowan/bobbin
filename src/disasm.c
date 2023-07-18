@@ -4,6 +4,13 @@
 
 static const char *get_op_mnem(byte op)
 {
+    // O-okay. I know this looks like complete butt,
+    // and I could probably make something both prettier and also
+    // shorter, by exploiting patterns in the op codes, and then just
+    // pick out the exceptions. But the quickest path to "done"
+    // was to just grab the mega switch statement from cpu.c's
+    // cpu_step(), and edit it... so that's what I did. Maybe I'll fix
+    // it up later, dunno.
     switch (op) {
         case 0x00:
             return "BRK";
