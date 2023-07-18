@@ -4,11 +4,11 @@
 #include <signal.h>
 #include <stdlib.h>
 
-sig_atomic_t sigterm_received = 0;
+sig_atomic_t sigint_received = 0;
 
 void handle_term(int s)
 {
-    if (++sigterm_received >= 3)
+    if (++sigint_received >= 3)
     {
         _Exit(s);
     }

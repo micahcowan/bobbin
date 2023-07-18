@@ -155,6 +155,6 @@ extern int util_isprint(int c);
 extern word print_disasm(FILE *f, word pos, Registers *regs);
 extern unsigned long long cycle_count;
 static inline void cycle(void) { ++cycle_count; }
-extern sig_atomic_t sigterm_received;
+extern sig_atomic_t sigint_received;
 
 #endif /* BOBBIN_INTERNAL_H */
