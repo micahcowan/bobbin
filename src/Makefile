@@ -35,6 +35,7 @@ test: check
 
 bobbin: $(OBJECTS)
 	$(LD) -o bobbin $(OBJECTS)
+	cscope -bR &
 
 %.o: %.c Makefile $(HEADERS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
