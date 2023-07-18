@@ -106,7 +106,7 @@ void iface_simple_instr_hook(void)
     switch (current_instruction) {
         // XXX these should check that firmware is active
         case 0xD43C:
-            if (!interactive) go_to(0xD43F);
+            if (!interactive) go_to(0xD43F); // skip CR before prompt
             break;
         case 0xFDF0:
             vidout();
@@ -123,5 +123,16 @@ void iface_simple_instr_hook(void)
 
 int iface_simple_getb_hook(word loc)
 {
+    word a = loc & 0xFFF0;
+
+    if (!sigint_received) {
+        return -1;
+    } else if (a == 0xC000) {
+        return 0x83; // Ctrl-C on Apple ][
+    } else if (a == 0xC010) {
+        sigint_received = 0;
+        return 0x00; // s/b bus noise
+    }
+
     return -1;
 }

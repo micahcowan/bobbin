@@ -138,6 +138,7 @@ extern void trace_off(void);
 extern int  tracing(void);
 
 extern void trace_instr(void);
+extern int  trace_mem_get_byte_nobus(word loc);
 extern int  trace_mem_get_byte(word loc);
 
 /********** DEBUG **********/

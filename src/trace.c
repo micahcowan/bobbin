@@ -66,6 +66,11 @@ void trace_instr(void)
     iface_simple_instr_hook();
 }
 
+int trace_mem_get_byte_nobus(word loc)
+{
+    return -1;
+}
+
 int trace_mem_get_byte(word loc)
 {
     return iface_simple_getb_hook(loc);
