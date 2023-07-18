@@ -45,7 +45,7 @@ void mem_init(void)
 {
     /* Immitate the on-boot memory pattern. */
     for (size_t z=0; z != ((sizeof membuf)/(sizeof membuf[0])); ++z) {
-        if (z & 0x2)
+        if (!(z & 0x2))
             membuf[z] = 0xFF;
     }
 
