@@ -5,6 +5,10 @@
 int util_toascii(int c)
 {
     if (c < 0) return c;
+    c &= 0x7F;
+    // XXX Should check for lowercase capability (Apple IIe) here
+    if (c >= 0x60)
+        c -= 0x40;
     return c & 0x7F;
 }
 
