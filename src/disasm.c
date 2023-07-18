@@ -398,63 +398,29 @@ static int get_op_type(byte op)
         return T_JMP_IND;
 
     switch (op & 0x9F) {
-        case 0x00:
-        case 0x08:
-        case 0x0A:
-        case 0x18:
-        case 0x88:
-        case 0x8A:
-        case 0x98:
-        case 0x9A:
+        case 0x00: case 0x08: case 0x0A: case 0x18: case 0x88:
+        case 0x8A: case 0x98: case 0x9A:
             return T_IMPLIED;
-        case 0x01:
-        case 0x81:
+        case 0x01: case 0x81:
             return T_INDX;
-        default:
-        case 0x02:
-        case 0x12:
-        case 0x14:
-        case 0x1A:
-        case 0x1C:
-        case 0x92:
+        default: case 0x02: case 0x12: case 0x14: case 0x1A:
+        case 0x1C: case 0x92:
             return T_UNKNOWN;
-        case 0x04:
-        case 0x05:
-        case 0x06:
-        case 0x84:
-        case 0x85:
-        case 0x86:
+        case 0x04: case 0x05: case 0x06: case 0x84: case 0x85: case 0x86:
             return T_ZP;
-        case 0x09:
-        case 0x80:
-        case 0x82:
-        case 0x89:
+        case 0x09: case 0x80: case 0x82: case 0x89:
             return T_IMMEDIATE;
-        case 0x0C:
-        case 0x0D:
-        case 0x0E:
-        case 0x8C:
-        case 0x8D:
-        case 0x8E:
+        case 0x0C: case 0x0D: case 0x0E: case 0x8C: case 0x8D: case 0x8E:
             return T_ABSOLUTE;
-        case 0x10:
-        case 0x90:
+        case 0x10: case 0x90:
             return T_RELATIVE;
-        case 0x11:
-        case 0x91:
+        case 0x11: case 0x91:
             return T_INDY;
-        case 0x15:
-        case 0x16:
-        case 0x94:
-        case 0x95:
+        case 0x15: case 0x16: case 0x94: case 0x95:
             return T_ZP_X;
-        case 0x19:
-        case 0x99:
+        case 0x19: case 0x99:
             return T_ABS_Y;
-        case 0x1D:
-        case 0x1E:
-        case 0x9C:
-        case 0x9D:
+        case 0x1D: case 0x1E: case 0x9C: case 0x9D:
             return T_ABS_X;
         case 0x96:
             return (op == 0x96 || op == 0xB6)? T_ZP_Y : T_ZP_X;
