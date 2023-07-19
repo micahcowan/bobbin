@@ -3,6 +3,7 @@
 /* For the ROM file, and error handling */
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -95,4 +96,20 @@ void poke_sneaky(word loc, byte val)
 {
     // XXX
     membuf[loc] = val;
+}
+
+bool mem_match(word loc, unsigned int nargs, ...)
+{
+    bool status = true;
+    va_list args;
+    va_start(args, nargs);
+
+    for (; nargs != 0; ++loc, --nargs) {
+        if (peek_sneaky(loc) != va_arg(args, int)) {
+            status = false;
+        }
+    }
+
+    va_end(args);
+    return status;
 }

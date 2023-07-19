@@ -110,6 +110,7 @@ extern void poke(word loc, byte val);
 //  and don't affect or use floating bus values.
 extern byte peek_sneaky(word loc);
 extern void poke_sneaky(word loc, byte val);
+extern bool mem_match(word loc, unsigned int nargs, ...);
 
 static inline byte stack_get(void)
 {
