@@ -42,7 +42,7 @@ static void set_noncanon(void)
     if (!interactive) return;
 
     // restore non-canonical mode (char-by-char input)
-    ios.c_lflag &= ~(tcflag_t)ICANON;
+    ios.c_lflag &= ~(tcflag_t)(ICANON | ECHO);
     ios.c_iflag |= IXANY; // any key can recover from Ctrl-S
                           //  - this is what an Apple does
     ios.c_cc[VMIN] = 0;
@@ -60,7 +60,7 @@ static void set_canon(void)
     if (!interactive) return;
 
     // turn on canonical mode until we hit a newline
-    ios.c_lflag |= ICANON;
+    ios.c_lflag |= ICANON | ECHO;
     errno = 0;
     int e = tcsetattr(inputfd, TCSANOW, &ios);
     if (e < 0) {
