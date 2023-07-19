@@ -21,6 +21,11 @@ unsigned char linebuf[256];
 unsigned char *lbuf_start = linebuf;
 unsigned char *lbuf_end = linebuf;
 
+#define OS_SUPPRESS_NONE    0
+#define OS_SUPPRESS_CR      1
+#define OS_SUPPRESS_ALL     2
+int output_suppressed = OS_SUPPRESS_NONE;
+
 static void restore_term(void)
 {
     ios = orig_ios;
@@ -91,6 +96,9 @@ static void set_interactive(void)
     }
     orig_ios = ios;
     set_noncanon();
+
+    printf("\n[Bobbin \"simple\" interactive mode.\n"
+           " Ctrl-D at input to exit.]\n");
 }
 
 int read_char(void)
@@ -105,6 +113,8 @@ int read_char(void)
         putchar('\n');
         exit(0);
     } else if (lbuf_start < lbuf_end) {
+        // We have chars left from a buffered read, grab the next
+        //  from that.
         if (*lbuf_start == '\n')
             set_noncanon(); // may have just finished a GETLN
         c = util_fromascii(*lbuf_start);
@@ -139,13 +149,6 @@ reread:
                 c = last_char_read;
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
-
-                // Odds are strong that we suppressed the prompt
-                // for the current line read. As a hack, read
-                // the current prompt char and re-issue it.
-                byte prompt = peek_sneaky(0x33);
-                putchar(util_toascii(prompt));
-                goto reread;
             } else {
                 // End of redirected input and not remaining after.
                 putchar('\n');
@@ -174,6 +177,10 @@ void consume_char(void)
     if (sigint_received) {
         sigint_received = 0;
     } else if (lbuf_start < lbuf_end) {
+        if (output_suppressed == OS_SUPPRESS_ALL
+            && (*lbuf_start == '\n' || *lbuf_start == '\r')) {
+            output_suppressed = OS_SUPPRESS_CR;
+        }
         ++lbuf_start;
     }
     // else nothing - no keypress was ready
@@ -191,8 +198,17 @@ static void iface_simple_init(void)
 void vidout(void)
 {
     // Output a character when COUT1 is called
+    int suppress = output_suppressed;
+    if (suppress == OS_SUPPRESS_CR) {
+        // Regardless of what we do with this character
+        // (emit, don't emit), we must stop suppressing.
+        output_suppressed = OS_SUPPRESS_NONE;
+    }
     int c = util_toascii(ACC);
     if (c < 0) return;
+
+    if (suppress == OS_SUPPRESS_ALL)
+        return;
 
     if (util_isprint(c)
         || c == '\t') {
@@ -206,9 +222,29 @@ void vidout(void)
            a dependable location, but the cold-start one may not be.
            Perhaps just suppress all newlines until the first time a
            non-newline is encountered? */
-        if (interactive || output_seen)
+        if (suppress == OS_SUPPRESS_CR) {
+            // Don't emit
+        }
+        else if (interactive || output_seen) {
             putchar('\n');
+        }
     }
+}
+
+static void suppress_output(void)
+{
+    // Suppress output until current emulated routine returns.
+    // Can't do that by waiting for PC to hit known RTS locations
+    // for the return: both DOS and ProDOS circumvent GETLN's
+    // normal return, and just *reset the stack*!!
+    //
+    // We'll suppress output until we read (and consume!) a carriage
+    // return. Then we'll suppress one more output (if it matches
+    // a carriage return), and stop suppressing.
+    //
+    // We could instead probably just suppress until the stack pointer
+    // has increased beyond a saved value...
+    output_suppressed = OS_SUPPRESS_ALL;
 }
 
 static void prompt(void)
@@ -216,6 +252,7 @@ static void prompt(void)
     // Skip printing the line prompt, IF stdin is not a tty.
     if (!interactive) {
         // It's not a tty. Skip to line fetch.
+        suppress_output();
         go_to(0xFD6F);
     }
 }
@@ -228,6 +265,7 @@ static void iface_simple_step(void)
             vidout();
             break;
         case 0xFD6F:
+            suppress_output();
             set_canon();
             break;
         case 0xFD67:
