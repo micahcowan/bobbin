@@ -1,14 +1,13 @@
 #include "bobbin-internal.h"
-#include "iface-simple.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+int saved_char = -1;
 static bool interactive;
-static bool getln_seen;
-static struct { bool stay_after_pipe; } cfg;
+static bool output_seen;
 FILE *insrc;
 
 void iface_simple_instr_init(void)
@@ -31,15 +30,16 @@ void vidout(void)
     if (util_isprint(c)
         || c == '\t') {
 
+        output_seen = true;
         putchar(c);
     }
     else if (c == '\r') {
         /* May wish to suppress newline issued at $F168 (from cold
            start), and the one at $D43C. The latter is probably
            a dependable location, but the cold-start one may not be.
-           Perhaps just suppress all newlines until the first time
-           GETLN is encountered? */
-        if (interactive || getln_seen)
+           Perhaps just suppress all newlines until the first time a
+           non-newline is encountered? */
+        if (interactive || output_seen)
             putchar('\n');
     }
 }
@@ -49,8 +49,6 @@ void getln(void)
 {
     char *s;
     word bufloc = 0x200;
-
-    getln_seen = 1;
 
     // Something wants to read a line of text, so do that
 reread:
@@ -105,9 +103,11 @@ void iface_simple_instr_hook(void)
 {
     switch (current_instruction) {
         // XXX these should check that firmware is active
+#if 0
         case 0xD43C:
             if (!interactive) go_to(0xD43F); // skip CR before prompt
             break;
+#endif
         case 0xFDF0:
             vidout();
             break;

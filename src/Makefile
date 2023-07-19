@@ -1,8 +1,9 @@
 CC=gcc
 LD=gcc
-WARNINGS=-Wall -Werror -Wno-unused
-CFLAGS=$(WARNINGS) -std=c99 -pedantic
-OBJECTS=main.o bobbin.o cpu.o mem.o trace.o iface-simple.o util.o signal.o debug.o disasm.o
+WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
+CPPFLAGS=-I$(PWD)
+CFLAGS=$(WARNINGS) -std=c99 -pedantic -g -Og
+OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/pipe.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o
 HEADERS=$(wildcard *.h)
 BOBBIN=bobbin
 
@@ -20,7 +21,7 @@ watch:
 	    fi; \
 	    echo; \
 	    echo; \
-	    inotifywait -e modify . ; \
+	    inotifywait -e modify -r . ; \
 	done
 
 .PHONY: check test
@@ -37,7 +38,7 @@ bobbin: $(OBJECTS)
 	$(LD) -o bobbin $(OBJECTS)
 
 %.o: %.c Makefile $(HEADERS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	cd $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $(notdir $<)
 
 .PHONY: clean
 clean:

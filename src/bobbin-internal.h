@@ -4,11 +4,25 @@
 #define _XOPEN_SOURCE   700
 
 #include <signal.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef uint16_t    word;
 typedef uint8_t     byte;
+
+#define STREQ(a, b) (!strcmp(a, b))
+
+#define WARN(...)  do { \
+        fprintf(stderr, "%s: ", program_name); \
+        fprintf(stderr, __VA_ARGS__); \
+    } while (0)
+#define DIE(st, ...) do { \
+        WARN(__VA_ARGS__); \
+        exit(st); \
+    } while(0)
 
 #define LOC_NMI     0xFFFA
 #define LOC_RESET   0xFFFC
@@ -21,6 +35,18 @@ typedef uint8_t     byte;
 #define LO(w)           (0x00FF & (w))
 
 extern void bobbin_run(void);
+
+/********** CONFIG **********/
+
+extern const char *program_name; // main.c
+
+typedef struct Config Config;
+struct Config {
+    bool            stay_after_pipe;
+    const char *    interface;
+    const char *    machine;
+};
+extern Config cfg;
 
 /********** CPU **********/
 
@@ -126,6 +152,14 @@ static inline byte pc_get_adv(void)
     PC_ADV;
     return op;
 }
+
+/********** INTERFACES **********/
+
+extern void interfaces_init(void);
+
+// XXX remove these
+extern void iface_simple_instr_hook(void);
+extern int   iface_simple_getb_hook(word loc);
 
 /********** TRACE **********/
 

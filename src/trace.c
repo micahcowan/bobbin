@@ -1,5 +1,4 @@
 #include "bobbin-internal.h"
-#include "iface-simple.h"
 
 #include <stdarg.h>
 #include <stdio.h>

@@ -22,7 +22,7 @@ static void load_test_code(void)
         exit(2);
     }
 
-    fread(membuf, 1, 64 * 1024, tf);
+    (void) fread(membuf, 1, 64 * 1024, tf);
 }
 
 static void load_rom(void)

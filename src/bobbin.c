@@ -1,15 +1,16 @@
 #include "bobbin-internal.h"
-#include "iface-simple.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
+extern void machine_init(void);
 extern void signals_init(void);
 
 void bobbin_run(void)
 {
     signals_init();
-    iface_simple_instr_init();
+    machine_init();
+    interfaces_init();
     mem_init();
     trfile = fopen("trace.log", "w");
     if (trfile == NULL) {
