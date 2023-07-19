@@ -262,7 +262,6 @@ static void prompt(void)
     if (!interactive) {
         // It's not a tty. Skip to line fetch.
         suppress_output();
-        go_to(0xFD6F);
     }
 }
 
@@ -272,7 +271,7 @@ static void prompt_wozbasic(void)
     if (mem_match(current_instruction, 5, 0x85, 0x33, 0x4C, 0xED, 0xFD)
             && !interactive) {    //  ^ make sure we're in INT basic
         // It's not a tty. Skip to line fetch.
-        rts();
+        suppress_output();
     }
 }
 
