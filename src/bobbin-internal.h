@@ -156,6 +156,13 @@ static inline byte pc_get_adv(void)
     return op;
 }
 
+// s/b in CPU, but need to be decl'd after stack_pop etc
+static inline void rts(void) {
+    byte lo = stack_pop();
+    byte hi = stack_pop();
+    go_to(WORD(lo, hi)+1);
+}
+
 /********** INTERFACES **********/
 
 typedef struct IfaceDesc IfaceDesc;
