@@ -54,9 +54,6 @@ static void set_canon(void)
 {
     if (!interactive) return;
 
-    restore_term();
-    return;
-
     // turn on canonical mode until we hit a newline
     ios.c_lflag |= ICANON;
     errno = 0;
