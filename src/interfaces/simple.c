@@ -116,7 +116,24 @@ reread:
             const char *err = strerror(errno);
             DIE(2,"read input failed: %s\n", err);
         } else if (nbytes <= 0) {
+            // If < 0, it was just EAGAIN or EWOULDBLOCK,
+            // not a "real" error
             if (interactive) {
+                if (nbytes == 0 && canon) {
+                    // 0 chars read in canonical mode.
+                    // According to SUSv4, in non-canonical mode, a
+                    // non-blocking terminal read may return 0 bytes instead
+                    // of setting errno to EAGAIN and returning -1.
+                    // But canonical mode must do -1/EAGAIN.
+                    //
+                    // I suspect a good Unix will always do -1/EAGAIN,
+                    // but to be safe we will only treat a 0-read as EOF
+                    // if we were in canonical mode. We'll look for an
+                    // explicit Ctrl-D on non-canonical input, to handle
+                    // that.
+                    putchar('\n');
+                    exit(0);
+                }
                 // No input ready at terminal, just return the last
                 // char read, but with byte unset to indicate invalid
                 c = last_char_read;
@@ -139,15 +156,15 @@ reread:
             lbuf_end = linebuf + nbytes;
             if (*lbuf_start == '\n')
                 set_noncanon(); // may have just finished an (empty?) GETLN
+            if (interactive && nbytes == 1 && *lbuf_start == 0x04) {
+                // Ctrl-D read from terminal. Treat as EOF.
+                putchar('\n');
+                exit(0);
+            }
             c = util_fromascii(*lbuf_start);
         }
     }
     if (c >= 0) last_char_read = c & 0x7f;
-
-    if (c >= 0x80) {
-        fprintf(trfile, canon? "[CANON (%02X)]\n" : "[NONCANON (%02X)]\n", (unsigned int)c);
-        util_print_state(trfile);
-    }
 
     return c;
 }
