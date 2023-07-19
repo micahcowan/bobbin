@@ -42,7 +42,7 @@ extern const char *program_name; // main.c
 
 typedef struct Config Config;
 struct Config {
-    bool            stay_after_pipe;
+    bool            remain_after_pipe;
     const char *    interface;
     const char *    machine;
 };

@@ -4,13 +4,14 @@
 #include <string.h>
 
 Config cfg = {
-    .stay_after_pipe = true,
+    .remain_after_pipe = false,
     .interface = NULL,
     .machine = "//e",
 };
 
 typedef enum {
-    T_STRING_ARG = 0,
+    T_BOOL = 0,
+    T_STRING_ARG = 1,
 } OptType;
 
 typedef struct OptInfo OptInfo;
@@ -22,10 +23,12 @@ struct OptInfo {
 
 const char * const INTERFACE_OPT_NAMES[] = {"interface","if","iface",NULL};
 const char * const MACHINE_OPT_NAMES[] = {"machine","m","mach",NULL};
+const char * const REMAIN_OPT_NAMES[] = {"remain-after-pipe","remain",NULL};
 
 const OptInfo options[] = {
     { INTERFACE_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
+    { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -71,22 +74,31 @@ void do_config(int c, char **v)
         }
 
         const OptInfo *info = find_option(opt);
+        if (!info && opt[0] == 'n' && opt[1] == 'o') {
+            const char *yesopt = opt + 2;
+            while (*yesopt == '-') ++yesopt;
+            info = find_option(yesopt);
+        }
         if (!info) DIE(2, "Unknown option \"--%s\".\n", opt);
 
-        // All options get args, for now
-        if (arg) {
-            // All good, nothing to do
-        } else {
-            // See if there's a following arg
-            ++v;
-            if (!*v) {
-                DIE(2, "Option \"--%s\" requires an argument.\n", opt);
-            }
-            else {
-                arg = *v;
-            }
-        }
+        if (info->type == T_BOOL) {
+            bool b = !(opt[0] == 'n' && opt[1] == 'o');
 
-        (*(const char **)info->arg) = arg;
+            (*(bool *)info->arg) = b;
+        } else {
+            // All options get args, for now
+            if (!arg) {
+                // See if there's a following arg
+                ++v;
+                if (!*v) {
+                    DIE(2, "Option \"--%s\" requires an argument.\n", opt);
+                }
+                else {
+                    arg = *v;
+                }
+            }
+
+            (*(const char **)info->arg) = arg;
+        }
     }
 }

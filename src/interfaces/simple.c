@@ -13,7 +13,6 @@ FILE *insrc;
 static void iface_simple_init(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
-    cfg.stay_after_pipe = true;
     if (isatty(0)) {
         interactive = 1;
     }
@@ -54,11 +53,11 @@ void getln(void)
 reread:
     s = fgets((char *)linebuf, sizeof linebuf, insrc);
     if (s == NULL) {
-        if (interactive) {
+        if (interactive || !cfg.remain_after_pipe) {
             putchar('\n');
             exit(0);
         }
-        else if (cfg.stay_after_pipe) {
+        else {
             insrc = fopen("/dev/tty", "r");
             if (!insrc) {
                 putchar('\n');
