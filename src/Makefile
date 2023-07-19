@@ -3,7 +3,7 @@ LD=gcc
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
 CPPFLAGS=-I$(PWD)
 CFLAGS=$(WARNINGS) -std=c99 -pedantic -g -Og
-OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/pipe.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o
+OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o
 HEADERS=$(wildcard *.h)
 BOBBIN=bobbin
 
@@ -42,4 +42,4 @@ bobbin: $(OBJECTS)
 
 .PHONY: clean
 clean:
-	rm -f *.o $(BOBBIN)
+	rm -f *.o */*.o $(BOBBIN) 6502_functional_test.bin

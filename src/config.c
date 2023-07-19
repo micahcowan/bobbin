@@ -5,7 +5,7 @@
 
 Config cfg = {
     .stay_after_pipe = true,
-    .interface = "tty",
+    .interface = NULL,
     .machine = "//e",
 };
 
