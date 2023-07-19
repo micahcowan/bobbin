@@ -1,0 +1,9 @@
+
+10 DIM A$(50)
+20 INPUT A$
+30 PRINT "-";A$;"-"
+100 END
+LIST
+RUN
+FOO
+PRINT "DONE."

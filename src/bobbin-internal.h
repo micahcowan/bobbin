@@ -213,5 +213,6 @@ extern word print_disasm(FILE *f, word pos, Registers *regs);
 extern unsigned long long cycle_count;
 static inline void cycle(void) { ++cycle_count; }
 extern sig_atomic_t sigint_received;
+extern const char *default_romfname;
 
 #endif /* BOBBIN_INTERNAL_H */

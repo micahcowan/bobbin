@@ -4,25 +4,25 @@ typedef const char *StrArray[];
 typedef const char * const * ConstStrPtr;
 typedef const char * const * * ConstStrPtrPtr;
 
-const char * const II_TAG = "original";
-const char * const PLUS_TAG = "plus";
-const char * const IIE_TAG = "twoey";
-const char * const ENHANCED_TAG = "enhanced";
+static const char * const II_TAG = "original";
+static const char * const PLUS_TAG = "plus";
+static const char * const IIE_TAG = "twoey";
+static const char * const ENHANCED_TAG = "enhanced";
 
-const StrArray II_ALIASES = {II_TAG,"][","II","two",NULL};
-const StrArray PLUS_ALIASES = {PLUS_TAG,"+","][+","II+",
+static const StrArray II_ALIASES = {II_TAG,"][","II","two",NULL};
+static const StrArray PLUS_ALIASES = {PLUS_TAG,"+","][+","II+",
                                  "twoplus","autostart",NULL};
-const StrArray IIE_ALIASES = {IIE_TAG,"][e","IIe",NULL};
-const StrArray ENHANCED_ALIASES = {ENHANCED_TAG,"//e",NULL};
+static const StrArray IIE_ALIASES = {IIE_TAG,"][e","IIe",NULL};
+static const StrArray ENHANCED_ALIASES = {ENHANCED_TAG,"//e",NULL};
 
-ConstStrPtr aliases[] = {
+static ConstStrPtr aliases[] = {
     II_ALIASES,
     PLUS_ALIASES,
     IIE_ALIASES,
     ENHANCED_ALIASES,
 };
 
-const char *find_alias(const char *machine)
+static const char *find_alias(const char *machine)
 {
     ConstStrPtrPtr machineVisitor = &aliases[0];
     ConstStrPtrPtr lomEnd = machineVisitor
@@ -39,13 +39,16 @@ const char *find_alias(const char *machine)
     return NULL;
 }
 
+const char *default_romfname;
+
 void machine_init(void)
 {
     const char *orig;
     if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);
     }
-    // Can compare ==, because we have the original's pointer.
+    // Can compare == (instead of STREQ), because we have
+    //  the original's pointer.
     if (orig == ENHANCED_TAG) {
         WARN("Default machine type is \"%s\", but that type is not actually\n",
              cfg.machine);
@@ -55,5 +58,11 @@ void machine_init(void)
     if (orig == IIE_TAG) {
         DIE(2, "This development version does not yet "
                "support machine \"%s\".\n", cfg.machine);
+    }
+    if (orig == II_TAG) {
+        default_romfname = "apple2.rom";
+    }
+    if (orig == PLUS_TAG) {
+        default_romfname = "apple2plus.rom";
     }
 }

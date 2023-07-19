@@ -17,8 +17,8 @@ void bobbin_run(void)
 
     signals_init();
     machine_init();
-    interfaces_init();
     mem_init();
+    interfaces_init();
 
     cpu_reset();
     if (bobbin_test) {

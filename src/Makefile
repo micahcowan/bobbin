@@ -1,14 +1,25 @@
 CC=gcc
 LD=gcc
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
-CPPFLAGS=-I$(PWD)
+CPPFLAGS=-I$(PWD) -DPREFIX='"$(PREFIX)"'
 CFLAGS=$(WARNINGS) -std=c99 -pedantic -g -Og
 OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o
 HEADERS=$(wildcard *.h)
 BOBBIN=bobbin
 
+# Can be overridden on cmdline:
+PREFIX=/usr
+
 .PHONY: all
-all: $(BOBBIN)
+all: $(BOBBIN) fetch-roms
+
+.PRECIOUS: roms
+roms:
+	ln -sf ../roms
+
+.PHONY: fetch-roms
+fetch-roms:
+	cd roms/ && ./fetch-roms.sh; true
 
 .PHONY: watch
 watch:

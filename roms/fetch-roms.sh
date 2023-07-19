@@ -9,7 +9,7 @@ set -e -u -C
 # for 'ftp://ftp.apple.asimov.net/pub/apple_II
 
 ROMFILES='
-apple2+.rom
+apple2plus.rom
 ftp://ftp.apple.asimov.net/pub/apple_II/emulators/rom_images/apple.rom
 378ba00c86a64cca49cedaca7de8d5d351983ebc295d9d11e0752febfc346249
 

@@ -1,11 +1,13 @@
 #include "bobbin-internal.h"
 
 /* For the ROM file, and error handling */
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 const char *bobbin_test;
 
@@ -26,13 +28,57 @@ static void load_test_code(void)
     (void) fread(membuf, 1, 64 * 1024, tf);
 }
 
+static const char * const rom_dirs[] = {
+    "BOBBIN_ROMDIR", // not a dirname, an env var name
+    PREFIX "/share/bobbin/roms",
+    "./roms",
+};
+static const char * const *romdirp = rom_dirs;
+static const char * const * const romdend = rom_dirs + (sizeof rom_dirs)/(sizeof rom_dirs[0]);
+static const char *get_try_rom_path(const char *fname) {
+    static char buf[256];
+    const char *env;
+    const char *dir;
+
+    if (romdirp == &rom_dirs[0] && (env = getenv(*romdirp++)) != NULL) {
+        dir = strchr(env, '=');
+        if (dir != NULL) {
+            ++dir;
+        } else {
+            goto realenv;
+        }
+    } else {
+realenv:
+        if (romdirp != romdend) {
+            dir = *romdirp++;
+        }
+        else {
+            return NULL;
+        }
+    }
+    WARN("Looking for ROM named \"%s\" in %s...\n", fname, dir);
+    (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
+    return buf;
+}
+
 static void load_rom(void)
 {
     /* Load a 12k rom file into place (not provided; get your own!) */
-    int fd = open("apple2.rom", O_RDONLY);
+    const char *rompath;
+    const char *last_tried_path;
+    int err = 0;
+    int fd = -1;
+    while (fd < 0
+            && (rompath = get_try_rom_path(default_romfname)) != NULL) {
+        errno = 0;
+        last_tried_path = rompath;
+        fd = open(rompath, O_RDONLY);
+        err = errno;
+    }
     if (fd < 0) {
-        perror("Couldn't open ROM file");
-        exit(2);
+        DIE(2, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
+    } else {
+        WARN("FOUND ROM file \"%s\".\n", rompath);
     }
 
     rombuf = mmap(NULL, 12 * 1024, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -40,6 +86,7 @@ static void load_rom(void)
         perror("Couldn't map in ROM file");
         exit(1);
     }
+    close(fd); // safe to close now.
 }
 
 void mem_init(void)
