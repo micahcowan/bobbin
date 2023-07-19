@@ -267,7 +267,9 @@ static void iface_simple_step(void)
         case 0xFDF0:
             vidout();
             break;
-        case 0xFD6F:
+        //case 0xFD6F:
+        case 0xFD75: // common part of GETLN used by
+                     //  both AppleSoft and Woz basics
             suppress_output();
             set_canon();
             break;
