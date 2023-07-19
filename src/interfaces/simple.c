@@ -111,10 +111,15 @@ int read_char(void)
 
     if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
-
-        // XXX always exit??
-        putchar('\n');
-        exit(0);
+        if (interactive) {
+            // Everything's fine
+        } else if (cfg.remain_after_pipe) {
+            // Flush remaining input and switch to interactive.
+            lbuf_start = lbuf_end = linebuf;
+            set_interactive();
+        } else {
+            eof_found = true;
+        }
     } else if (lbuf_start < lbuf_end) {
         // We have chars left from a buffered read, grab the next
         //  from that.
