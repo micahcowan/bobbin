@@ -95,6 +95,9 @@ static void set_interactive(void)
         DIE(1,"tcgetattr: %s\n", err);
     }
     orig_ios = ios;
+
+    atexit(restore_term);
+
     set_noncanon();
 
     printf("\n[Bobbin \"simple\" interactive mode.\n"
