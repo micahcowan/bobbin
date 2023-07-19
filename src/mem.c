@@ -58,19 +58,19 @@ void mem_init(void)
     }
 }
 
-byte mem_get_byte(word loc)
+byte peek(word loc)
 {
-    int t = trace_mem_get_byte(loc);
+    int t = trace_peek(loc);
     if (t >= 0) {
         return (byte) t;
     }
 
-    return mem_get_byte_nobus(loc);
+    return peek_sneaky(loc);
 }
 
-byte mem_get_byte_nobus(word loc)
+byte peek_sneaky(word loc)
 {
-    int t = -1; // trace_mem_get_byte_nobus(loc);
+    int t = -1; // trace_peek_sneaky(loc);
     if (t >= 0) {
         return (byte) t;
     }
@@ -86,12 +86,12 @@ byte mem_get_byte_nobus(word loc)
     }
 }
 
-void mem_put_byte(word loc, byte val)
+void poke(word loc, byte val)
 {
-    mem_put_byte_nobus(loc, val);
+    poke_sneaky(loc, val);
 }
 
-void mem_put_byte_nobus(word loc, byte val)
+void poke_sneaky(word loc, byte val)
 {
     // XXX
     membuf[loc] = val;

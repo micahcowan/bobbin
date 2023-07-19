@@ -34,7 +34,7 @@ static void bobbin_hooks(void)
             fputs("*** REPORT ERROR ***\n", stderr);
             fprintf(stderr, "Cycle count: %llu\n", cycle_count);
             fprintf(stderr, "Failed testcase: %02X\n",
-                    mem_get_byte_nobus(0x200));
+                    peek_sneaky(0x200));
             do_rts();
             PC -= 3;
             current_instruction = PC;
@@ -65,12 +65,12 @@ void trace_instr(void)
     iface_simple_instr_hook();
 }
 
-int trace_mem_get_byte_nobus(word loc)
+int trace_peek_sneaky(word loc)
 {
     return -1;
 }
 
-int trace_mem_get_byte(word loc)
+int trace_peek(word loc)
 {
     return iface_simple_getb_hook(loc);
 }

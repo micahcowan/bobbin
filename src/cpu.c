@@ -10,11 +10,11 @@ void cpu_reset(void)
     /* Cycle details taken from https://www.pagetable.com/?p=410 */
     /* Cycles here are counted from 0 to match the source (for
        comparison purposes), but elsewhere counted from 1. */
-    (void) mem_get_byte(PC);
+    (void) peek(PC);
     cycle(); /* end of cycle 0 */
-    (void) mem_get_byte(PC);
+    (void) peek(PC);
     cycle();
-    (void) mem_get_byte(PC);
+    (void) peek(PC);
     cycle();
 
     (void) stack_get();
@@ -27,9 +27,9 @@ void cpu_reset(void)
     (void) stack_dec();
     cycle(); /* end of cycle 5; fake push of status */
 
-    byte pcL = mem_get_byte(LOC_RESET);
+    byte pcL = peek(LOC_RESET);
     cycle(); /* end of cycle 6; read vector low byte */
-    byte pcH = mem_get_byte(LOC_RESET+1);
+    byte pcH = peek(LOC_RESET+1);
     go_to(WORD(pcL, pcH));
     cycle(); /* end of cycle 7 (8th); read vector high byte */
 }
@@ -43,13 +43,13 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); \
-        (void) mem_get_byte(XREG); \
+        (void) peek(XREG); \
         cycle(); \
-        byte lo = mem_get_byte(LO(immed + XREG)); \
+        byte lo = peek(LO(immed + XREG)); \
         cycle(); \
-        byte hi = mem_get_byte(LO(immed + XREG + 1)); \
+        byte hi = peek(LO(immed + XREG + 1)); \
         cycle(); \
-        byte val = mem_get_byte(WORD(lo, hi)); \
+        byte val = peek(WORD(lo, hi)); \
         exec; \
         cycle(); \
     } while (0)
@@ -58,7 +58,7 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); \
-        byte val = mem_get_byte(immed); \
+        byte val = peek(immed); \
         exec; \
         cycle(); \
     } while (0)
@@ -67,12 +67,12 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); \
-        byte val = mem_get_byte(immed); \
+        byte val = peek(immed); \
         cycle(); \
-        mem_put_byte(LO(immed), val); \
+        poke(LO(immed), val); \
         cycle(); \
         exec; \
-        mem_put_byte(LO(immed), val); \
+        poke(LO(immed), val); \
         cycle(); \
     } while (0)
 
@@ -97,7 +97,7 @@ void cpu_reset(void)
         cycle(); \
         byte hi = pc_get_adv(); \
         cycle(); \
-        byte val = mem_get_byte(WORD(lo, hi)); \
+        byte val = peek(WORD(lo, hi)); \
         exec; \
         cycle(); \
     } while (0)
@@ -110,12 +110,12 @@ void cpu_reset(void)
         byte hi = pc_get_adv(); \
         cycle(); \
         word addr = WORD(lo, hi); \
-        byte val = mem_get_byte(addr); \
+        byte val = peek(addr); \
         cycle(); \
-        mem_put_byte(addr, val); \
+        poke(addr, val); \
         cycle(); \
         exec; \
-        mem_put_byte(addr,val); \
+        poke(addr,val); \
         cycle(); \
     } while (0)
 
@@ -124,17 +124,17 @@ void cpu_reset(void)
         PC_ADV; \
         cycle(); /* 2 */ \
         word orig = PC; \
-        (void) mem_get_byte(PC); \
+        (void) peek(PC); \
         if (test) { \
             word offset = SE(immed); \
             word addr = PC + offset; \
             go_to(WORD(HI(PC), LO(addr))); \
             cycle(); /* 3 */\
-            (void) mem_get_byte(PC); \
+            (void) peek(PC); \
             if (PC != addr) { \
                 cycle(); /* 4 */ \
                 go_to(addr); \
-                (void) mem_get_byte(PC); \
+                (void) peek(PC); \
             } \
             cycle(); /* 4 or 5 */ \
         } else { \
@@ -149,18 +149,18 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
-        byte lo = mem_get_byte(immed); \
+        byte lo = peek(immed); \
         cycle(); /* 3 */ \
-        byte hi = mem_get_byte(immed + 1); \
+        byte hi = peek(immed + 1); \
         word addr = WORD(lo, hi) + YREG; \
         word wrAddr = WORD(LO(lo + YREG), hi); \
         cycle(); /* 4 */ \
-        byte val = mem_get_byte(wrAddr); \
+        byte val = peek(wrAddr); \
         if (addr == wrAddr) { \
             exec; \
         } else { \
             cycle(); /* 5 */ \
-            val = mem_get_byte(addr); \
+            val = peek(addr); \
             exec; \
         } \
         cycle(); /* 5 or 6 */ \
@@ -170,9 +170,9 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); \
-        (void) mem_get_byte(immed); \
+        (void) peek(immed); \
         cycle(); \
-        byte val = mem_get_byte(LO(immed + reg)); \
+        byte val = peek(LO(immed + reg)); \
         exec; \
     } while (0)
 
@@ -180,15 +180,15 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); \
-        (void) mem_get_byte(immed); \
+        (void) peek(immed); \
         cycle(); \
         byte addr = LO(immed + reg); \
-        byte val = mem_get_byte(addr); \
+        byte val = peek(addr); \
         cycle(); \
-        mem_put_byte(addr, val); \
+        poke(addr, val); \
         cycle(); \
         exec; \
-        mem_put_byte(addr, val); \
+        poke(addr, val); \
         cycle(); /* 6 */ \
     } while (0)
 
@@ -201,12 +201,12 @@ void cpu_reset(void)
         word addr = WORD(lo, hi) + reg; \
         word wrAddr = WORD(LO(lo + reg), hi); \
         cycle(); /* 3 */ \
-        byte val = mem_get_byte(wrAddr); \
+        byte val = peek(wrAddr); \
         if (addr == wrAddr) { \
             exec; \
         } else { \
             cycle(); \
-            val = mem_get_byte(addr); \
+            val = peek(addr); \
             exec; \
         } \
     } while (0)
@@ -220,14 +220,14 @@ void cpu_reset(void)
         word addr = WORD(lo, hi) + reg; \
         word wrAddr = WORD(LO(lo + reg), hi); \
         cycle(); /* 3 */ \
-        byte val = mem_get_byte(wrAddr); \
+        byte val = peek(wrAddr); \
         cycle(); /* 4 */ \
-        val = mem_get_byte(addr); \
+        val = peek(addr); \
         cycle(); /* 5 */ \
-        mem_put_byte(addr, val); \
+        poke(addr, val); \
         cycle(); /* 6 */ \
         exec; \
-        mem_put_byte(addr, val); \
+        poke(addr, val); \
         cycle(); /* 7 */ \
     } while (0)
 
@@ -235,15 +235,15 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
-        (void) mem_get_byte(immed); \
+        (void) peek(immed); \
         cycle(); /* 3 */ \
         immed += XREG; \
-        byte lo = mem_get_byte(immed); \
+        byte lo = peek(immed); \
         cycle(); /* 4 */ \
         immed += 1; \
-        byte hi = mem_get_byte(immed); \
+        byte hi = peek(immed); \
         cycle(); /* 5 */ \
-        mem_put_byte(WORD(lo, hi), valReg); \
+        poke(WORD(lo, hi), valReg); \
         cycle(); /* 6 */ \
     } while (0)
 
@@ -251,7 +251,7 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
-        mem_put_byte(immed, reg); \
+        poke(immed, reg); \
         cycle(); /* 3 */ \
     } while (0)
 
@@ -259,9 +259,9 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
-        (void) mem_get_byte(immed); \
+        (void) peek(immed); \
         cycle(); /* 3 */ \
-        mem_put_byte(LO(immed + idxReg), valReg); \
+        poke(LO(immed + idxReg), valReg); \
         cycle();  /* 4 */ \
     } while (0)
 
@@ -272,9 +272,9 @@ void cpu_reset(void)
         cycle(); /* 2 */ \
         byte hi = pc_get_adv(); \
         cycle(); /* 3 */ \
-        (void) mem_get_byte(WORD(LO(lo + idxReg), hi)); \
+        (void) peek(WORD(LO(lo + idxReg), hi)); \
         cycle(); /* 4 */ \
-        mem_put_byte(WORD(lo, hi) + idxReg, valReg); \
+        poke(WORD(lo, hi) + idxReg, valReg); \
         cycle(); /* 5 */ \
     } while (0)
 
@@ -282,13 +282,13 @@ void cpu_reset(void)
     do { \
         PC_ADV; \
         cycle(); /* 2 */ \
-        byte lo = mem_get_byte(immed); \
+        byte lo = peek(immed); \
         cycle(); /* 3 */ \
-        byte hi = mem_get_byte(LO(immed + 1)); \
+        byte hi = peek(LO(immed + 1)); \
         cycle(); /* 4 */ \
-        (void) mem_get_byte(WORD(LO(lo+YREG), hi)); \
+        (void) peek(WORD(LO(lo+YREG), hi)); \
         cycle(); /* 5 */ \
-        mem_put_byte(WORD(lo, hi)+YREG, valReg); \
+        poke(WORD(lo, hi)+YREG, valReg); \
         cycle(); /* 6 */ \
     } while (0)
 
@@ -299,7 +299,7 @@ void cpu_reset(void)
         cycle(); /* 2 */ \
         byte hi = pc_get_adv(); \
         cycle(); /* 3 */ \
-        mem_put_byte(WORD(lo, hi), valReg); \
+        poke(WORD(lo, hi), valReg); \
         cycle(); /* 4 */ \
     } while (0)
 
@@ -433,7 +433,7 @@ void cpu_step(void)
     byte op = pc_get_adv();
     cycle(); // end 1
 
-    byte immed = mem_get_byte(PC);
+    byte immed = peek(PC);
 
     switch (op) {
         case 0x01: // ORA, (MEM,x).
@@ -499,7 +499,7 @@ void cpu_step(void)
                 cycle();
                 stack_push(LO(PC));
                 cycle();
-                word dest = WORD(lo, mem_get_byte(PC));
+                word dest = WORD(lo, peek(PC));
                 go_to(dest);
                 cycle();
             }
@@ -521,7 +521,7 @@ void cpu_step(void)
                 cycle();
                 stack_inc();
                 cycle();
-                byte p = mem_get_byte(STACK);
+                byte p = peek(STACK);
                 // Leave BRK flag alone; always set UNUSED
                 PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
                 cycle();
@@ -580,7 +580,7 @@ void cpu_step(void)
                 byte hi = stack_pop();
                 cycle(); // 5
                 go_to(WORD(lo, hi));
-                (void) mem_get_byte(STACK);
+                (void) peek(STACK);
                 cycle(); // 6
             }
             break;
@@ -656,7 +656,7 @@ void cpu_step(void)
                 go_to(WORD(lo, HI(PC)));
                 (void) stack_pop();
                 cycle(); // 4
-                byte hi = mem_get_byte(STACK);
+                byte hi = peek(STACK);
                 word dest = WORD(lo, hi);
                 go_to(dest);
                 cycle(); // 5
@@ -677,7 +677,7 @@ void cpu_step(void)
             cycle();
             (void) stack_pop();
             cycle();
-            ff(ACC = mem_get_byte(STACK));
+            ff(ACC = peek(STACK));
             cycle();
             break;
         case 0x69: // ADC, imm
@@ -694,9 +694,9 @@ void cpu_step(void)
                 byte hi = pc_get_adv();
                 word addr = WORD(lo,hi);
                 cycle(); // 3
-                lo = mem_get_byte(addr);
+                lo = peek(addr);
                 cycle(); // 4
-                hi = mem_get_byte(WORD(LO(addr+1),HI(addr)));
+                hi = peek(WORD(LO(addr+1),HI(addr)));
                 word dest = WORD(lo, hi);
                 go_to(dest);
                 cycle(); // 5
@@ -993,9 +993,9 @@ void cpu_step(void)
                 stack_push_flags_or(PMASK(PBRK));
                 cycle(); // 5
 
-                byte pcL = mem_get_byte(LOC_BRK);
+                byte pcL = peek(LOC_BRK);
                 cycle(); // 6
-                byte pcH = mem_get_byte(LOC_BRK + 1);
+                byte pcH = peek(LOC_BRK + 1);
                 go_to(WORD(pcL, pcH));
                 PPUT(PINT,1);
                 cycle(); // 7

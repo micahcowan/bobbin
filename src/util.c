@@ -50,11 +50,11 @@ void util_print_state(FILE *f)
     fputc('\n', f);
 
     // Print stack
-    fprintf(f, "STK: $1%02X:  (%02X)", SP, mem_get_byte_nobus(STACK));
+    fprintf(f, "STK: $1%02X:  (%02X)", SP, peek_sneaky(STACK));
     byte sp = SP+1;
     for (int i=0; i != 13; ++i) {
         if (!sp) fprintf(f, "  |");
-        fprintf(f, "  %02X", mem_get_byte_nobus(WORD(sp++,0x1)));
+        fprintf(f, "  %02X", peek_sneaky(WORD(sp++,0x1)));
     }
     fputc('\n', f);
 

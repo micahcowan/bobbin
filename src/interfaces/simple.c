@@ -69,7 +69,7 @@ reread:
             // Odds are strong that we suppressed the prompt
             // for the current line read. As a hack, read
             // the current prompt char and re-issue it.
-            byte prompt = mem_get_byte_nobus(0x33);
+            byte prompt = peek_sneaky(0x33);
             putchar(util_toascii(prompt));
             goto reread;
         }
@@ -80,10 +80,10 @@ reread:
             unsigned char cin, cout;
             cin = *s;
             cout = util_fromascii(cin);
-            mem_put_byte_nobus(bufloc++, cout);
+            poke_sneaky(bufloc++, cout);
         }
     }
-    mem_put_byte_nobus(bufloc, 0x8D); // RETURN character
+    poke_sneaky(bufloc, 0x8D); // RETURN character
 
     // Set PC to return from GETLN (COUT1)
     PC = 0xFDFF;

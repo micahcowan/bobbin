@@ -104,19 +104,21 @@ static inline void go_to(word w) {
 extern const char *bobbin_test;
 
 extern void mem_init(void);
-extern byte mem_get_byte(word loc);
-extern byte mem_get_byte_nobus(word loc);
-extern void mem_put_byte(word loc, byte val);
-extern void mem_put_byte_nobus(word loc, byte val);
+extern byte peek(word loc);
+extern void poke(word loc, byte val);
+// These versions don't trigger debugger break-on-memory,
+//  and don't affect or use floating bus values.
+extern byte peek_sneaky(word loc);
+extern void poke_sneaky(word loc, byte val);
 
 static inline byte stack_get(void)
 {
-    return mem_get_byte(STACK);
+    return peek(STACK);
 }
 
 static inline void stack_put(byte val)
 {
-    mem_put_byte(STACK, val);
+    poke(STACK, val);
 }
 
 static inline byte stack_inc(void)
@@ -148,7 +150,7 @@ static inline byte stack_pop(void)
 
 static inline byte pc_get_adv(void)
 {
-    byte op = mem_get_byte(PC);
+    byte op = peek(PC);
     PC_ADV;
     return op;
 }
@@ -172,8 +174,8 @@ extern void trace_off(void);
 extern int  tracing(void);
 
 extern void trace_instr(void);
-extern int  trace_mem_get_byte_nobus(word loc);
-extern int  trace_mem_get_byte(word loc);
+extern int  trace_peek_sneaky(word loc);
+extern int  trace_peek(word loc);
 
 /********** DEBUG **********/
 

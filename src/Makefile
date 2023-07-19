@@ -26,7 +26,7 @@ watch:
 
 .PHONY: check test
 check: $(BOBBIN) 6502_functional_test.bin
-	BOBBIN_TEST=6502_functional_test.bin ./bobbin
+	BOBBIN_TEST=6502_functional_test.bin ./bobbin -m ][+ --iface simple
 
 6502_functional_test.bin:
 	$(MAKE) -C ../test/tests6502/

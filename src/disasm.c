@@ -433,7 +433,7 @@ static void pracc_abs(FILE *f, word addr)
 {
     fprintf(f, "%04X: ", addr);
     for (int i=0; i!=5; ++i) {
-        byte b = mem_get_byte_nobus(addr++);
+        byte b = peek_sneaky(addr++);
         fprintf(f, " %02X", b);
     }
 }
@@ -442,8 +442,8 @@ static void pracc_zp(FILE *f, byte addr)
 {
     fprintf(f, "%02X: %02X %02X   ",
             addr,
-            mem_get_byte_nobus(addr),
-            mem_get_byte_nobus(LO(addr+1)));
+            peek_sneaky(addr),
+            peek_sneaky(LO(addr+1)));
 }
 
 static void print_access(FILE *f, word pc, Registers *regs,
@@ -472,16 +472,16 @@ static void print_access(FILE *f, word pc, Registers *regs,
         case T_INDY:
             {
                 pracc_zp(f, m[0]);
-                byte lo = mem_get_byte_nobus(m[0]);
-                byte hi = mem_get_byte_nobus(m[0]+1);
+                byte lo = peek_sneaky(m[0]);
+                byte hi = peek_sneaky(m[0]+1);
                 pracc_abs(f, WORD(lo, hi) + regs->y);
             }
             break;
         case T_INDX:
             {
                 pracc_zp(f, LO(m[0] + regs->x));
-                byte lo = mem_get_byte_nobus(m[0]);
-                byte hi = mem_get_byte_nobus(m[0]+1);
+                byte lo = peek_sneaky(m[0]);
+                byte hi = peek_sneaky(m[0]+1);
                 pracc_abs(f, WORD(lo, hi));
             }
             break;
@@ -494,7 +494,7 @@ word print_disasm(FILE *f, word pc, Registers *regs)
 {
     byte m[3];
     for (int i=0; i != (sizeof m); ++i) {
-        m[i] = mem_get_byte_nobus(pc+i);
+        m[i] = peek_sneaky(pc+i);
     }
 
     const char *mnem = get_op_mnem(m[0]);
