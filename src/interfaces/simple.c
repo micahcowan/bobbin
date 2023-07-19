@@ -16,6 +16,7 @@ struct termios ios;
 struct termios orig_ios;
 bool canon = 1;
 byte last_char_read;
+bool eof_found = 0;
 
 unsigned char linebuf[256];
 unsigned char *lbuf_start = linebuf;
@@ -112,7 +113,6 @@ int read_char(void)
         c = 0x83; // Ctrl-C in Apple ][
 
         // XXX always exit??
-        restore_term();
         putchar('\n');
         exit(0);
     } else if (lbuf_start < lbuf_end) {
@@ -144,18 +144,19 @@ reread:
                     // if we were in canonical mode. We'll look for an
                     // explicit Ctrl-D on non-canonical input, to handle
                     // that.
-                    putchar('\n');
-                    exit(0);
+                    eof_found = true; // defer until "consumed"
+                    c = 0x8D; // fake "ready-to-read" chr: ensure consumption
+                } else {
+                    // No input ready at terminal, just return the last
+                    // char read, but with byte unset to indicate invalid
+                    c = last_char_read;
                 }
-                // No input ready at terminal, just return the last
-                // char read, but with byte unset to indicate invalid
-                c = last_char_read;
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
             } else {
                 // End of redirected input and not remaining after.
-                putchar('\n');
-                exit(0);
+                eof_found = true;
+                c = 0x8D; // fake "ready-to-read" chr: ensure consumption
             }
         } else {
             lbuf_start = linebuf;
@@ -164,8 +165,8 @@ reread:
                 set_noncanon(); // may have just finished an (empty?) GETLN
             if (interactive && nbytes == 1 && *lbuf_start == 0x04) {
                 // Ctrl-D read from terminal. Treat as EOF.
-                putchar('\n');
-                exit(0);
+                eof_found = true;
+                c = 0x8D; // fake "ready-to-read" chr: ensure consumption
             }
             c = util_fromascii(*lbuf_start);
         }
@@ -177,6 +178,11 @@ reread:
 
 void consume_char(void)
 {
+    if (eof_found) {
+        // Exit gracefully.
+        putchar('\n');
+        exit(0);
+    }
     if (sigint_received) {
         sigint_received = 0;
     } else if (lbuf_start < lbuf_end) {
