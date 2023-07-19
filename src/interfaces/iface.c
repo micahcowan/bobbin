@@ -1,11 +1,26 @@
 #include "bobbin-internal.h"
 
-extern void iface_simple_instr_init(void); // XXX
+extern IfaceDesc simpleInterface;
 
 void interfaces_init(void)
 {
     // No default interface selected?
     // Pick "simple" if stdin isn't a tty;
     // otherwise, pick "tty" (not yet implemented).
-    iface_simple_instr_init();
+    simpleInterface.init();
+}
+
+void iface_step(void)
+{
+    simpleInterface.step();
+}
+
+int iface_peek(word loc)
+{
+    return simpleInterface.peek(loc);
+}
+
+int iface_poke(word loc, byte val)
+{
+    return simpleInterface.poke(loc, val);
 }

@@ -10,7 +10,7 @@ static bool interactive;
 static bool output_seen;
 FILE *insrc;
 
-void iface_simple_instr_init(void)
+static void iface_simple_init(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
     cfg.stay_after_pipe = true;
@@ -99,7 +99,7 @@ static void prompt(void)
     }
 }
 
-void iface_simple_instr_hook(void)
+static void iface_simple_step(void)
 {
     switch (current_instruction) {
         // XXX these should check that firmware is active
@@ -121,7 +121,7 @@ void iface_simple_instr_hook(void)
     }
 }
 
-int iface_simple_getb_hook(word loc)
+static int iface_simple_peek(word loc)
 {
     word a = loc & 0xFFF0;
 
@@ -136,3 +136,15 @@ int iface_simple_getb_hook(word loc)
 
     return -1;
 }
+
+static int iface_simple_poke(word loc, byte val)
+{
+    return -1;
+}
+
+IfaceDesc simpleInterface = {
+    iface_simple_init,
+    iface_simple_step,
+    iface_simple_peek,
+    iface_simple_poke
+};

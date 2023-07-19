@@ -157,11 +157,23 @@ static inline byte pc_get_adv(void)
 
 /********** INTERFACES **********/
 
+typedef struct IfaceDesc IfaceDesc;
+struct IfaceDesc {
+    void (*init)(void);
+    void (*step)(void);
+    int  (*peek)(word loc);
+    int  (*poke)(word loc, byte val);
+};
+
 extern void interfaces_init(void);
 
-// XXX remove these
-extern void iface_simple_instr_hook(void);
-extern int   iface_simple_getb_hook(word loc);
+extern void iface_step(void);
+extern int  iface_poke(word loc, byte val);
+                                  // if -1 is NOT returned, suppress
+                                  // actual memory write (because iface
+                                  // intercepted the write)
+
+extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 
 /********** TRACE **********/
 

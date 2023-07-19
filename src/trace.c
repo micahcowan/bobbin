@@ -62,7 +62,7 @@ void trace_instr(void)
     if (bobbin_test)
         bobbin_hooks();
 
-    iface_simple_instr_hook();
+    iface_step();
 }
 
 int trace_peek_sneaky(word loc)
@@ -72,7 +72,7 @@ int trace_peek_sneaky(word loc)
 
 int trace_peek(word loc)
 {
-    return iface_simple_getb_hook(loc);
+    return iface_peek(loc);
 }
 
 void trace_on(char *format, ...)
