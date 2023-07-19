@@ -1,9 +1,8 @@
 
-10 DIM A$(50)
-20 INPUT A$
-30 PRINT "-";A$;"-"
-100 END
-LIST
-RUN
-FOO
-PRINT "DONE."
+10 dim a$(50)
+20 input "type something",a$
+30 for i=1 to 10
+40 print a$
+50 next i
+100 end
+list

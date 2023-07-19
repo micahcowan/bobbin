@@ -1,0 +1,6 @@
+
+10 print "infinite loop"
+20 go to 10
+30 end
+run
+list
