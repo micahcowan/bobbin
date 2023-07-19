@@ -13,6 +13,8 @@ void bobbin_run(void)
         perror("Couldn't open trace file");
         exit(2);
     }
+    setvbuf(trfile, NULL, _IOLBF, 0);
+
     signals_init();
     machine_init();
     interfaces_init();
