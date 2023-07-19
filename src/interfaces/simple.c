@@ -97,9 +97,6 @@ int read_char(void)
 {
     int c = -1;
 
-    fputs(canon? "[CANON]" : "[NONCANON]", trfile);
-    util_print_state(trfile);
-
     if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
 
@@ -146,6 +143,12 @@ reread:
         }
     }
     if (c >= 0) last_char_read = c & 0x7f;
+
+    if (c >= 0x80) {
+        fprintf(trfile, canon? "[CANON (%02X)]\n" : "[NONCANON (%02X)]\n", (unsigned int)c);
+        util_print_state(trfile);
+    }
+
     return c;
 }
 
