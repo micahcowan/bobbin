@@ -8,15 +8,15 @@ extern void signals_init(void);
 
 void bobbin_run(void)
 {
-    signals_init();
-    machine_init();
-    interfaces_init();
-    mem_init();
     trfile = fopen("trace.log", "w");
     if (trfile == NULL) {
         perror("Couldn't open trace file");
         exit(2);
     }
+    signals_init();
+    machine_init();
+    interfaces_init();
+    mem_init();
 
     cpu_reset();
     if (bobbin_test) {
