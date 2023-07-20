@@ -4,7 +4,7 @@
 
 [Click below](https://youtu.be/zMlG5CRfRDA) to watch a demonstration of an early version (roughly two days into development) of the pipe-able, standard I/O emulator interface (dubbed the "simple" interface):
 
-**Please note:** the video shows the use of command-line options `--simple` and `-m ][`. There is no `--simple` option: use `--iface simple` in its place. The correct value of `-m` to use **bobbin** as shown, should be `-m ][+`, or `-m plus`. `-m ][` (or `-m two`, `-m original`) will drop you directly into the monitor program (from which you can enter Integer ("Woz") BASIC, by typing Ctrl-B followed by Enter).
+**Please note:** the video shows the use of command-line options `--simple` and `-m ][`. In the latest version of the **bobbin**, you must use `-m ][+` (or `-m plus`), and also add `--simple-input canonical`, to obtain approximately the same results as shown in the video. If you use `-m ][` as shown in the video (and if your shell even allows that), instead of the correct `-m ][+`, then **bobbin** will drop you directly into the monitor program (from which you can enter Integer ("Woz") BASIC, by typing Ctrl-B followed by Enter, but from which you have no access to AppleSoft).
 <br />
 
 [![a2vimode showcase video](https://img.youtube.com/vi/zMlG5CRfRDA/0.jpg)](https://youtu.be/zMlG5CRfRDA)
@@ -48,7 +48,7 @@ Bobbin has no external dependencies as of right now, though this will change in 
 Once it has built successfully, try:
 
 ```
-$ ./bobbin -m plus --iface simple
+$ ./bobbin -m plus --simple
 ./bobbin: Looking for ROM named "apple2plus.rom" in /usr/share/bobbin/roms...
 ./bobbin: Looking for ROM named "apple2plus.rom" in ./roms...
 ./bobbin: FOUND ROM file "./roms/apple2plus.rom".
@@ -80,14 +80,14 @@ Note that at least one shell—**zsh**, which is the default shell on Mac OS—d
 
 ## The "simple" interface
 
-Just as with the machine type, a different default (called `tty`) is planned for what interface **bobbin** uses to display the emulation, and to accept user input. It is not necessary to specify the interface if **bobbin**'s standard input is being redirected from a file or a pipe, but it *is* necessary if **bobbin**'s program input is connected to a terminal. Even though at present there is only one supported interface, you must specify `--iface simple` on the command-line for an interactive session with **bobbin**.
+Just as with the machine type, a different default (called `tty`) is planned for what interface **bobbin** uses to display the emulation, and to accept user input. It is not necessary to specify the interface if **bobbin**'s standard input is being redirected from a file or a pipe, but it *is* necessary if **bobbin**'s program input is connected to a terminal. Even though at present there is only one supported interface, you must specify `--iface simple` (or just `--simple`) on the command-line for an interactive session with **bobbin**.
 
 ### Interactive "simple" interface
 
 The most straightforward way to use the `simple` interface is interactively. If you run **bobbin** like:
 
 ```
-$ ./bobbin -m plus --iface simple
+$ ./bobbin -m plus --simple
 ```
 
 You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, and because the interface is in your terminal, it's a lightweight way to "check something real wuick" without having to fire up a more graphics-oriented emulation program.
