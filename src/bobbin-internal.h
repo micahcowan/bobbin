@@ -42,9 +42,12 @@ extern const char *program_name; // main.c
 
 typedef struct Config Config;
 struct Config {
-    bool            remain_after_pipe;
     const char *    interface;
     const char *    machine;
+
+    // "simple" interface config:
+    bool            remain_after_pipe;
+    const char *    simple_input_mode;
 };
 extern Config cfg;
 

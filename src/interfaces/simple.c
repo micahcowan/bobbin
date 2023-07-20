@@ -8,15 +8,21 @@
 #include <termios.h>
 #include <unistd.h>
 
-int saved_char = -1;
+static int saved_char = -1;
 static bool interactive;
 static bool output_seen;
-int inputfd = -1;
-struct termios ios;
-struct termios orig_ios;
-bool canon = 1;
-byte last_char_read;
-bool eof_found = 0;
+static int inputfd = -1;
+static struct termios ios;
+static struct termios orig_ios;
+static bool canon = 1;
+static byte last_char_read;
+static bool eof_found = 0;
+
+static enum {
+    IM_APPLE = 0,
+    IM_CANON,
+    // SIMPLE_GETLINE, // future GNU getline() feature??
+} input_mode;
 
 unsigned char linebuf[256];
 unsigned char *lbuf_start = linebuf;
@@ -202,6 +208,16 @@ void consume_char(void)
 
 static void iface_simple_init(void)
 {
+    // Handle input mode
+    const char *s = cfg.simple_input_mode;
+    if (STREQ(s, "apple")) {
+        input_mode = IM_APPLE;
+    } else if (STREQ(s, "canonical")) {
+        input_mode = IM_CANON;
+    } else {
+        DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
+    }
+
     setvbuf(stdout, NULL, _IONBF, 0);
     inputfd = 0;
     if (isatty(0)) {
@@ -225,7 +241,7 @@ void vidout(void)
         return;
 
     if (util_isprint(c)
-        || c == '\t') {
+        || c == '\t' || c == '\b') {
 
         output_seen = true;
         putchar(c);
@@ -287,11 +303,18 @@ static void iface_simple_step(void)
         case 0xFDF0:
             vidout();
             break;
-        //case 0xFD6F:
         case 0xFD75: // common part of GETLN used by
                      //  both AppleSoft and Woz basics
-            suppress_output();
-            set_canon();
+            if (!interactive) {
+                // Don't want to echo the input when it's piped in.
+                suppress_output();
+            }
+            else if (input_mode == IM_CANON) {
+                // Use the terminal's "canonical mode" input handling,
+                //  instead of the Apple ]['s built-in handling
+                suppress_output();
+                set_canon();
+            }
             break;
         case 0xFD67:
         case 0xFD6A:
