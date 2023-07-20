@@ -90,7 +90,7 @@ The most straightforward way to use the `simple` interface is interactively. If 
 $ ./bobbin -m plus --simple
 ```
 
-You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, and because the interface is in your terminal, it's a lightweight way to "check something real wuick" without having to fire up a more graphics-oriented emulation program.
+You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, and because the interface is in your terminal, it's a lightweight way to "check something real quick" without having to fire up a more graphics-oriented emulation program.
 
 ### Non-interactive, input-redirected "simple" interface
 
