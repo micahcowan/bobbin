@@ -56,7 +56,7 @@ realenv:
             return NULL;
         }
     }
-    WARN("Looking for ROM named \"%s\" in %s...\n", fname, dir);
+    INFO("Looking for ROM named \"%s\" in %s...\n", fname, dir);
     (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
     return buf;
 }
@@ -78,7 +78,7 @@ static void load_rom(void)
     if (fd < 0) {
         DIE(2, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
     } else {
-        WARN("FOUND ROM file \"%s\".\n", rompath);
+        INFO("FOUND ROM file \"%s\".\n", rompath);
     }
 
     rombuf = mmap(NULL, 12 * 1024, PROT_READ, MAP_PRIVATE, fd, 0);

@@ -4,6 +4,7 @@
 #include <string.h>
 
 Config cfg = {
+    .squawk_level = DEFAULT_LEVEL,
     .remain_after_pipe = false,
     .interface = NULL,
     .machine = "//e",
@@ -14,6 +15,8 @@ typedef enum {
     T_BOOL = 0,
     T_STRING_ARG,
     T_ALIAS,
+    T_INCREMENT,
+    T_INT_RESET,
 } OptType;
 
 typedef struct OptInfo OptInfo;
@@ -24,6 +27,8 @@ struct OptInfo {
 };
 
 typedef const char * const AryOfStr;
+static AryOfStr VERBOSE_OPT_NAMES[] = {"verbose","v",NULL};
+static AryOfStr QUIET_OPT_NAMES[] = {"quiet","q",NULL};
 static AryOfStr INTERFACE_OPT_NAMES[] = {"interface","if","iface",NULL};
 static AryOfStr MACHINE_OPT_NAMES[] = {"machine","m","mach",NULL};
 static AryOfStr REMAIN_OPT_NAMES[] = {"remain-after-pipe","remain",NULL};
@@ -34,6 +39,8 @@ typedef char Alias[];
 static Alias ALIAS_SIMPLE = "iface=simple";
 
 const OptInfo options[] = {
+    { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
+    { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
     { INTERFACE_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
@@ -95,6 +102,12 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         if (!info) DIE(2, "Unknown option \"--%s\".\n", opt);
 
         switch (info->type) {
+            case T_INCREMENT:
+                ++(*(int *)info->arg);
+                break;
+            case T_INT_RESET:
+                (*(int *)info->arg) = 0;
+                break;
             case T_BOOL:
             {
                 bool b = !(opt[0] == 'n' && opt[1] == 'o');

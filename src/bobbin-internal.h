@@ -15,15 +15,6 @@ typedef uint8_t     byte;
 
 #define STREQ(a, b) (!strcmp(a, b))
 
-#define WARN(...)  do { \
-        fprintf(stderr, "%s: ", program_name); \
-        fprintf(stderr, __VA_ARGS__); \
-    } while (0)
-#define DIE(st, ...) do { \
-        WARN(__VA_ARGS__); \
-        exit(st); \
-    } while(0)
-
 #define LOC_NMI     0xFFFA
 #define LOC_RESET   0xFFFC
 #define LOC_IRQ     0xFFFE
@@ -36,12 +27,57 @@ typedef uint8_t     byte;
 
 extern void bobbin_run(void);
 
+/********** LOGGING **********/
+
+#define DIE_LEVEL      0
+#define WARN_LEVEL     1
+#define INFO_LEVEL     2
+#define VERBOSE_LEVEL  3
+
+#define DEFAULT_LEVEL   WARN_LEVEL
+
+#define SQUAWK_OK(level)    ((level) <= cfg.squawk_level)
+#define WARN_OK         SQUAWK_OK(WARN_LEVEL)
+#define INFO_OK         SQUAWK_OK(INFO_LEVEL)
+#define VERBOSE_OK      SQUAWK_OK(VERBOSE_LEVEL)
+
+#define SQUAWK_CONT(level, ...) \
+    do { \
+        if (SQUAWK_OK(level)) { \
+            fprintf(stderr, __VA_ARGS__); \
+        } \
+    } while (0)
+#define SQUAWK(level, ...) \
+    do { \
+        if (SQUAWK_OK(level)) { \
+            fprintf(stderr, "%s: ", program_name); \
+            fprintf(stderr, __VA_ARGS__); \
+        } \
+    } while (0)
+
+#define WARN(...)           SQUAWK(WARN_LEVEL, __VA_ARGS__)
+#define WARN_CONT(...)      SQUAWK(WARN_LEVEL, __VA_ARGS__)
+#define INFO(...)           SQUAWK(INFO_LEVEL, __VA_ARGS__)
+#define INFO_CONT(...)      SQUAWK(INFO_LEVEL, __VA_ARGS__)
+#define VERBOSE(...)        SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
+#define VERBOSE_CONT(...)      SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
+
+#define DIE_CONT(st, ...) do { \
+        SQUAWK_CONT(DIE_LEVEL, __VA_ARGS__); \
+        if (st) exit(st); \
+    } while(0)
+#define DIE(st, ...) do { \
+        SQUAWK(DIE_LEVEL, __VA_ARGS__); \
+        if (st) exit(st); \
+    } while(0)
+
 /********** CONFIG **********/
 
 extern const char *program_name; // main.c
 
 typedef struct Config Config;
 struct Config {
+    int squawk_level;
     const char *    interface;
     const char *    machine;
 

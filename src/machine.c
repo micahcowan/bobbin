@@ -93,10 +93,10 @@ static const char *find_alias(const char *machine)
     return NULL;
 }
 
-void print_sum(const byte *sum, FILE *fp)
+void print_sum(const byte *sum, FILE *fp, int level)
 {
     for (const byte *p = sum; p != sum + SIZE_OF_SHA_256_HASH; ++p) {
-        fprintf(fp, "%02x", (unsigned int)*p);
+        SQUAWK_CONT(level, "%02x", (unsigned int)*p);
     }
 }
 
@@ -107,16 +107,16 @@ bool validate_rom(unsigned char *buf, size_t sz)
 
     calc_sha_256(theHash, buf, sz);
 
-    WARN("ROM file checksum:\n");
-    WARN("  ");
-    print_sum(theHash, stderr);
-    fputc('\n', stderr);
-
     for (Sha256SumPtrPtr visit = acceptable_sums;
          *visit != NULL; ++visit)
     {
         if (MEMEQ(theHash, *visit, SIZE_OF_SHA_256_HASH)) {
-            WARN("ROM checksum is good!\n");
+            if (INFO_OK) {
+                INFO("ROM file checksum is good:\n");
+                INFO("  ");
+                print_sum(theHash, stderr, INFO_LEVEL);
+                INFO_CONT("\n");
+            }
 
             return true;
         }
@@ -124,13 +124,23 @@ bool validate_rom(unsigned char *buf, size_t sz)
 
     // No valid ROM found. Complain about it.
     WARN("WARNING!!! ROM file does not match an expected checksum.\n");
-    WARN("Expected checksums for this machine:\n");
-    for (Sha256SumPtrPtr visit = acceptable_sums;
-         *visit != NULL; ++visit)
-    {
-        WARN("  ");
-        print_sum(*visit, stderr);
-        fputc('\n', stderr);
+    WARN(" You may experience problems.");
+    if (INFO_OK) {
+        INFO("ROM file checksum:\n");
+        INFO("  ");
+        print_sum(theHash, stderr, INFO_LEVEL);
+        INFO_CONT("\n");
+
+        INFO("Expected checksums for this machine:\n");
+        for (Sha256SumPtrPtr visit = acceptable_sums;
+             *visit != NULL; ++visit)
+        {
+            INFO("  ");
+            print_sum(*visit, stderr, INFO_LEVEL);
+            INFO_CONT("\n");
+        }
+    } else {
+        WARN("(Try --verbose for more information.)\n");
     }
 
     return false;

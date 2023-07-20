@@ -39,8 +39,9 @@ void interfaces_init(void)
     }
 
     if (STREQ(cfg.interface, "tty")) {
-        WARN("default interface is \"tty\" when stdin is a tty; but that\n");
-        WARN("interface is not yet implemented in this development version.\n");
+        DIE(0,"default interface is \"tty\" when stdin is a tty; but that\n");
+        DIE(0,"interface is not yet implemented in this"
+            " development version.\n");
         DIE(2,"Try invoking with --iface simple.\n");
     }
     load_interface();
