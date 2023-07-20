@@ -9,7 +9,7 @@ static const char * const PLUS_TAG = "plus";
 static const char * const IIE_TAG = "twoey";
 static const char * const ENHANCED_TAG = "enhanced";
 
-static const StrArray II_ALIASES = {II_TAG,"][","II","two",NULL};
+static const StrArray II_ALIASES = {II_TAG,"][","II","two","woz","int","integer",NULL};
 static const StrArray PLUS_ALIASES = {PLUS_TAG,"+","][+","II+",
                                  "twoplus","autostart",NULL};
 static const StrArray IIE_ALIASES = {IIE_TAG,"][e","IIe",NULL};

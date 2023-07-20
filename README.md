@@ -74,7 +74,7 @@ There are currently two supported machine types, an Apple \]\[, and an Apple \]\
 
 To start **bobbin** in AppleSoft BASIC, use `-m plus`. Equivalent aliases to `plus` include: `+`, `][+`, `II+`, `twoplus`, and `autostart`.
 
-To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`. Equivalent aliases to `original` include: `][`, `II`, `two`, `woz`, and `integer`.
+To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`. Equivalent aliases to `original` include: `][`, `II`, `two`, `woz`, `int`, and `integer`.
 
 Note that at least one shell—**zsh**, which is the default shell on Mac OS—does not accept `][` or `][+` unquoted; you would need to place them in single-quotes, or simply use one of the other aliases for the same machine.
 
