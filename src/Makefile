@@ -18,7 +18,7 @@ roms:
 	ln -sf ../roms
 
 .PHONY: fetch-roms
-fetch-roms:
+fetch-roms: roms
 	cd roms/ && ./fetch-roms.sh; true
 
 .PHONY: watch
