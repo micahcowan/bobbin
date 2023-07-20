@@ -87,6 +87,8 @@ static void load_rom(void)
         exit(1);
     }
     close(fd); // safe to close now.
+
+    validate_rom(rombuf, 12 * 1024);
 }
 
 void mem_init(void)

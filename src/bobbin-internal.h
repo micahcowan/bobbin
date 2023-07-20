@@ -217,5 +217,6 @@ extern unsigned long long cycle_count;
 static inline void cycle(void) { ++cycle_count; }
 extern sig_atomic_t sigint_received;
 extern const char *default_romfname;
+extern bool validate_rom(unsigned char *buf, size_t sz);
 
 #endif /* BOBBIN_INTERNAL_H */

@@ -4,7 +4,7 @@ WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
 CPPFLAGS=-I$(PWD) -DPREFIX='"$(PREFIX)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
-OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o
+OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o sha-256.o
 HEADERS=$(wildcard *.h)
 BOBBIN=bobbin
 
