@@ -124,7 +124,7 @@ bool validate_rom(unsigned char *buf, size_t sz)
 
     // No valid ROM found. Complain about it.
     WARN("WARNING!!! ROM file does not match an expected checksum.\n");
-    WARN(" You may experience problems.");
+    WARN(" You may experience problems.\n");
     if (INFO_OK) {
         INFO("ROM file checksum:\n");
         INFO("  ");
