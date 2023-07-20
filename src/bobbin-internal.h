@@ -56,11 +56,11 @@ extern void bobbin_run(void);
     } while (0)
 
 #define WARN(...)           SQUAWK(WARN_LEVEL, __VA_ARGS__)
-#define WARN_CONT(...)      SQUAWK(WARN_LEVEL, __VA_ARGS__)
+#define WARN_CONT(...)      SQUAWK_CONT(WARN_LEVEL, __VA_ARGS__)
 #define INFO(...)           SQUAWK(INFO_LEVEL, __VA_ARGS__)
-#define INFO_CONT(...)      SQUAWK(INFO_LEVEL, __VA_ARGS__)
+#define INFO_CONT(...)      SQUAWK_CONT(INFO_LEVEL, __VA_ARGS__)
 #define VERBOSE(...)        SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
-#define VERBOSE_CONT(...)      SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
+#define VERBOSE_CONT(...)   SQUAWK_CONT(VERBOSE_LEVEL, __VA_ARGS__)
 
 #define DIE_CONT(st, ...) do { \
         SQUAWK_CONT(DIE_LEVEL, __VA_ARGS__); \
