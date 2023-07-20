@@ -1,4 +1,3 @@
-
 10 dim a$(50)
 20 input "type something",a$
 30 for i=1 to 10

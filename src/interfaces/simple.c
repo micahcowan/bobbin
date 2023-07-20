@@ -21,8 +21,15 @@ static bool eof_found = 0;
 static enum {
     IM_APPLE = 0,
     IM_CANON,
-    // SIMPLE_GETLINE, // future GNU getline() feature??
+    // IM_GETLINE, // future GNU getline() feature??
 } input_mode;
+
+enum mon_rom_check_status {
+    MON_ROM_NOT_CHECKED,
+    MON_ROM_IS_WOZ,
+    MON_ROM_NOT_WOZ,
+};
+bool mon_entered = false;
 
 unsigned char linebuf[256];
 unsigned char *lbuf_start = linebuf;
@@ -133,7 +140,6 @@ int read_char(void)
             set_noncanon(); // may have just finished a GETLN
         c = util_fromascii(*lbuf_start);
     } else {
-reread:
         errno = 0;
         ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
         if (nbytes < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -286,11 +292,21 @@ static void prompt(void)
     }
 }
 
+static bool check_is_woz_rom(void)
+{
+    static enum mon_rom_check_status status = MON_ROM_NOT_CHECKED;
+    
+    if (status == MON_ROM_NOT_CHECKED) {
+        status = mem_match(0xE006, 5, 0x85, 0x33, 0x4C, 0xED, 0xFD) ?
+                 MON_ROM_IS_WOZ : MON_ROM_NOT_WOZ;
+    }
+    return status == MON_ROM_IS_WOZ;
+}
+
 static void prompt_wozbasic(void)
 {
     // Skip printing the line prompt, IF stdin is not a tty.
-    if (mem_match(current_instruction, 5, 0x85, 0x33, 0x4C, 0xED, 0xFD)
-            && !interactive) {    //  ^ make sure we're in INT basic
+    if (check_is_woz_rom() && !interactive) {    //  ^ make sure we're in INT basic
         // It's not a tty. Skip to line fetch.
         suppress_output();
     }
@@ -322,6 +338,16 @@ static void iface_simple_step(void)
             break;
         case 0xE006:
             prompt_wozbasic();
+            break;
+        case 0xFF69:
+            if (!mon_entered) {
+                mon_entered = true;
+                if (check_is_woz_rom()) {
+                    // Special kludge: skip monitor at startup,
+                    // go straight to Woz basic.
+                    go_to(0xE000);
+                }
+            }
             break;
     }
 }
