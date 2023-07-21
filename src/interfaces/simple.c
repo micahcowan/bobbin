@@ -114,7 +114,9 @@ static void set_interactive(void)
 
     set_noncanon();
 
-    printf("\n[Bobbin \"simple\" interactive mode.\n"
+    // Not a warning... but we really want the user to see this by
+    // default. They can shut it up with --quiet
+    WARN("\n[Bobbin \"simple\" interactive mode.\n"
            " Ctrl-D at input to exit.]\n");
 }
 
