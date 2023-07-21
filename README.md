@@ -66,8 +66,11 @@ HELLO, WORLD
 
 ## Using Bobbin
 
+<!-- The Synopsis is used to generate bobbin --help text; -->
+<!-- be careful about editing it! -->
 ### Synopsis
 
+**bobbin --help**
 **bobbin --simple -m** *machine* \[ *options* \]<br />
 **bobbin -m** *machine* \[ *options* \] **&lt;** *file*
 

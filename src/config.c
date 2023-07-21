@@ -1,5 +1,6 @@
 #include "bobbin-internal.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -28,7 +29,9 @@ struct OptInfo {
 
 typedef const char * const AryOfStr;
 
-#include "option-names.h" // a make-generated file, from README.md
+#include "help-text.h"      // a make-generated file, from README.md
+
+#include "option-names.h"   // a make-generated file, from README.md
 /*
     static AryOfStr VERBOSE_OPT_NAMES[] = {"verbose","v",NULL};
     static AryOfStr QUIET_OPT_NAMES[] = {"quiet","q",NULL};
@@ -39,13 +42,16 @@ typedef const char * const AryOfStr;
 typedef char Alias[];
 static Alias ALIAS_SIMPLE = "iface=simple";
 
+bool help = false;
+
 const OptInfo options[] = {
+    { HELP_OPT_NAMES, T_BOOL, &help },
     { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
-    { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
-    { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
+    { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
+    { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
 };
 
@@ -66,6 +72,12 @@ static const OptInfo *find_option(const char *opt)
     }
 
     return NULL;
+}
+
+void do_help(void)
+{
+    fputs(help_text, stdout);
+    exit(0);
 }
 
 void do_config(int c, char **v)
@@ -148,4 +160,6 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         if (eq) *eq = '='; // put it back, in case it was an alias
                            //  and just  housekeeping
     }
+
+    if (help) do_help();
 }

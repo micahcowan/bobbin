@@ -58,7 +58,11 @@ option-names.h: ../README.md gen-names.awk
 	awk -f gen-names.awk < $< > $@.out
 	mv $@.out $@
 
-config.o: option-names.h
+help-text.h: ../README.md gen-help.awk
+	awk -f gen-help.awk < $< > $@.out
+	mv $@.out $@
+
+config.o: option-names.h help-text.h
 
 %.o: %.c Makefile $(HEADERS)
 	cd $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $(notdir $<)
