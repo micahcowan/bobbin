@@ -66,6 +66,67 @@ HELLO, WORLD
 
 ## Using Bobbin
 
+### Synopsis
+
+**bobbin --simple -m** *machine* \[ *options* \]<br />
+**bobbin -m** *machine* \[ *options* \] **&lt;** *file*
+
+### Options
+
+Note: **bobbin**'s option parser treats **--option** and **-option** the same. Options that take value arguments can either give the option in one argument, and the value in the next, or else it can be specified all in one, like **--option=value**. Consequently, **bobbin** does *not* suport stringing a series of short options together, like **-cfb** to mean **-c**, **-f**, **-b**.
+
+<!-- Note: if you change anything in the Options section, it will AFFECT PROGRAM BEHAVIOR! -->
+<!--       this README.md is parsed for some of the information about program options.     -->
+<!--START-OPTIONS-->
+#### Basic Options
+
+##### -h, --help
+
+Display basic information on how to use **bobbin**.
+
+##### -v, --verbose
+
+Increase **bobbin**'s informational output.
+
+Normally **bobbin** only produces information about program-ending errors, or warnings about configuration or situations that might lead to unexpected operation.
+
+##### -q, --quiet
+
+Don't produce warnings, only errors.
+
+#### Essential Options
+
+##### -m, --machine, --mach *arg*
+
+The machine **bobbin** should emulate.
+
+This is currently a required argument, to tell **bobbin** what type of Apple \]\[ it should be. It *does* have a default value (emulating an enahnced IIe, or `//e`), but that machine is not yet supported, and so you must choose something else&mdash;either `original` or `plus` (or their equivalents). See [Choosing what type of Apple to emulate](#choosing-what-type-of-apple--to-emulate), below.
+
+##### --if, --interface, --iface *arg*
+
+Select the user interface.
+
+This is currently a required argument, unless **bobbin**'s input is from a file or pipe rather than a terminal. The default value, `tty`, has not yet been implemented. Currently only `simple` is supported. You may also specify `--simple`, instead of `--if simple`. See the section on [the "simple" interface](#the-simple-interface), below, for quite a lot of detail.
+
+##### --simple
+
+Alias for `--interface=simple`.
+
+#### "Simple" interface options
+
+##### --remain
+
+Go interactive after input is exhausted.
+
+This option applies when **bobbin**'s input has been redirected, say from a file or pipe, and is not connected to the terminal. **Bobbin** ordinarly would quit once that input is exhausted, but if the `--remain` option is specified and **bobbin** is on a terminal, it will reconnect input through the terminal and continue executing with the `simple` interface.
+
+##### --simple-input *arg*
+
+`apple` (default), or `canonical`.
+
+See [](#choosing-your-flavor-of-input-mode-with---simple-input) below, for copious details about this option. The TL;DR of it is that `canonical` uses your terminal's (primitive) line-input processing when **bobbin** detects that the Apple \]\[ wants to read a line of input (as opposed to a single character), and `apple` (the default) defers to the emulated Apple computer's (equally primitive, yet distinctly different) line-input processing. This option has no effect while **bobbin** is not reading from a terminal.
+
+<!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate
 
 The eventual plan is for **bobbin** to emulate an enhanced Apple //e as the default, but this is not yet supported. In order to prevent future confusion when the Apple //e does become a supported machine type, **bobbin** does not default to either of the machine types that *are* currently supported: you must explicitly select the machine type via the `-m` switch.
