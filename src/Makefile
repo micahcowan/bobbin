@@ -6,7 +6,7 @@ CPPFLAGS=-I$(PWD) -DPREFIX='"$(PREFIX)"'
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
 BOBBIN-OBJECTS=main.o bobbin.o config.o cpu.o mem.o trace.o interfaces/iface.o interfaces/simple.o util.o signal.o debug.o disasm.o machine.o sha-256.o
 SHAVERIFY-OBJECTS=sha256-verify.o sha-256.o
-HEADERS=$(wildcard *.h)
+HEADERS=bobbin-internal.h
 BOBBIN=bobbin
 SHAVERIFY=sha256-verify
 
@@ -53,6 +53,12 @@ $(SHAVERIFY): $(SHAVERIFY-OBJECTS)
 
 $(BOBBIN): $(BOBBIN-OBJECTS)
 	$(LD) -o $(BOBBIN) $(BOBBIN-OBJECTS)
+
+option-names.h: ../README.md gen-names.awk
+	awk -f gen-names.awk < $< > $@.out
+	mv $@.out $@
+
+config.o: option-names.h
 
 %.o: %.c Makefile $(HEADERS)
 	cd $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $(notdir $<)

@@ -202,7 +202,7 @@ Note that all the `]` prompts printed by the emulated Apple `\]\[+ have been sup
 
 ### Mixed-interactivity via `--remain`
 
-If you specify the `--remain-after-pipe` option (or just `--remain`), then **bobbin** will start in non-interactive mode, suppressing prompts, until all of its input has been consumed. It will then remain open, and switch to user input until the user types Ctrl-D (and any prompts the Apple emits will output successfully).
+If you specify the `--remain` option, then **bobbin** will start in non-interactive mode, suppressing prompts, until all of its input has been consumed. It will then remain open, and switch to user input until the user types Ctrl-D (and any prompts the Apple emits will output successfully).
 
 Example (note: `amazing.bas`, not `amazing-run.bas` as in the previous example):
 ```

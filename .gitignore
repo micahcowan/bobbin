@@ -10,3 +10,4 @@ test/tests6502/*.bin
 test/tests6502/*.lst
 test/tests6502/*.map
 src/roms
+src/option-names.h

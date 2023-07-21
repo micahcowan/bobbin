@@ -27,13 +27,14 @@ struct OptInfo {
 };
 
 typedef const char * const AryOfStr;
-static AryOfStr VERBOSE_OPT_NAMES[] = {"verbose","v",NULL};
-static AryOfStr QUIET_OPT_NAMES[] = {"quiet","q",NULL};
-static AryOfStr INTERFACE_OPT_NAMES[] = {"interface","if","iface",NULL};
-static AryOfStr MACHINE_OPT_NAMES[] = {"machine","m","mach",NULL};
-static AryOfStr REMAIN_OPT_NAMES[] = {"remain-after-pipe","remain",NULL};
-static AryOfStr SIMPLE_OPT_NAMES[] = {"simple",NULL};
-static AryOfStr SIMPLE_INPUT_OPT_NAMES[] = {"simple-input",NULL};
+
+#include "option-names.h" // a make-generated file, from README.md
+/*
+    static AryOfStr VERBOSE_OPT_NAMES[] = {"verbose","v",NULL};
+    static AryOfStr QUIET_OPT_NAMES[] = {"quiet","q",NULL};
+
+    ...etc. referenced below.
+*/
 
 typedef char Alias[];
 static Alias ALIAS_SIMPLE = "iface=simple";
@@ -41,7 +42,7 @@ static Alias ALIAS_SIMPLE = "iface=simple";
 const OptInfo options[] = {
     { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
-    { INTERFACE_OPT_NAMES, T_STRING_ARG, &cfg.interface },
+    { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
