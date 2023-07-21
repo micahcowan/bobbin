@@ -106,6 +106,20 @@ The machine **bobbin** should emulate.
 
 This is currently a required argument, to tell **bobbin** what type of Apple \]\[ it should be. It *does* have a default value (emulating an enahnced IIe, or `//e`), but that machine is not yet supported, and so you must choose something else&mdash;either `original` or `plus` (or their equivalents). See [Choosing what type of Apple to emulate](#choosing-what-type-of-apple--to-emulate), below.
 
+Valid values are:
+<!--MACHINES-->
+ - `original`. Aliases: `\]\[`, `II`, `two`, `woz`, `int`, `integer`.<br />
+   Selects an original, non-autostart Apple \]\[ with Integer BASIC loaded. The `simple` interface boots directly into Integer BASIC (unlike the real machine); all other interfaces boot directly to the system monitor (actual machine behavior).
+ - `plus`. Aliases: `+`, `][+`, `II+`, `twoplus`, `autostart`, `applesoft`, `asoft`.<br />
+   Selects an Apple \]\[+ (or, equivalently an original Apple \]\[ with the autostart, AppleSoft BASIC firmware). Boots into AppleSoft.
+
+Planned future values:
+ - `twoey`. Aliases: `][e`, `IIe`.<br />
+   An unenhanced Apple \]\[e.
+ - `enhanced`. Alias: `//e`.<br />
+   The enhanced Apple //e. This will be the default `--machine` value, in future.
+<!--/MACHINES-->
+
 ##### --if, --interface, --iface *arg*
 
 Select the user interface.
@@ -137,9 +151,9 @@ The eventual plan is for **bobbin** to emulate an enhanced Apple //e as the defa
 
 There are currently two supported machine types, an Apple \]\[, and an Apple \]\[+. Since an (early) Apple \]\[+ is exactly equivalent to the original Apple \]\[ with the "autostart" ROM with AppleSoft (floating-point) BASIC built-in, the term "original Apple ][" is used here to mean that the original, "non-autostart" ROM that starts directly in the monitor program, and which included Integer BASIC and the original mini-assembler (including "trace" and "step" features), via entering `F666G` (not `!`) from the monitor. (Note that the "monitor" we are referring to here is a program that is built into all Apple \]\[ machines; we are not referring to a hardware display device in this context.) As a special feature of the `--simple` interface, **bobbin** does not actually drop you into the monitor with `-m \]\[ --simple`; instead it jumps you into Integer BASIC, as that's the more likely thing you might want to pipe a program into (you can still get to the monitor via `CALL-151`, of course!).
 
-To start **bobbin** in AppleSoft BASIC, use `-m plus`. Equivalent aliases to `plus` include: `+`, `][+`, `II+`, `twoplus`, and `autostart`.
+To start **bobbin** in AppleSoft BASIC, use `-m plus`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above).
 
-To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`. Equivalent aliases to `original` include: `][`, `II`, `two`, `woz`, `int`, and `integer`. Note that the `--simple` interface (the only interface currently available in **bobbin**) actually drops you directly into Integer BASIC, instead of the monitor. While this behavior is unrealistic to the original machine, it is thought to be more convenient for the purpose of redirected input (as you don't have to start your files with a Ctrl-B character).
+To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above). Note that the `--simple` interface (the only interface currently available in **bobbin**) actually drops you directly into Integer BASIC, instead of the monitor. While this behavior is unrealistic to the original machine, it is thought to be more convenient for the purpose of redirected input (as you don't have to start your files with a Ctrl-B character).
 
 Note that at least one shell—**zsh**, which is the default shell on Mac OS—does not accept `][` or `][+` unquoted; you would need to place them in single-quotes, or simply use one of the other aliases for the same machine.
 
