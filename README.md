@@ -26,6 +26,7 @@
 - Full graphics (not to the terminal) and sound emulation, of course
 - Emulate an enhanced Apple //e by default
 - Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
+- Use **bobbin** as a compiler or assembler, by loading in your sources, running your favorite assembler (or what have you) in the emulated Apple, and then save the results back out
 - Remote commands via Unix-socket or network connection
 
 ### Known issues
