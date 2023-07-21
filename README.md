@@ -70,7 +70,7 @@ HELLO, WORLD
 <!-- be careful about editing it! -->
 ### Synopsis
 
-**bobbin --help**
+**bobbin --help**<br />
 **bobbin --simple -m** *machine* \[ *options* \]<br />
 **bobbin -m** *machine* \[ *options* \] **&lt;** *file*
 
