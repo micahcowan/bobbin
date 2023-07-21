@@ -62,13 +62,17 @@ extern void bobbin_run(void);
 #define VERBOSE(...)        SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
 #define VERBOSE_CONT(...)   SQUAWK_CONT(VERBOSE_LEVEL, __VA_ARGS__)
 
+#define DIE_FINAL(st) do { \
+        SQUAWK(DIE_LEVEL, "Exiting (%d).\n", (int)st); \
+        exit(st); \
+    } while (0)
 #define DIE_CONT(st, ...) do { \
         SQUAWK_CONT(DIE_LEVEL, __VA_ARGS__); \
-        if (st) exit(st); \
+        if (st) DIE_FINAL(st); \
     } while(0)
 #define DIE(st, ...) do { \
         SQUAWK(DIE_LEVEL, __VA_ARGS__); \
-        if (st) exit(st); \
+        if (st) DIE_FINAL(st); \
     } while(0)
 
 /********** CONFIG **********/

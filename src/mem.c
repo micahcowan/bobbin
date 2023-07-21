@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,9 +77,24 @@ static void load_rom(void)
         err = errno;
     }
     if (fd < 0) {
-        DIE(2, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
+        DIE(1, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
     } else {
         INFO("FOUND ROM file \"%s\".\n", rompath);
+    }
+
+    struct stat st;
+    errno = 0;
+    err = fstat(fd, &st);
+    if (err < 0) {
+        err = errno;
+        DIE(1, "Couldn't stat ROM file \"%s\": %s\n", last_tried_path, strerror(err));
+    }
+    if (st.st_size != 12 * 1024) {
+        // XXX expected size will need to be configurable
+        DIE(0, "ROM file \"%s\" has unexpected file size %zu\n",
+            last_tried_path, (size_t)st.st_size);
+        DIE(1, "  (expected %zu).\n",
+            (size_t)(12 * 1024));
     }
 
     rombuf = mmap(NULL, 12 * 1024, PROT_READ, MAP_PRIVATE, fd, 0);
