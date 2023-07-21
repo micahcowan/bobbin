@@ -51,6 +51,11 @@ void interfaces_init(void)
     iii->init();
 }
 
+void interfaces_start(void)
+{
+    iii->start();
+}
+
 void iface_step(void)
 {
     iii->step();

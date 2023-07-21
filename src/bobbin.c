@@ -17,8 +17,10 @@ void bobbin_run(void)
 
     signals_init();
     machine_init();
-    mem_init();
     interfaces_init();
+    mem_init(); // Loads ROM files. Nothing past this point
+                // should be validating options or arguments.
+    interfaces_start();
 
     cpu_reset();
     if (bobbin_test) {

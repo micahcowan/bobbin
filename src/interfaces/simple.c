@@ -225,7 +225,10 @@ static void iface_simple_init(void)
     } else {
         DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
     }
+}
 
+static void iface_simple_start(void)
+{
     setvbuf(stdout, NULL, _IONBF, 0);
     inputfd = 0;
     if (isatty(0)) {
@@ -373,8 +376,9 @@ static int iface_simple_poke(word loc, byte val)
 }
 
 IfaceDesc simpleInterface = {
-    iface_simple_init,
-    iface_simple_step,
-    iface_simple_peek,
-    iface_simple_poke
+    .init = iface_simple_init,
+    .start= iface_simple_start,
+    .step = iface_simple_step,
+    .peek = iface_simple_peek,
+    .poke = iface_simple_poke
 };

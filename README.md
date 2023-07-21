@@ -80,6 +80,7 @@ Note: **bobbin**'s option parser treats **--option** and **-option** the same. O
 
 <!-- Note: if you change anything in the Options section, it will AFFECT PROGRAM BEHAVIOR! -->
 <!--       this README.md is parsed for some of the information about program options.     -->
+<!--       Only the first paragraph of each option's description gets copied to --help     -->
 <!--START-OPTIONS-->
 #### Basic Options
 
@@ -89,7 +90,7 @@ Display basic information on how to use **bobbin**.
 
 ##### -v, --verbose
 
-Increase **bobbin**'s informational output.
+Increase **bobbin**'s informational output. Use again for even more.
 
 Normally **bobbin** only produces information about program-ending errors, or warnings about configuration or situations that might lead to unexpected operation.
 

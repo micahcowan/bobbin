@@ -56,7 +56,7 @@ realenv:
             return NULL;
         }
     }
-    INFO("Looking for ROM named \"%s\" in %s...\n", fname, dir);
+    VERBOSE("Looking for ROM named \"%s\" in %s...\n", fname, dir);
     (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
     return buf;
 }

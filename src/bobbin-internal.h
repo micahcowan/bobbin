@@ -206,13 +206,15 @@ static inline void rts(void) {
 
 typedef struct IfaceDesc IfaceDesc;
 struct IfaceDesc {
-    void (*init)(void);
+    void (*init)(void); // Process options
+    void (*start)(void);// *Actually* start interface
     void (*step)(void);
     int  (*peek)(word loc);
     int  (*poke)(word loc, byte val);
 };
 
 extern void interfaces_init(void);
+extern void interfaces_start(void);
 
 extern void iface_step(void);
 extern int  iface_poke(word loc, byte val);
