@@ -232,7 +232,7 @@ There are currently two different "input modes" available for the `--simple` int
 
 #### `--simple-input apple`
 
-The default (`--simple-input apple`) is to pass every character through directly to the emulated apple, and let it handle echoing the characters back, and backspacing over characters. This mode provides the classic Apple \]\[ behavior in which backspacing over characters leaves them visible on the line, and Ctrl-U moves the cursor back over them (Ctrl-U is what the right-arrow key generates on an Apple \]\[; the `--simple` interface in `--simple-input apple` mode doesn't know how to convert a right-arrow key on your terminal (which it may not even support) to a right-arrow key on the Apple, but if you type a Ctrl-U it will be passed through, and the Apple will recognize that as "right-arrow key" just the same). Note that Ctrl-U has an *entirely different* meaning under `--simple-input canonical`, on most Unix-style terminals.
+The default (`--simple-input apple`) is to pass every character through directly to the emulated Apple, and let it handle echoing the characters back, and backspacing over characters. This mode provides the classic Apple \]\[ behavior in which backspacing over characters leaves them visible on the line, and Ctrl-U moves the cursor back over them&mdash;Ctrl-U is *right-arrow* on Apple; Ctrl-H is *left-arrow* (and is what Apple used as backspace). If you want to toggle between moving left and right while editing a line, Ctrl-H/Ctrl-U are conveniently close to one another; but if you just want to backspace over some characters, your keyboard's Backspace key is the better option. Note that Ctrl-U has an *entirely different* meaning under `--simple-input canonical`, on most Unix-style terminals (erases the current input line).
 
 The `apple` input mode does *not* grant you access to moving the cursor arround the screen using the Escape key in combination with other keys... or rather, it *does*, but you won't *see* it, because that requires full screen emulation (like the `--tty` interface will do). So, if you type something like:
 
@@ -252,7 +252,7 @@ HEY THERE
 ]EY THE
 ```
 
-Our advice is to refrain from using the Esc key at line inputs.
+Our advice is to refrain from using the Esc key at line inputs. If you want to copy/re-enter a line, it's usually easier just to use your terminal's copy/paste feature!
 
 The developer prefers `--simple-input apple` over `--simple-input canonical` for two reasons: (a) it is visually much closer to what the emulated Apple is actually seeing/processing, and (b) it keeps the interface experience perfectly consistent, in the event that a program is using it's own bespoke line-input routine (which **bobbin** cannot detect). Since, in `apple` mode, no distinction is attempted between handling normal keypresses, versus handling a line of input, those two cases do not differ.
 
