@@ -10,17 +10,12 @@ typedef const char *StrArray[];
 typedef const char * const * ConstStrPtr;
 typedef const char * const * * ConstStrPtrPtr;
 
-static const char * const II_TAG = "original";
-static const char * const PLUS_TAG = "plus";
-static const char * const IIE_TAG = "twoey";
-static const char * const ENHANCED_TAG = "enhanced";
-
 typedef const byte                Sha256Sum[32];
 typedef const byte              * Sha256SumPtr;
 typedef const Sha256SumPtr        Sha256SumPtrAry[];
 typedef const Sha256SumPtr      * Sha256SumPtrPtr; // const byte * const *
 
-static const Sha256Sum II_SUM_A
+static const Sha256Sum ORIGINAL_SUM_A
   = { 0x68, 0xd9, 0xdb, 0x6b, 0xb4, 0xc3, 0x05, 0xd4,
       0x0c, 0x3f, 0xa8, 0x9f, 0xa0, 0xf2, 0xd7, 0xb7,
       0xf7, 0x15, 0x16, 0xa9, 0x43, 0x1e, 0x31, 0x38,
@@ -36,8 +31,8 @@ static const Sha256Sum ZERO_SUM
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
 
-static const Sha256SumPtrAry II_SUMS = {
-    II_SUM_A,
+static const Sha256SumPtrAry ORIGINAL_SUMS = {
+    ORIGINAL_SUM_A,
     NULL,
 };
 
@@ -51,11 +46,7 @@ static const Sha256SumPtrAry PLACEHOLDER_SUMS = {
     NULL,
 };
 
-static const StrArray II_ALIASES = {II_TAG,"][","II","two","woz","int","integer",NULL};
-static const StrArray PLUS_ALIASES = {PLUS_TAG,"+","][+","II+",
-                                 "twoplus","autostart",NULL};
-static const StrArray IIE_ALIASES = {IIE_TAG,"][e","IIe",NULL};
-static const StrArray ENHANCED_ALIASES = {ENHANCED_TAG,"//e",NULL};
+#include "machine-names.h"
 
 typedef struct Alias Alias;
 struct Alias {
@@ -64,9 +55,9 @@ struct Alias {
 };
 
 static const Alias aliases[] = {
-    { II_SUMS, II_ALIASES },
+    { ORIGINAL_SUMS, ORIGINAL_ALIASES },
     { PLUS_SUMS, PLUS_ALIASES },
-    { PLACEHOLDER_SUMS, IIE_ALIASES },
+    { PLACEHOLDER_SUMS, TWOEY_ALIASES },
     { PLACEHOLDER_SUMS, ENHANCED_ALIASES },
 };
 
@@ -159,11 +150,11 @@ void machine_init(void)
         WARN("supported in this development version.\n");
         DIE(2,"Try invoking with -m ][+ or -m plus\n");
     }
-    if (orig == IIE_TAG) {
+    if (orig == TWOEY_TAG) {
         DIE(2, "This development version does not yet "
                "support machine \"%s\".\n", cfg.machine);
     }
-    if (orig == II_TAG) {
+    if (orig == ORIGINAL_TAG) {
         default_romfname = "apple2.rom";
     }
     if (orig == PLUS_TAG) {

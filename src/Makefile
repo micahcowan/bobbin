@@ -54,15 +54,20 @@ $(SHAVERIFY): $(SHAVERIFY-OBJECTS)
 $(BOBBIN): $(BOBBIN-OBJECTS)
 	$(LD) -o $(BOBBIN) $(BOBBIN-OBJECTS)
 
-option-names.h: ../README.md gen-names.awk
-	awk -f gen-names.awk < $< > $@.out
+option-names.h: ../README.md scripts/gen-names.awk
+	awk -f scripts/gen-names.awk < $< > $@.out
 	mv $@.out $@
 
-help-text.h: ../README.md gen-help.awk
-	awk -f gen-help.awk < $< > $@.out
+help-text.h: ../README.md scripts/gen-help.awk
+	awk -f scripts/gen-help.awk < $< > $@.out
+	mv $@.out $@
+
+machine-names.h: ../README.md scripts/gen-machines.awk
+	awk -f scripts/gen-machines.awk < $< > $@.out
 	mv $@.out $@
 
 config.o: option-names.h help-text.h
+machine.o: machine-names.h
 
 %.o: %.c Makefile $(HEADERS)
 	cd $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $(notdir $<)
