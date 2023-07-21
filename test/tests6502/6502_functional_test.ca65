@@ -141,7 +141,7 @@ ram_top = -1
 
 ;disable test decimal mode ADC & SBC, 0=enable, 1=disable,
 ;2=disable including decimal flag in processor status
-disable_decimal = 1
+disable_decimal = 0
 
 ;macros for error & success traps to allow user modification
 ;example:

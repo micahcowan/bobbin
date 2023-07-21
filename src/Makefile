@@ -42,7 +42,7 @@ watch:
 check: $(BOBBIN) 6502_functional_test.bin
 	BOBBIN_TEST=6502_functional_test.bin ./bobbin -m ][+ --iface simple
 
-6502_functional_test.bin:
+6502_functional_test.bin: ../test/tests6502/6502_functional_test.ca65
 	$(MAKE) -C ../test/tests6502/
 	cp  ../test/tests6502/$@ ./$@
 

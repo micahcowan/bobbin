@@ -21,7 +21,7 @@ static void do_rts(void)
 static void bobbin_hooks(void)
 {
 #if 0
-    if (!traceon && (cycle_count + 256) > 47888692)
+    if (!traceon && (cycle_count + 256) > 96404509)
         trace_on("6502 TESTS");
 #endif
 

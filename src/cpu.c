@@ -361,14 +361,14 @@ static inline void do_adc(byte val)
         // BCD. Implementation based on description
         //  from https://www.nesdev.org/6502_cpu.txt
         byte sumL = (ACC & 0xF) + (val & 0xF) + PGET(PCARRY);
-        byte sumH = (ACC >> 4) + (val >> 4) + (sumL & 0x10);
+        byte sumH = (ACC >> 4) + (val >> 4) + (sumL > 9);
         if (sumL > 9) sumL += 6;
         PPUT(PZERO, ((ACC + val + PGET(PCARRY)) & 0xFF) == 0);
         PPUT(PNEG, (sumH & 0x8) != 0);
         PPUT(POVERFL, (((sumH << 4) ^ ACC) & 0x80)
                         && !((ACC ^ val) & 0x80));
         if (sumH > 9) sumH += 6;
-        PPUT(PCARRY, sumH > 0xF);
+        PPUT(PCARRY, sumH > 9);
         ACC = LO(((sumH << 4) | (sumL & 0xF)));
     } else {
         word sum = ACC + val + PGET(PCARRY);
@@ -388,14 +388,8 @@ static inline void do_sbc(byte val)
         //  from https://www.nesdev.org/6502_cpu.txt
         byte diffL = (ACC & 0xF) - (val & 0xF) - !PGET(PCARRY);
         if (diffL & 0x10) diffL -= 6;
-        byte diffH = (ACC >> 4) - (val >> 4) - (diffL & 0x10);
-        if (diffH & 0x10) diffH += 6;
-
-        PPUT(PZERO, ((ACC + val + PGET(PCARRY)) & 0xFF) == 0);
-        PPUT(PNEG, (diffH & 0x8) != 0);
-        PPUT(POVERFL, (((diffH << 4) ^ ACC) & 0x80)
-                        && !((ACC ^ val) & 0x80));
-        if (diffH > 9) diffH += 6;
+        byte diffH = (ACC >> 4) - (val >> 4) - ((diffL & 0x80) != 0);
+        if (diffH & 0x10) diffH -= 6;
 
         word diff = ACC - val - !PGET(PCARRY);
         PPUT(PNEG, diff & 0x80);
