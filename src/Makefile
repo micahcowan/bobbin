@@ -1,5 +1,6 @@
 CC=gcc
 LD=gcc
+AWK=awk
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
 CPPFLAGS=-I$(PWD) -DPREFIX='"$(PREFIX)"'
 #CCDEBUG=-g -Og
@@ -55,15 +56,15 @@ $(BOBBIN): $(BOBBIN-OBJECTS)
 	$(LD) -o $(BOBBIN) $(BOBBIN-OBJECTS)
 
 option-names.h: ../README.md scripts/gen-names.awk
-	awk -f scripts/gen-names.awk < $< > $@.out
+	$(AWK) -f scripts/gen-names.awk < $< > $@.out
 	mv $@.out $@
 
 help-text.h: ../README.md scripts/gen-help.awk
-	awk -f scripts/gen-help.awk < $< > $@.out
+	$(AWK) -f scripts/gen-help.awk < $< > $@.out
 	mv $@.out $@
 
 machine-names.h: ../README.md scripts/gen-machines.awk
-	awk -f scripts/gen-machines.awk < $< > $@.out
+	$(AWK) -f scripts/gen-machines.awk < $< > $@.out
 	mv $@.out $@
 
 config.o: option-names.h help-text.h
@@ -75,3 +76,4 @@ machine.o: machine-names.h
 .PHONY: clean
 clean:
 	rm -f *.o */*.o $(BOBBIN) 6502_functional_test.bin $(SHAVERIFY)
+	rm -f machine-names.h option-names.h help-text.h

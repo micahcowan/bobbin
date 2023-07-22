@@ -1,21 +1,21 @@
 #!/usr/bin/awk -f
 
 function print_tags() {
-    for (name in names) {
+    for (name in names_num) {
         tag = toupper(name) "_TAG"
         print "static const char * const " tag " = \"" name "\";"
     }
 }
 
 function print_aliases() {
-    for (name in names) {
+    for (name in names_num) {
         alias = toupper(name) "_ALIASES"
         tag = toupper(name) "_TAG"
         ors = ORS
         ORS = ""
         print "static const StrArray " alias " = {" tag
-        for (x in names[name]) {
-            print ", \"" names[name][x] "\""
+        for (i=0; i < names_num[name]; ++i) {
+            print ", \"" names[name,i] "\""
         }
         ORS = ors
         print ", NULL};"
@@ -32,12 +32,12 @@ function get_name_list() {
         if (first == "") {
             first = item
         } else {
-            names[first][i++] = item
+            names[first, i++] = item
         }
         list[i] = item
         rem = substr(rem, RSTART + RLENGTH + 1)
     }
-    #names[list[0]] = list
+    names_num[first] = i
 }
 
 BEGIN {
