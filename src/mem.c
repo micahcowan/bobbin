@@ -42,12 +42,7 @@ static const char *get_try_rom_path(const char *fname) {
     const char *dir;
 
     if (romdirp == &rom_dirs[0] && (env = getenv(*romdirp++)) != NULL) {
-        dir = strchr(env, '=');
-        if (dir != NULL) {
-            ++dir;
-        } else {
-            goto realenv;
-        }
+        dir = env;
     } else {
 realenv:
         if (romdirp != romdend) {
