@@ -138,9 +138,6 @@ void cpu_reset(void)
             } \
             cycle(); /* 4 or 5 */ \
         } else { \
-            /* https://www.nesdev.org/6502_cpu.txt
-                says "else increment PC", but that's
-                clearly an error. */ \
             cycle(); /* 3 */ \
         } \
     } while (0)
@@ -358,8 +355,6 @@ static inline void do_bit(byte val)
 static inline void do_adc(byte val)
 {
     if (PTEST(PDEC)) {
-        // BCD. Implementation based on description
-        //  from https://www.nesdev.org/6502_cpu.txt
         byte sumL = (ACC & 0xF) + (val & 0xF) + PGET(PCARRY);
         byte sumH = (ACC >> 4) + (val >> 4) + (sumL > 9);
         if (sumL > 9) sumL += 6;
@@ -384,8 +379,6 @@ static inline void do_adc(byte val)
 static inline void do_sbc(byte val)
 {
     if (PTEST(PDEC)) {
-        // BCD. Implementation based on description
-        //  from https://www.nesdev.org/6502_cpu.txt
         byte diffL = (ACC & 0xF) - (val & 0xF) - !PGET(PCARRY);
         if (diffL & 0x10) diffL -= 6;
         byte diffH = (ACC >> 4) - (val >> 4) - ((diffL & 0x80) != 0);
