@@ -1,1 +1,1 @@
-SUBDIRS = tests6502
+SUBDIRS = tests6502 pexpect

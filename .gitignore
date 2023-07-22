@@ -12,6 +12,7 @@ install-sh
 missing
 Makefile
 Makefile.in
+py-compile
 trace.log
 cscope.out
 *.o
@@ -27,3 +28,6 @@ src/roms
 src/option-names.h
 src/help-text.h
 src/machine-names.h
+test/pexpect/__pycache__
+test/pexpect/bobbin
+*.pyc
