@@ -84,6 +84,7 @@ struct Config {
     int squawk_level;
     const char *    interface;
     const char *    machine;
+    size_t          amt_ram;
 
     // "simple" interface config:
     bool            remain_after_pipe;

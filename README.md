@@ -131,6 +131,16 @@ This is currently a required argument, unless **bobbin**'s input is from a file 
 
 Alias for `--interface=simple`.
 
+#### Machine configuration options
+
+##### --ram *arg*
+
+Select how much RAM is installed on the machine, in kilobytes.
+
+The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. (*Note: Language Card emulation is not yet implemented.*) If you specify 128k, then the top 64k of that will be used for so-called *auxilliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
+
+Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxilliary memory are implemented yet.
+
 #### "Simple" interface options
 
 ##### --remain

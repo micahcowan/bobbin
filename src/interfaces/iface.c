@@ -42,7 +42,7 @@ void interfaces_init(void)
         DIE(0,"default interface is \"tty\" when stdin is a tty; but that\n");
         DIE(0,"interface is not yet implemented in this"
             " development version.\n");
-        DIE(2,"Try invoking with --iface simple.\n");
+        DIE(2,"Try invoking with --simple.\n");
     }
     load_interface();
     if (iii == NULL) {

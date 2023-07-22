@@ -144,7 +144,7 @@ byte peek_sneaky(word loc)
     if (rombuf && loc >= 0xD000) {
         return rombuf[loc - 0xD000];
     }
-    else if (loc >= 0xC000 && loc < 0xD000) {
+    else if (loc >= cfg.amt_ram || (loc >= 0xC000 && loc < 0xD000)) {
         return 0;
     }
     else {
