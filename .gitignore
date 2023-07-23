@@ -1,3 +1,17 @@
+.dirstamp
+aclocal.m4
+autom4te.cache
+build
+compile
+configure
+config.log
+config.status
+.deps
+depcomp
+install-sh
+missing
+Makefile
+Makefile.in
 trace.log
 cscope.out
 *.o

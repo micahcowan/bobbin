@@ -87,7 +87,7 @@ how_to_fetch() {
 file_present() {
     file=$1; shift
     sum=$1; shift
-    if test "x$(../src/sha256-verify "$file" 2>/dev/null)" = "x$sum"; then
+    if test "x$(../sha256-verify "$file" 2>/dev/null)" = "x$sum"; then
         warn "ROM $file already present, skipping."
         return 0
     else
@@ -126,7 +126,7 @@ fetch_file() {
         warn "*** DOWNLOAD FAILED: $file ***"
         status=1
         return 0;
-    elif test "x$(../src/sha256-verify tmprom)" != "x$sum"; then
+    elif test "x$(../sha256-verify tmprom)" != "x$sum"; then
         warn "*** BAD CHECKSUM: $file - DISCARDING ***"
         rm -f tmprom
         status=1
