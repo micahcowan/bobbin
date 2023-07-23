@@ -4,7 +4,9 @@ AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_FILES([
     Makefile
     src/Makefile
+    test/Makefile
+    test/tests6502/Makefile
 ])
 AC_PROG_CC
-SUBDIRS=src
+SUBDIRS=src test
 AC_OUTPUT

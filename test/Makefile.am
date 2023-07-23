@@ -1,0 +1,1 @@
+SUBDIRS = tests6502

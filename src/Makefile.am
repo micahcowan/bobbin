@@ -31,11 +31,6 @@ watch:
 	    inotifywait -e modify -r . ; \
 	done
 
-.PHONY: check-bobbin
-check: check-bobbin
-check-bobbin: bobbin 6502_functional_test.bin
-	BOBBIN_TEST=6502_functional_test.bin ./bobbin -m ][+ --iface simple
-
 6502_functional_test.bin: $(top_srcdir)/test/tests6502/6502_functional_test.ca65
 	$(MAKE) -C $(top_builddir)/test/tests6502/
 	cp  ../test/tests6502/$@ ./$@
