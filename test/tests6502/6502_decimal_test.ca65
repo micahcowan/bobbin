@@ -104,11 +104,11 @@ LOOP2:  lda N1    ; N1L = N1 & $0F
         jsr ADD
         jsr A6502
         jsr COMPARE
-        bne DONE
+        bne FAILURE
         jsr SUB
         jsr S6502
         jsr COMPARE
-        bne DONE
+        bne FAILURE
 NEXT1:  inc N1    ; [5] see text
         bne LOOP2 ; loop through all 256 values of N1
 NEXT2:  inc N2    ; [6] see text
@@ -117,8 +117,10 @@ NEXT2:  inc N2    ; [6] see text
         bpl LOOP1 ; loop through both values of the carry flag
         lda #0    ; test passed, so store 0 in ERROR
         sta ERROR
-DONE:   
-        end_of_test
+SUCCESS:
+        JMP $0002 ; bobbin treats as success during special testing mode
+FAILURE:
+        JMP $0001 ; bobbin treats as failure
            
 ; Calculate the actual decimal mode accumulator and flags, the accumulator
 ; and flag results when N1 is added to N2 using binary arithmetic, the
