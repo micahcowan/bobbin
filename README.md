@@ -41,11 +41,13 @@
 ## Building Bobbin / Getting Started
 
 ```
-$ cd src
+$ autoreconf --install
+$ ./configure
 $ make
 ```
 
-Bobbin has no external dependencies as of right now, though this will change in the near future.
+You must have GNU autoconf and automake installed for the `autoreconf`
+part to work
 Once it has built successfully, try:
 
 ```
