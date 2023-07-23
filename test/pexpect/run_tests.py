@@ -1,4 +1,5 @@
 from basics import *
+from asoft import *
 import pexpect
 import os
 import re
@@ -31,7 +32,7 @@ for test in tests:
     name = test.__name__
     name = spaces.sub(" ", name)
     print('%-30s' % name, end='')
-    p = pexpect.spawn('%s %s' % (BOBBIN, test.bobbin_args))
+    p = pexpect.spawn('%s %s' % (BOBBIN, test.bobbin_args), echo=False, encoding='ascii')
     p.timeout = 1
     ret = False
     try:

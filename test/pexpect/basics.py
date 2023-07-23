@@ -12,7 +12,7 @@ def no_args(p):
 %(bobbin)s: supported in this development version.\r
 %(bobbin)s: Try invoking with -m ][+ or -m plus\r
 %(bobbin)s: Exiting (2).\r
-""" % {"bobbin": BOBBIN}, p.before.decode('ascii'))
+""" % {"bobbin": BOBBIN}, p.before)
 
 @bobbin('-m plus')
 def m_plus_only(p):
@@ -24,7 +24,7 @@ def m_plus_only(p):
 %(bobbin)s: interface is not yet implemented in this development version.\r
 %(bobbin)s: Try invoking with --simple.\r
 %(bobbin)s: Exiting (2).\r
-""" % {"bobbin": BOBBIN}, p.before.decode('ascii'))
+""" % {"bobbin": BOBBIN}, p.before)
 
 @bobbin('-m plus --simple')
 def m_plus_simple(p):
@@ -38,14 +38,14 @@ def m_plus_simple(p):
  Ctrl-D at input to exit.]\r
 \r
 \r
-]""", p.before.decode('ascii'))
+]""", p.before)
 
 @bobbin('-m plus --simple -q')
 def m_plus_simple_q(p):
     got = p.expect([EOF, TIMEOUT])
     if got != 1:
         fail("got EOF")
-    return want_got("\r\n\r\n]", p.before.decode('ascii'))
+    return want_got("\r\n\r\n]", p.before)
 
 @bobbin('-m plus --simple -v')
 def m_plus_simple_v(p):
@@ -63,7 +63,7 @@ def m_plus_simple_v(p):
  Ctrl-D at input to exit.]\r
 \r
 \r
-]""" % {"bobbin": BOBBIN}, p.before.decode('ascii'))
+]""" % {"bobbin": BOBBIN}, p.before)
 
 @bobbin('-m plus --simple -v -v')
 def m_plus_simple_v_v(p):
@@ -82,4 +82,4 @@ def m_plus_simple_v_v(p):
  Ctrl-D at input to exit.]\r
 \r
 \r
-]""" % {"bobbin": BOBBIN}, p.before.decode('ascii'))
+]""" % {"bobbin": BOBBIN}, p.before)
