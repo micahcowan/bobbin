@@ -22,7 +22,6 @@ def pfail():
     status = 1
 
 os.environ['BOBBIN_ROMDIR'] = '../../src/roms'
-BOBBIN = '../../src/bobbin'
 
 for test in tests:
     print(test.__name__, end='')
@@ -39,8 +38,8 @@ for test in tests:
     except Exception as e:
         pfail()
         if (verbose):
-            #raise(e)
             print('----- %s FAILURE -----' % test.__name__)
+            print(type(e))
             print(str(e))
             print('-----')
 

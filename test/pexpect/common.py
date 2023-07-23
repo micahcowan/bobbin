@@ -8,6 +8,9 @@ import sys
 global tests
 tests = []
 
+global BOBBIN
+BOBBIN = '../../src/bobbin'
+
 def fail(s):
     raise Exception("FAILED: %s" % s)
 

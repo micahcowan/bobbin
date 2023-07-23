@@ -4,19 +4,18 @@ from common import *
 
 @bobbin
 def no_args(p):
-    p.expect(
+    p.expect(EOF)
+    global BOBBIN
+    wanted = (
 """\
-[^\n]*bobbin: Default machine type is \"//e\", but that type is not actually\r
-[^\n]*bobbin: supported in this development version.\r
-[^\n]*bobbin: Try invoking with -m ]\[\+ or -m plus\r
-[^\n]*bobbin: Exiting \(2\)\\.\r
-""")
-    if len(p.before) != 0:
-        fail("preceding output: %s" % p.before)
-    #p.expect(
-    got = p.expect(EOF)
-    if (len(p.before) != 0):
-        fail("succeeding output: %s" % p.before)
-    return True
+%(bobbin)s: Default machine type is \"//e\", but that type is not actually\r
+%(bobbin)s: supported in this development version.\r
+%(bobbin)s: Try invoking with -m ][+ or -m plus\r
+%(bobbin)s: Exiting (2).\r
+""" % {"bobbin": BOBBIN})
+    if wanted != p.before.decode('ascii'):
+        fail("wanted: %s\n\nGot:    %s\n" % (wanted,p.before))
+    else:
+        return True
 
 #@bobbin('
