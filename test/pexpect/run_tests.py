@@ -1,6 +1,7 @@
 from basics import *
 import pexpect
 import os
+import re
 
 global tests
 global status
@@ -23,9 +24,13 @@ def pfail():
 
 os.environ['BOBBIN_ROMDIR'] = '../../src/roms'
 
+spaces = re.compile("_")
+
+print()
 for test in tests:
-    print(test.__name__, end='')
-    print("\t\t", end='')
+    name = test.__name__
+    name = spaces.sub(" ", name)
+    print('%-30s' % name, end='')
     p = pexpect.spawn('%s %s' % (BOBBIN, test.bobbin_args))
     p.timeout = 1
     ret = False
