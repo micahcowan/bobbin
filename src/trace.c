@@ -7,7 +7,8 @@
 word current_instruction = 0;
 unsigned long long cycle_count = 0;
 
-FILE *trfile;
+const char *trfile_name = "trace.log";
+FILE *trfile = NULL;
 
 static int traceon = 0;
 
@@ -78,6 +79,15 @@ int trace_peek(word loc)
 void trace_on(char *format, ...)
 {
     va_list args;
+
+    if (trfile == NULL) {
+        trfile = fopen(trfile_name, "w");
+        if (trfile == NULL) {
+            perror("Couldn't open trace file");
+            exit(2);
+        }
+        setvbuf(trfile, NULL, _IOLBF, 0);
+    }
 
     fprintf(trfile, "\n\n~~~ TRACING STARTED: ");
     va_start(args, format);

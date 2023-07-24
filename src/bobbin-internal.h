@@ -231,6 +231,7 @@ extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 
 /********** TRACE **********/
 
+extern const char *trfile_name;
 extern FILE *trfile;
 
 extern word current_instruction;
