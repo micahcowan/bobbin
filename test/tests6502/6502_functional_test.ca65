@@ -748,7 +748,14 @@ data_bss_end:
         .CODE
         .org code_segment
         .P02            ; disable 65SC02, 65C02 and 65816 instructions
-start:  cld
+start:
+.if (load_data_direct = 1) & (ROM_vectors = 1)
+        ldx #<res_trap
+        stx $fffc
+        ldx #>res_trap
+        stx $fffd
+.endif
+        cld
         ldx #$ff
         txs
         lda #0          ;*** test 0 = initialize
@@ -6123,6 +6130,6 @@ vec_bss equ $fffa
         .segment "VECTORS"
         .org $fffa       ;vectors
         .word   nmi_trap
-        .word   res_trap
+        .word   start
         .word   irq_trap
     .endif
