@@ -31,7 +31,7 @@ static void load_test_code(void)
 
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
-    PREFIX "/share/bobbin/roms",
+    ROMSRCHDIR "/roms",
     "./roms",
 };
 static const char * const *romdirp = rom_dirs;

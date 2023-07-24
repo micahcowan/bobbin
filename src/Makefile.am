@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS=subdir-objects
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
-CPPFLAGS=-I$(PWD) -DPREFIX='"$(PREFIX)"'
+# XXX: ROMSRCHDIR should be decided in ./configure script
+ROMSRCHDIR=$(datarootdir)/$(PACKAGE_TARNAME)
+AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(ROMSRCHDIR)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
 bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c sha-256.c
