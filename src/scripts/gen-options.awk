@@ -16,7 +16,7 @@ BEGIN {
 
 STARTED && /^##### / {
     sub(/^##### /,"");
-    sub(/ \*arg\*$/,"");
+    sub(/ \*.*$/,"");
 
     # Extract a variable name.
     # From the first option, unless it's a single character.
@@ -38,10 +38,16 @@ STARTED && /^##### / {
     a = a-1 + match(substr($0,a), /[^-]/);
     name = toupper(substr($0,a,b-a));
     gsub(/-/,"_",name);
+    sub (/^NO_/,"",name);
     gsub(/, /,"\", \"");
     sub (/^/,"\"");
     sub (/$/,"\"");
     gsub(/"--*/,"\"");
+    match($0,/"/);
+    # Replace "no- at the start of (just) the first option
+    if (substr($0,RSTART,4) == "\"no-") {
+        sub("\"no-","\"")
+    }
     print "static AryOfStr " name "_OPT_NAMES[] = {"  $0 ", NULL};";
 }
 

@@ -60,7 +60,18 @@ NEED_DESC && !/^$/ {
 STARTED && /^##### / {
     NEED_DESC = 1;
     sub(/^##### /,"");
-    sub(/\*arg\*/,"ARG");
+    while(match($0,/\*[^*][^*]*\*/)) {
+        a = ""
+        if (RSTART != 0) {
+            a = substr($0,1,RSTART-1)
+        }
+        b = toupper(substr($0,RSTART+1,RLENGTH-2))
+        c = ""
+        if (RSTART+RLENGTH < length($0)) {
+            c = substr($0,RSTART+RLENGTH)
+        }
+        $0 = a b c
+    }
     OUTPUT = "  " $0;
 }
 

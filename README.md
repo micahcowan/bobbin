@@ -135,6 +135,28 @@ Alias for `--interface=simple`.
 
 #### Machine configuration options
 
+##### --no-rom
+
+Refrain from loading a ROM file into the upper address space.
+
+When this option is specified, `--load` *arg* must be used as well (else there is no code to be run), and the `-m`/`--machine` option is no longer required.
+
+Note that this option makes it possible to programatically change the contents of the `NMI`, `INT`, and `RESET` vectors at the extreme end of addressable space.
+
+##### --load *arg*
+
+Load the specified binary file into RAM.
+
+When this option is specified, the given file will be loaded into the emulated machine RAM. It will be loaded starting at the memory location given to the `--load-at` argument, or `$0000` if that option was not provided.
+
+Note that, if the loaded file overlaps ROM space (`$D000` thru `$FFFF`), the RAM in that space will not be accessible, unless the `--no-rom` option was given. Additionally, if program execution or memory reads breach the "soft switch" space at `$C000` thru `$C07F`, or slot space at `$C080` thru `$CFFF`, unexpected behavior may occur.
+
+##### --load-at *arg*
+
+RAM location to load file from `--load`.
+
+The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
+
 ##### --ram *arg*
 
 Select how much RAM is installed on the machine, in kilobytes.
@@ -156,6 +178,40 @@ This option applies when **bobbin**'s input has been redirected, say from a file
 `apple` (default), or `canonical`.
 
 See [](#choosing-your-flavor-of-input-mode-with---simple-input) below, for copious details about this option. The TL;DR of it is that `canonical` uses your terminal's (primitive) line-input processing when **bobbin** detects that the Apple \]\[ wants to read a line of input (as opposed to a single character), and `apple` (the default) defers to the emulated Apple computer's (equally primitive, yet distinctly different) line-input processing. This option has no effect while **bobbin** is not reading from a terminal.
+
+#### Diagnostics and Testing Options
+
+##### --die-on-brk
+
+Exit emulation with an error, if a BRK or illegal opcode is encountered.
+
+##### --trace-to *m*!*n*
+
+Trace N instructions before/including M.
+
+This feature is intended for use with the `--trap-failure` feature. If the failure trao is triggered, it will output the instruction number where it did. You can then plug that number into this option, followed by an exclamation point and the number of instructions *before* the number you gave, that should be logged to the trace file (`trace.log` by default; adjustable with `--trace-file`). As an example, if the failure traps at instruction *12564*, then `--trap-failure 12564!100` would start logging instructions, register values, and (explicit) memory accesses starting at instruction *12465*. If instruction *12564* is reached, the trace logging ends. If instruction *12564* does not trigger the failure trap, then execution will still continue, but no more information will be output to the trace-log file.
+
+This feature is used by **bobbin**'s build system to debug the emulator's correctness. It could also be used for Apple developers to examine unexpected behavior in their software via automated tests.
+
+##### --trace-file *arg*
+
+Trace log file to use instead of `trace.log`.
+
+##### --trap-failure *arg*
+
+Exit emulator with an error if execution reaches this location.
+
+The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with the message `*** REPORT ERROR ***`, report the current instruction number and CPU status, and exit with a non-zero status. It will also interpret the value of the byte at memory location `$200` as "the current case number", and report that as well (this behavior is used in the testing of **bobbin**'s emulation accuracy).
+
+Together with `--trap-success`, this option can be used to run automated tests on your Apple \]\[ code, since it will cause the emulator to exit with a suitable exit status.
+
+##### --trap-success *arg*
+
+Exit emulator, reporting success, if execution reaches this location.
+
+The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
+
+Together with `--trap-success`, this option can be used to run automated tests on your Apple \]\[ code, since it will cause the emulator to exit with a suitable exit status.
 
 <!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate

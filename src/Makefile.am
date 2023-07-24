@@ -35,8 +35,8 @@ watch:
 	$(MAKE) -C $(top_builddir)/test/tests6502/
 	cp  ../test/tests6502/$@ ./$@
 
-option-names.h: ../README.md scripts/gen-names.awk
-	$(AWK) -f $(srcdir)/scripts/gen-names.awk < $< > $@.out
+option-names.h: ../README.md scripts/gen-options.awk
+	$(AWK) -f $(srcdir)/scripts/gen-options.awk < $< > $@.out
 	mv $@.out $@
 
 help-text.h: ../README.md scripts/gen-help.awk
