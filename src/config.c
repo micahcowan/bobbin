@@ -12,7 +12,9 @@ Config cfg = {
     .interface = NULL,
     .machine = "//e",
     .amt_ram = 128 * 1024,
+    .load_rom = true,
     .simple_input_mode = "apple",
+    .die_on_brk = false,
 };
 
 typedef enum {
@@ -69,10 +71,12 @@ const OptInfo options[] = {
     { VV_OPT_NAMES, T_FUNCTION, &vv },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
+    { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
+    { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -189,7 +193,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         if (eq) *eq = '='; // put it back, in case it was an alias
                            //  and just  housekeeping
     }
-}
+} // do_config()
 
 void do_help(void)
 {

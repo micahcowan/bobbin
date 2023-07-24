@@ -83,12 +83,18 @@ typedef struct Config Config;
 struct Config {
     int squawk_level;
     const char *    interface;
+
+    // machine config optioons
     const char *    machine;
     size_t          amt_ram;
+    bool            load_rom;
 
     // "simple" interface config:
     bool            remain_after_pipe;
     const char *    simple_input_mode;
+
+    // trace stuff
+    bool            die_on_brk;
 };
 extern Config cfg;
 
@@ -144,8 +150,6 @@ static inline void go_to(word w) {
 }
 
 /********** MEMORY **********/
-
-extern const char *bobbin_test;
 
 extern void mem_init(void);
 extern byte peek(word loc);

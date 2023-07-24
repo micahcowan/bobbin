@@ -32,7 +32,7 @@ static void bobbin_hooks(void)
             do_rts();
             break;
         case 1:
-            fputs("*** REPORT ERROR ***\n", stderr);
+            fputs("*** ERROR TRAP REACHED ***\n", stderr);
             fprintf(stderr, "Cycle count: %llu\n", cycle_count);
             fprintf(stderr, "Failed testcase: %02X\n",
                     peek_sneaky(0x200));
@@ -60,8 +60,7 @@ void trace_instr(void)
         util_print_state(trfile);
     }
 
-    if (bobbin_test)
-        bobbin_hooks();
+    // bobbin_hooks()
 
     iface_step();
 }

@@ -1,5 +1,6 @@
 #include "bobbin-internal.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 Cpu theCpu;
@@ -969,6 +970,15 @@ void cpu_step(void)
         case 0x00: // BRK
         default:   // UNRECOGNIZED OPCODE (treat as BRK)
             {
+                if (cfg.die_on_brk) {
+                    DIE(0, "%s (--die-on-brk)\n",
+                        op == 0? "BRK" : "ILLEGAL OP");
+                    DIE(0, "  (CPU state follows.)\n");
+
+                    util_print_state(stderr);
+                    exit(3);
+                }
+
                 // XXX cycles and behavior not realistic
                 //  for non-break unsupported op-codes
                 PC_ADV;

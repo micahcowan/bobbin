@@ -144,7 +144,7 @@ void machine_init(void)
     }
     // Can compare == (instead of STREQ), because we have
     //  the original's pointer.
-    if (orig == ENHANCED_TAG) {
+    if (orig == ENHANCED_TAG && cfg.load_rom) {
         WARN("Default machine type is \"%s\", but that type is not actually\n",
              cfg.machine);
         WARN("supported in this development version.\n");

@@ -16,9 +16,6 @@ void bobbin_run(void)
     interfaces_start();
 
     cpu_reset();
-    if (bobbin_test) {
-        PC = 0x400;
-    }
 
     for (;;) /* ever */ {
         trace_instr();

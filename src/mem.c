@@ -110,11 +110,7 @@ void mem_init(void)
             membuf[z] = 0xFF;
     }
 
-    bobbin_test = getenv("BOBBIN_TEST");
-    if (bobbin_test) {
-        load_test_code();
-    }
-    else {
+    if (cfg.load_rom) {
         load_rom();
     }
 }
