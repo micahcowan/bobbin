@@ -13,6 +13,8 @@ Config cfg = {
     .machine = "//e",
     .amt_ram = 128 * 1024,
     .load_rom = true,
+    .ram_load_file = NULL,
+    .ram_load_loc = 0,
     .simple_input_mode = "apple",
     .die_on_brk = false,
 };
@@ -20,11 +22,12 @@ Config cfg = {
 typedef enum {
     T_BOOL = 0,
     T_STRING_ARG,
-    T_FUNCTION,
+    T_WORD_ARG,
     T_FN_ARG,
-    T_ALIAS,
+    T_FUNCTION,
     T_INCREMENT,
     T_INT_RESET,
+    T_ALIAS,
 } OptType;
 
 typedef struct OptInfo OptInfo;
@@ -72,6 +75,8 @@ const OptInfo options[] = {
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
+    { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
+    { LOAD_AT_OPT_NAMES, T_WORD_ARG, &cfg.ram_load_loc },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
@@ -135,6 +140,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         switch (info->type) {
             case T_STRING_ARG:
             case T_FN_ARG:
+            case T_WORD_ARG:
             if (!arg) {
                 // See if there's a following arg
                 ++v;
@@ -175,10 +181,23 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                 break;
             case T_ALIAS:
             {
-                // wTHis option is an alias for another one
+                // This option is an alias for another one
                 //  (most likely wth an arg). Restart for that.
                 opt = (char *)info->arg;
                 goto recheck;
+            }
+                break;
+            case T_WORD_ARG:
+            {
+                char *end;
+                if (arg[0] == '$') {
+                    ++arg;
+                }
+                word w = strtoul(arg, &end, 16);
+                if (*end != '\0') {
+                    DIE(2,"Garbage at end of arg to --%s.\n", opt);
+                }
+                (*(word *)info->arg) = w;
             }
                 break;
             case T_STRING_ARG:

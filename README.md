@@ -149,7 +149,14 @@ Load the specified binary file into RAM.
 
 When this option is specified, the given file will be loaded into the emulated machine RAM. It will be loaded starting at the memory location given to the `--load-at` argument, or `$0000` if that option was not provided.
 
-Note that, if the loaded file overlaps ROM space (`$D000` thru `$FFFF`), the RAM in that space will not be accessible, unless the `--no-rom` option was given. Additionally, if program execution or memory reads breach the "soft switch" space at `$C000` thru `$C07F`, or slot space at `$C080` thru `$CFFF`, unexpected behavior may occur.
+Note that, if the loaded file overlaps ROM space (`$D000` thru `$FFFF`), the RAM in that space will not be accessible, unless the `--no-rom` option was given, or appropriate soft switches are used to grant access to RAM at that space (not yet implemented). The same is true if `--ram` is used to limit the amount of available RAM below the end of the loaded contents (the file can't be loaded into RAM that isn't there!). If a file is loaded across the region reserved for soft switches and slotted peripherals, `$C000` thru `$CFFF`, it is diverted to an alternate RAM bank (the so-called "first 4k bank") at `$D000` thru `$DFFF`.
+
+A file's contents are mapped into RAM pretty much as one would expect: if a file is loaded into the start of RAM, at `$0000`, then all the locations in the file will correspond to the same loctions in RAM, *with the following exceptions*:
+
+- Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank.
+- File locations `$C000` thru `$CFFF`, and `$1C000` thru `$1CFFF`, are *not* mapped into their corrsponding locations in addressable memory as described in the previous bullet point, since RAM is never mapped to those locations (they are reserved for slotted peripheral firmware). They are instead mapped to the "alternate" 4k RAM banks ("main RAM bank 1" and "auxilliary RAM bank 2", respectively), which are accessed at region `$D000` thru `$DFFF` (but *only* when appropriate soft switches have been activated).
+
+If the file's contents would exceed the end of even auxilliary memory (128k), additional contents are silently discarded.
 
 ##### --load-at *arg*
 
@@ -161,9 +168,9 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 
 Select how much RAM is installed on the machine, in kilobytes.
 
-The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. (*Note: Language Card emulation is not yet implemented.*) If you specify 128k, then the top 64k of that will be used for so-called *auxilliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
+The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. (*Note: Language Card emulation is not yet implemented.*) If you specify 128k, then the top 64k of that will be used for so-called *auxiliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
 
-Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxilliary memory are implemented yet.
+Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxiliary memory are implemented yet.
 
 #### "Simple" interface options
 

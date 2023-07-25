@@ -88,6 +88,8 @@ struct Config {
     const char *    machine;
     size_t          amt_ram;
     bool            load_rom;
+    const char *    ram_load_file;
+    word            ram_load_loc;
 
     // "simple" interface config:
     bool            remain_after_pipe;

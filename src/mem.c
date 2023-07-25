@@ -10,24 +10,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-const char *bobbin_test;
-
 // Enough of a RAM buffer to provide 128k
+//  Note: memory at 0xC000 thru 0xCFFF, and 0x1C000 thru 0x1CFFF,
+//  are read at alternate banks of RAM for locations $D000 - $DFFF
 static byte membuf[128 * 1024];
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
-
-static void load_test_code(void)
-{
-    FILE *tf = fopen(bobbin_test, "r");
-    if (!tf) {
-        perror("Couldn't open BOBBIN_TEST file");
-        exit(2);
-    }
-
-    (void) fread(membuf, 1, 64 * 1024, tf);
-}
 
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
@@ -102,16 +91,54 @@ static void load_rom(void)
     validate_rom(rombuf, 12 * 1024);
 }
 
+static void load_ram(void)
+{
+    errno = 0;
+    FILE *file = fopen(cfg.ram_load_file, "rb");
+    if (file == NULL) {
+        DIE(1, "Couldn't open --load file \"%s\": %s\n",
+            cfg.ram_load_file, strerror(errno));
+    }
+
+    errno = 0;
+    size_t rb = fread(&membuf[cfg.ram_load_loc], 1,
+                      (sizeof membuf) - cfg.ram_load_loc, file);
+    int err = errno;
+    if (ferror(file)) {
+        DIE(1, "Error reading from --load file \"%s\": %s\n",
+            cfg.ram_load_file, strerror(err));
+    }
+
+    INFO("%zu bytes read into RAM from file \"%s\",\n",
+         (size_t)rb, cfg.ram_load_file);
+    INFO("  starting at memory location $%04X.\n",
+         (unsigned int)cfg.ram_load_loc);
+    // Warning, this ^ is a lie for some values ($C000 - $CFFF), and
+    //  aux mem locations
+
+    fclose(file);
+}
+
 void mem_init(void)
 {
+    if (cfg.ram_load_loc >= sizeof membuf) {
+        DIE(2, "--load-at value must be less than $20000 (128k).\n");
+    }
+
     /* Immitate the on-boot memory pattern. */
-    for (size_t z=0; z != ((sizeof membuf)/(sizeof membuf[0])); ++z) {
+    for (size_t z=0; z != sizeof membuf; ++z) {
         if (!(z & 0x2))
             membuf[z] = 0xFF;
     }
 
     if (cfg.load_rom) {
         load_rom();
+    } else if (cfg.ram_load_file == NULL) {
+        DIE(2, "--no-rom given, but not --load!\n");
+    }
+
+    if (cfg.ram_load_file != NULL) {
+        load_ram();
     }
 }
 
@@ -135,7 +162,8 @@ byte peek_sneaky(word loc)
     if (rombuf && loc >= 0xD000) {
         return rombuf[loc - 0xD000];
     }
-    else if (loc >= cfg.amt_ram || (loc >= 0xC000 && loc < 0xD000)) {
+    else if ((loc >= cfg.amt_ram && loc < 0xC000)
+             || (loc >= 0xC000 && loc < 0xD000)) {
         return 0;
     }
     else {
