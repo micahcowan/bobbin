@@ -129,7 +129,7 @@ void cpu_reset(void)
         if (test) { \
             word offset = SE(immed); \
             word addr = PC + offset; \
-            go_to(WORD(HI(PC), LO(addr))); \
+            go_to(WORD(LO(addr), HI(PC))); \
             cycle(); /* 3 */\
             (void) peek(PC); \
             if (PC != addr) { \
