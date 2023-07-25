@@ -1,9 +1,12 @@
 #include "bobbin-internal.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 Cpu theCpu;
+
+uintmax_t instr_count = 0;
 
 void cpu_reset(void)
 {
@@ -1000,4 +1003,6 @@ void cpu_step(void)
             }
             break;
     }
+
+    ++instr_count;
 }

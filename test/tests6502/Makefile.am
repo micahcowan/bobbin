@@ -16,8 +16,11 @@ all:
 check: $(OBJS) $(BOBBIN_TARGETS)
 	set -e; \
 	if test "$(CA65)" != ":" -a "$(LD65)" != ":"; then \
-	    BOBBIN_TEST=6502_decimal_test.bin BOBBIN_ROMDIR=$(top_builddir)/src/roms $(top_builddir)/src/bobbin -m ][+ --iface simple </dev/null; \
-	    BOBBIN_TEST=6502_functional_test.bin BOBBIN_ROMDIR=$(top_builddir)/src/roms $(top_builddir)/src/bobbin -m ][+ --iface simple </dev/null; \
+	    echo '*** 6502 DECIMAL TESTS: ***'; \
+	    $(top_builddir)/src/bobbin --iface simple --no-rom --load=6502_decimal_test.bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null; \
+	    echo; \
+	    echo '*** 6502 FUNCTIONAL TESTS: ***'; \
+	    $(top_builddir)/src/bobbin --iface simple --no-rom --load=6502_functional_test.bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null; \
 	else \
 	    exec 2>&1; \
 	    echo; echo '***' No ca65. Skipping opcode tests.; \

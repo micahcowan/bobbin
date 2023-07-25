@@ -353,3 +353,9 @@ S6502:      jsr SUB1
             rts
 
         .endif
+
+.segment "VECTORS"
+.org $fffa       ;vectors
+.word   0000
+.word   TEST
+.word   0000

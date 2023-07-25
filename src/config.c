@@ -1,7 +1,10 @@
 #include "bobbin-internal.h"
 
 #include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +20,11 @@ Config cfg = {
     .ram_load_loc = 0,
     .simple_input_mode = "apple",
     .die_on_brk = false,
+    .trace_file = "trace.log",
+    .trace_start = 0,
+    .trace_end = 0,
+    .trap_success_on = false,
+    .trap_failure_on = false,
 };
 
 typedef enum {
@@ -66,6 +74,8 @@ void do_help(void);
 struct fn help = {do_help};
 void do_ram(const char *s);
 struct fnarg ramfn = {do_ram};
+void do_trace_to(const char *s);
+struct fnarg trace_to_fn = {do_trace_to};
 
 const OptInfo options[] = {
     { HELP_OPT_NAMES, T_FUNCTION, &help },
@@ -82,6 +92,10 @@ const OptInfo options[] = {
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
+    { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
+    { TRACE_TO_OPT_NAMES, T_FN_ARG, &trace_to_fn },
+    { TRAP_FAILURE_OPT_NAMES, T_WORD_ARG, &cfg.trap_failure },
+    { TRAP_SUCCESS_OPT_NAMES, T_WORD_ARG, &cfg.trap_success },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -134,6 +148,8 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
             const char *yesopt = opt + 2;
             while (*yesopt == '-') ++yesopt;
             info = find_option(yesopt);
+            if (info->type != T_BOOL)
+                info = NULL;
         }
         if (!info) DIE(2, "Unknown option \"--%s\".\n", opt);
 
@@ -193,11 +209,21 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                 if (arg[0] == '$') {
                     ++arg;
                 }
+                errno = 0;
                 word w = strtoul(arg, &end, 16);
                 if (*end != '\0') {
                     DIE(2,"Garbage at end of arg to --%s.\n", opt);
+                } else if (errno == ERANGE || errno == EINVAL) {
+                    DIE(2,"Could not parse numeric arg to --%s.\n", opt);
                 }
                 (*(word *)info->arg) = w;
+
+                // Special-case handling to indicate option was set
+                if (((word *)info->arg) == &cfg.trap_success) {
+                    cfg.trap_success_on = true;
+                } else if (((word *)info->arg) == &cfg.trap_failure) {
+                    cfg.trap_failure_on = true;
+                }
             }
                 break;
             case T_STRING_ARG:
@@ -226,6 +252,7 @@ void do_ram(const char *v) {
                         // but that args to tolower() must be an int value.
                         // "epresentable as an unsigned char". So this is
                         // me trying to be pedantically safe.
+    errno = 0;
     size_t amt = strtoul(v, &end_, 10);
     end = (unsigned char *)end_;
 
@@ -241,6 +268,8 @@ void do_ram(const char *v) {
         DIE(0, "Unrecognized characters \"%s\" following (possibly empty)\n",
             end_);
         DIE(2, " numeric portion, in argument to --ram.\n");
+    } else if (errno == ERANGE || errno == EINVAL) {
+        DIE(2,"Could not parse numeric arg to --ram.\n");
     }
 
     if (amt < 4
@@ -257,4 +286,31 @@ void do_ram(const char *v) {
     }
 
     cfg.amt_ram = amt * 1024;
+}
+
+void do_trace_to(const char *arg) {
+    char *end;
+    errno = 0;
+    cfg.trace_end = strtoumax(arg, &end, 10);
+    if (errno == ERANGE || errno == EINVAL || cfg.trace_end == UINTMAX_MAX) {
+        DIE(2, "Couldn't parse numeric arg to --trace-to.\n");
+    }
+    if (*end == '\0') {
+        cfg.trace_start = cfg.trace_end - 255;
+    } else if (*end == '!') {
+        arg = end + 1;
+        errno = 0;
+        unsigned long count = strtoul(arg, &end, 10);
+        if (errno == ERANGE || errno == EINVAL || count == 0) {
+            DIE(2, "Couldn't parse numeric arg to --trace-to (after !).\n");
+        }
+        if (*end != '\0') {
+            DIE(2,"Garbage at end of arg to --trace-to.\n");
+        }
+        cfg.trace_start = cfg.trace_end - (count - 1);
+    } else {
+        DIE(2,"Garbage at end of arg to --trace-to.\n");
+    }
+
+    ++cfg.trace_end;
 }

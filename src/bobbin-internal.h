@@ -97,6 +97,13 @@ struct Config {
 
     // trace stuff
     bool            die_on_brk;
+    const char *    trace_file;
+    uintmax_t       trace_start;
+    uintmax_t       trace_end;
+    bool            trap_success_on;
+    word            trap_success;
+    bool            trap_failure_on;
+    word            trap_failure;
 };
 extern Config cfg;
 
@@ -263,8 +270,9 @@ extern int util_isprint(int c);
 
 /* TBD */
 extern word print_disasm(FILE *f, word pos, Registers *regs);
-extern unsigned long long cycle_count;
-static inline void cycle(void) { ++cycle_count; }
+extern uintmax_t cycle_count;
+extern uintmax_t instr_count;
+static inline void cycle(void) { /* ++cycle_count; */ }
 extern sig_atomic_t sigint_received;
 extern const char *default_romfname;
 extern bool validate_rom(unsigned char *buf, size_t sz);

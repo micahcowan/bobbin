@@ -769,7 +769,7 @@ test_num .set 0
 
 ;initialize I/O for report channel
     .if report = 1
-        jsr report_init
+        ; jsr report_init
     .endif
 
 ;pretest small branch offset

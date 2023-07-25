@@ -192,9 +192,9 @@ See [](#choosing-your-flavor-of-input-mode-with---simple-input) below, for copio
 
 Exit emulation with an error, if a BRK or illegal opcode is encountered.
 
-##### --trace-to *m*!*n*
+##### --trace-to *m*\[!*n*\]
 
-Trace N instructions before/including M.
+Trace N instructions before/including M (default N = 256).
 
 This feature is intended for use with the `--trap-failure` feature. If the failure trao is triggered, it will output the instruction number where it did. You can then plug that number into this option, followed by an exclamation point and the number of instructions *before* the number you gave, that should be logged to the trace file (`trace.log` by default; adjustable with `--trace-file`). As an example, if the failure traps at instruction *12564*, then `--trap-failure 12564!100` would start logging instructions, register values, and (explicit) memory accesses starting at instruction *12465*. If instruction *12564* is reached, the trace logging ends. If instruction *12564* does not trigger the failure trap, then execution will still continue, but no more information will be output to the trace-log file.
 
