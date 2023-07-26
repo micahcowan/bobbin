@@ -222,7 +222,7 @@ static void iface_simple_init(void)
     const char *s = cfg.simple_input_mode;
     if (STREQ(s, "apple")) {
         input_mode = IM_APPLE;
-    } else if (STREQ(s, "canonical")) {
+    } else if (STREQ(s, "canonical") || STREQ(s, "fgets")) {
         input_mode = IM_CANON;
     } else {
         DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
