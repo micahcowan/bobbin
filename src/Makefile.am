@@ -5,13 +5,16 @@ ROMSRCHDIR=$(datarootdir)/$(PACKAGE_TARNAME)
 AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(ROMSRCHDIR)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
-bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c sha-256.c
+bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c sha-256.c sha-256.h bobbin-internal.h
 sha256_verify_SOURCES=sha256-verify.c sha-256.c
 bin_PROGRAMS=bobbin
 noinst_PROGRAMS=sha256-verify
 BUILT_SOURCES = option-names.h machine-names.h help-text.h
+EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
+	     scripts/gen-machines.awk scripts/check-options.awk \
+	     roms/fetch-roms.sh
 CLEANFILES = $(BUILT_SOURCES)
-DISTCLEANFILES = roms/*.rom
+DISTCLEANFILES = roms/*.rom cscope.out trace.log
 
 all: do-fetch-roms
 

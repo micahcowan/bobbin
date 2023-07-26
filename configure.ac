@@ -1,4 +1,4 @@
-AC_INIT([bobbin], [v0.1.1-dev], [micah@addictivecode.org])
+AC_INIT([bobbin], [v0.2.1-dev], [micah@addictivecode.org])
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE([foreign])
 AC_PROG_CC

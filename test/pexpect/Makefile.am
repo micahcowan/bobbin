@@ -1,4 +1,4 @@
-noinst_PYTHON = basics.py common.py run_tests.py
+noinst_PYTHON = basics.py asoft.py common.py run_tests.py
 BOBBIN_TARGETS = $(top_builddir)/src/bobbin $(top_builddir)/src/fetch-roms
 DISTCLEANFILES = $(noinst_PYTHON:.py=.pyc)
 all:
