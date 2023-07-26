@@ -1,4 +1,5 @@
 #include "bobbin-internal.h"
+#include "bobbin-readline.h"
 
 #include <errno.h>
 #include <fcntl.h> // open()
@@ -21,7 +22,7 @@ static bool eof_found = 0;
 static enum {
     IM_APPLE = 0,
     IM_CANON,
-    // IM_GETLINE, // future GNU getline() feature??
+    IM_READLINE,
 } input_mode;
 
 enum mon_rom_check_status {
@@ -29,16 +30,17 @@ enum mon_rom_check_status {
     MON_ROM_IS_WOZ,
     MON_ROM_NOT_WOZ,
 };
-bool mon_entered = false;
+static bool mon_entered = false;
 
-unsigned char linebuf[256];
-unsigned char *lbuf_start = linebuf;
-unsigned char *lbuf_end = linebuf;
+static unsigned char linebuf[256];
+static unsigned char *lbuf_start = linebuf;
+static unsigned char *lbuf_end = linebuf;
+static char *readline_line = NULL;
 
 #define OS_SUPPRESS_NONE    0
 #define OS_SUPPRESS_CR      1
 #define OS_SUPPRESS_ALL     2
-int output_suppressed = OS_SUPPRESS_NONE;
+static int output_suppressed = OS_SUPPRESS_NONE;
 
 static void restore_term(void)
 {
@@ -140,9 +142,9 @@ int read_char(void)
     } else if (lbuf_start < lbuf_end) {
         // We have chars left from a buffered read, grab the next
         //  from that.
-        if (*lbuf_start == '\n')
-            set_noncanon(); // may have just finished a GETLN
         c = util_fromascii(*lbuf_start);
+        if (c == '\x8D' /* CR */)
+            set_noncanon(); // may have just finished a GETLN
     } else {
         errno = 0;
         ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
@@ -197,6 +199,29 @@ int read_char(void)
     return c;
 }
 
+void do_readline(void)
+{
+    if (lbuf_start != lbuf_end)
+        return; // There are still chars left to read in the buffer
+
+    set_canon(); // Mostly just to get echo back; readline do non-canon.
+    if (readline_line != NULL) {
+        free(readline_line);
+    }
+    readline_line = readline(NULL);
+    if (readline_line == NULL) {
+        lbuf_start = lbuf_end =linebuf;
+        *lbuf_end++ - '\r'; // give 'em a fake char to consume
+        eof_found = true;
+    } else {
+        size_t len = strlen(readline_line);
+        lbuf_start = (unsigned char *)readline_line;
+        lbuf_end = lbuf_start + len;
+        (*lbuf_end++) = '\r'; // Replace NUL char with carriage return
+    }
+    set_noncanon();
+}
+
 void consume_char(void)
 {
     if (eof_found) {
@@ -224,6 +249,13 @@ static void iface_simple_init(void)
         input_mode = IM_APPLE;
     } else if (STREQ(s, "canonical") || STREQ(s, "fgets")) {
         input_mode = IM_CANON;
+    } else if (STREQ(s, "readline")) {
+#ifdef HAVE_LIBREADLINE
+        input_mode = IM_READLINE;
+#else
+        DIE(0,"--simple-input readline:\n");
+        DIE(2,"  readline() support not configured in this build.\n");
+#endif
     } else {
         DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
     }
@@ -337,6 +369,12 @@ static void iface_simple_step(void)
                 //  instead of the Apple ]['s built-in handling
                 suppress_output();
                 set_canon();
+            }
+            else if (input_mode == IM_READLINE) {
+                // Use readline()
+                //  instead of the Apple ]['s built-in handling
+                suppress_output();
+                do_readline();
             }
             break;
         case 0xFD67:
