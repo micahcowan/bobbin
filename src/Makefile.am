@@ -33,6 +33,12 @@ watch:
 	    inotifywait -e modify -r . ; \
 	done
 
+check: ck-options-impl
+
+.PHONY: ck-options-impl
+ck-options-impl: option-names.h $(srcdir)/config.c
+	cat option-names.h $(srcdir)/config.c | $(AWK) -f $(srcdir)/scripts/check-options.awk
+
 option-names.h: ../README.md scripts/gen-options.awk
 	$(AWK) -f $(srcdir)/scripts/gen-options.awk < $< > $@.out
 	mv $@.out $@
