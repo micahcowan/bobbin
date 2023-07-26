@@ -151,6 +151,11 @@ extern Cpu theCpu;
                                    | (!!(val) << flag))))
 #define PTEST(flag)     (!!(PFLAGS & PMASK(flag)))
 
+#define RPGET(p, flag)      (!!((p) & PMASK(flag)))
+#define RPPUT(p, flag, val) ((void)((p) = (((p) & ~PMASK(flag)) \
+                                   | (!!(val) << flag))))
+#define RPTEST(p, flag)     (!!((p) & PMASK(flag)))
+
 extern void cpu_reset(void);
 extern void cpu_step(void);
 

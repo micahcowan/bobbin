@@ -380,33 +380,44 @@ static inline void do_adc(byte val)
     }
 }
 
-static inline void do_sbc(byte val)
+static void do_sbc_seq3(byte val, Registers *reg)
+{
+    byte diffL = (reg->a & 0xF) - (val & 0xF) - !RPGET(reg->p, PCARRY);
+    if (diffL & 0x10) diffL -= 6;
+    byte diffH = (reg->a >> 4) - (val >> 4) - ((diffL & 0x80) != 0);
+    if (diffH & 0x10) diffH -= 6;
+
+    reg->a = LO(((diffH << 4) | (diffL & 0xF)));
+}
+
+static void do_sbc_bin(byte val, Registers *reg)
+{
+    word diff = reg->a - val - !PGET(PCARRY);
+    RPPUT(reg->p, PNEG, diff & 0x80);
+    int v = ((0x80 & reg->a) != (0x80 & val)) && ((0x80 & reg->a) != (0x80 & diff));
+    RPPUT(reg->p, POVERFL, v);
+    RPPUT(reg->p, PZERO, LO(diff) == 0);
+    int borrow = (reg->a < val) || (reg->a == val && !RPGET(reg->p, PCARRY));
+    RPPUT(reg->p, PCARRY, !borrow);
+    reg->a = LO(diff);
+}
+
+static void do_sbc(byte val)
 {
     if (PTEST(PDEC)) {
-        byte diffL = (ACC & 0xF) - (val & 0xF) - !PGET(PCARRY);
-        if (diffL & 0x10) diffL -= 6;
-        byte diffH = (ACC >> 4) - (val >> 4) - ((diffL & 0x80) != 0);
-        if (diffH & 0x10) diffH -= 6;
+        // 6502 BCD SBC implementation based on
+        //  http://www.6502.org/tutorials/decimal_mode.html
+        //
+        Registers decReg = theCpu.regs;
+        do_sbc_seq3(val, &decReg);
 
-        word diff = ACC - val - !PGET(PCARRY);
-        PPUT(PNEG, diff & 0x80);
-        int v = ((0x80 & ACC) == (0x80 & NEG(val))) && ((0x80 & ACC) != (0x80 & diff));
-        PPUT(POVERFL, v);
-        PPUT(PZERO, LO(diff) == 0);
-        int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
-        PPUT(PCARRY, !borrow);
+        Registers binReg = theCpu.regs;
+        do_sbc_bin(val, &binReg);
 
-        ACC = LO(((diffH << 4) | (diffL & 0xF)));
+        theCpu.regs.a = decReg.a;
+        theCpu.regs.p = binReg.p;
     } else {
-        word diff = ACC - val - !PGET(PCARRY);
-        PPUT(PNEG, diff & 0x80);
-        //int v = ((0x80 & ACC) == (0x80 & NEG(val))) && ((0x80 & ACC) != (0x80 & diff));
-        int v = ((0x80 & ACC) != (0x80 & val)) && ((0x80 & ACC) != (0x80 & diff));
-        PPUT(POVERFL, v);
-        PPUT(PZERO, LO(diff) == 0);
-        int borrow = (ACC < val) || (ACC == val && !PGET(PCARRY));
-        PPUT(PCARRY, !borrow);
-        ACC = LO(diff);
+        do_sbc_bin(val, &theCpu.regs);
     }
 }
 
