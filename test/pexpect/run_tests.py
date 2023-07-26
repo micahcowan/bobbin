@@ -5,6 +5,7 @@ import os
 import re
 
 global tests
+global only_test
 global status
 
 verbose = False
@@ -28,10 +29,13 @@ os.environ['BOBBIN_ROMDIR'] = '../../src/roms'
 spaces = re.compile("_")
 
 print()
+if len(only_test) != 0:
+    tests = only_test
 for test in tests:
     name = test.__name__
     name = spaces.sub(" ", name)
-    print('%-30s' % name, end='')
+    m = test.__module__
+    print('%-40s' % (m + ": " + name), end='')
     p = pexpect.spawn('%s %s' % (BOBBIN, test.bobbin_args), echo=False, encoding='ascii')
     p.timeout = 1
     ret = False

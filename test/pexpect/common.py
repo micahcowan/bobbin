@@ -6,10 +6,12 @@ from pexpect.replwrap import REPLWrapper
 import pexpect
 import re
 import sys
-from difflib import context_diff
+from difflib import unified_diff
 
 global tests
 tests = []
+global only_test
+only_test = []
 
 global BOBBIN
 BOBBIN = '../../src/bobbin'
@@ -26,11 +28,16 @@ def commandck(repl, cmd, want):
 def want_got(want, got):
     if want != got:
         fail("Got/want mismatch:\n%s\n" %
-                ''.join(context_diff(got.splitlines(True),want.splitlines(True))))
+                ''.join(unified_diff(want.splitlines(True),got.splitlines(True))))
     return True
 
 def fail(s):
     raise Exception("FAILED: %s" % s)
+
+# fn decorator to select only this test to be run
+def only(fn):
+    only_test.append(fn)
+    return fn
 
 # fn decorator to choose bobbin args and register the test
 def bobbin(*args):

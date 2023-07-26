@@ -1,6 +1,10 @@
 noinst_PYTHON = basics.py common.py run_tests.py
 BOBBIN_TARGETS = $(top_builddir)/src/bobbin $(top_builddir)/src/fetch-roms
+DISTCLEANFILES = $(noinst_PYTHON:.py=.pyc)
 all:
+
+distclean-local:
+	rm -fr __pycache__
 
 check: $(BOBBIN_TARGETS)
 	if test '$(PYTHON)' != : ; then \
