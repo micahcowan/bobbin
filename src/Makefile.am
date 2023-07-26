@@ -10,7 +10,7 @@ sha256_verify_SOURCES=sha256-verify.c sha-256.c
 bin_PROGRAMS=bobbin
 noinst_PROGRAMS=sha256-verify
 BUILT_SOURCES = option-names.h machine-names.h help-text.h
-CLEANFILES = $(BUILT_SOURCES) 6502_functional_test.bin
+CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = roms/*.rom
 
 all: do-fetch-roms
@@ -32,10 +32,6 @@ watch:
 	    echo; \
 	    inotifywait -e modify -r . ; \
 	done
-
-6502_functional_test.bin: $(top_srcdir)/test/tests6502/6502_functional_test.ca65
-	$(MAKE) -C $(top_builddir)/test/tests6502/
-	cp  ../test/tests6502/$@ ./$@
 
 option-names.h: ../README.md scripts/gen-options.awk
 	$(AWK) -f $(srcdir)/scripts/gen-options.awk < $< > $@.out
