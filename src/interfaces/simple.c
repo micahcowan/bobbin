@@ -1,4 +1,7 @@
 #include "bobbin-internal.h"
+#ifdef HAVE_LIBEDITLINE
+#include <histedit.h>
+#endif
 
 #include <errno.h>
 #include <fcntl.h> // open()
@@ -21,7 +24,7 @@ static bool eof_found = 0;
 static enum {
     IM_APPLE = 0,
     IM_CANON,
-    // IM_GETLINE, // future GNU getline() feature??
+    IM_EDITLINE,
 } input_mode;
 
 enum mon_rom_check_status {
@@ -29,16 +32,20 @@ enum mon_rom_check_status {
     MON_ROM_IS_WOZ,
     MON_ROM_NOT_WOZ,
 };
-bool mon_entered = false;
+static bool mon_entered = false;
 
-unsigned char linebuf[256];
-unsigned char *lbuf_start = linebuf;
-unsigned char *lbuf_end = linebuf;
+static unsigned char linebuf[256];
+static unsigned char *lbuf_start = linebuf;
+static unsigned char *lbuf_end = linebuf;
+static const char *editline_line = NULL;
+#ifdef HAVE_LIBEDITLINE
+EditLine *eldata = NULL;
+#endif
 
 #define OS_SUPPRESS_NONE    0
 #define OS_SUPPRESS_CR      1
 #define OS_SUPPRESS_ALL     2
-int output_suppressed = OS_SUPPRESS_NONE;
+static int output_suppressed = OS_SUPPRESS_NONE;
 
 static void restore_term(void)
 {
@@ -114,6 +121,17 @@ static void set_interactive(void)
 
     set_noncanon();
 
+#ifdef HAVE_LIBEDITLINE
+    if (input_mode == IM_EDITLINE) {
+        errno = 0;
+        FILE *f = fdopen(inputfd, "r");
+        if (f == NULL) {
+            DIE(1,"fdopen: %s\n", strerror(errno));
+        }
+        eldata = el_init("Bobbin", f, stdout, stderr);
+    }
+#endif
+
     // Not a warning... but we really want the user to see this by
     // default. They can shut it up with --quiet
     if (WARN_OK) {
@@ -140,9 +158,9 @@ int read_char(void)
     } else if (lbuf_start < lbuf_end) {
         // We have chars left from a buffered read, grab the next
         //  from that.
-        if (*lbuf_start == '\n')
-            set_noncanon(); // may have just finished a GETLN
         c = util_fromascii(*lbuf_start);
+        if (c == '\x8D' /* CR */)
+            set_noncanon(); // may have just finished a GETLN
     } else {
         errno = 0;
         ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
@@ -197,6 +215,35 @@ int read_char(void)
     return c;
 }
 
+void do_editline(void)
+{
+#ifdef HAVE_LIBEDITLINE
+    if (lbuf_start != lbuf_end)
+        return; // There are still chars left to read in the buffer
+
+    set_canon(); // Mostly just to get echo back; editline does non-canon.
+    int count;
+    editline_line = el_gets(eldata, &count);
+    if (editline_line != NULL) {
+        if (count > (sizeof linebuf)-(sizeof((char)'\r'))) {
+            // FIXME: should complain about this truncation
+            count = (sizeof linebuf)-1;
+        }
+        memcpy(linebuf, editline_line, count);
+        lbuf_start = (unsigned char *)editline_line;
+        lbuf_end = lbuf_start + count;
+        (*lbuf_end++) = '\r'; // Replace NUL char with carriage return
+    } else if (count < 0) {
+        // error occurred (probably EOF?)
+        // FIXME: should distinguish those
+        lbuf_start = lbuf_end =linebuf;
+        *lbuf_end++ - '\r'; // give 'em a fake char to consume
+        eof_found = true;
+    }
+    set_noncanon();
+#endif // HAVE_LIBEDITLINE
+}
+
 void consume_char(void)
 {
     if (eof_found) {
@@ -224,6 +271,13 @@ static void iface_simple_init(void)
         input_mode = IM_APPLE;
     } else if (STREQ(s, "canonical") || STREQ(s, "fgets")) {
         input_mode = IM_CANON;
+    } else if (STREQ(s, "editline")) {
+#ifdef HAVE_LIBEDITLINE
+        input_mode = IM_EDITLINE;
+#else
+        DIE(0,"--simple-input editline:\n");
+        DIE(2,"  editline() support not configured in this build.\n");
+#endif
     } else {
         DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
     }
@@ -337,6 +391,12 @@ static void iface_simple_step(void)
                 //  instead of the Apple ]['s built-in handling
                 suppress_output();
                 set_canon();
+            }
+            else if (input_mode == IM_EDITLINE) {
+                // Use editline()
+                //  instead of the Apple ]['s built-in handling
+                suppress_output();
+                do_editline();
             }
             break;
         case 0xFD67:

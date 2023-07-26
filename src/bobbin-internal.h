@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ac-config.h"
+
 typedef uint16_t    word;
 typedef uint8_t     byte;
 

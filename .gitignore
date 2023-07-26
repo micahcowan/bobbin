@@ -18,6 +18,9 @@ cscope.out
 *.o
 *.rom
 *.ROM
+src/ac-config.h
+src/ac-config.h.in~
+src/stamp-h1
 src/bobbin
 src/sha256-verify
 src/6502*.bin
