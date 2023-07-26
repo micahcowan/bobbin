@@ -50,7 +50,7 @@ void trace_instr(void)
     }
 
     if (traceon) {
-        fputc('\n', trfile);
+        fprintf(trfile, "%79ju\n", instr_count);
         util_print_state(trfile);
     }
 
