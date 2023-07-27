@@ -63,18 +63,22 @@ void debugger(void)
             fputs("Continuing...\n", dbg_outf);
             debugging_flag = false;
             break;
-#if 0 // WIP
         case 'm':
             // Swap ourselves out for the built-in Apple II system
             // monitor!
             fputs("Switching to monitor...\n", dbg_outf);
             // Behave as if it were a BRK.
             // Push stuff to stack...
-
-            go_to(MON_BREAK);
+            stack_push_sneaky(HI(PC));
+            stack_push_sneaky(LO(PC));
+            stack_push_sneaky(PFLAGS | PMASK(PUNUSED) | PMASK(PBRK));
+            go_to(WORD(peek_sneaky(VEC_BRK),peek_sneaky(VEC_BRK+1)));
+            // ^ Note: some autostart ROMs have
+            // OLDRST instead of BREAK, in VEC_BRK, with the result that
+            // PC and the other registers will NOT be printed on entry
+            // into the system monitor.
             debugging_flag = false;
             break;
-#endif
         case 'q':
             fputs("Exiting.\n", dbg_outf);
             exit(0);

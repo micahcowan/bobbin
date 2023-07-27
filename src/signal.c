@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-sig_atomic_t sigint_received = 0;
+volatile sig_atomic_t sigint_received = 0;
 
 void handle_term(int s)
 {

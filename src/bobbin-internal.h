@@ -10,15 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "apple2.h"
+
 typedef uint16_t    word;
 typedef uint8_t     byte;
 
 #define STREQ(a, b) (!strcmp(a, b))
-
-#define LOC_NMI     0xFFFA
-#define LOC_RESET   0xFFFC
-#define LOC_IRQ     0xFFFE
-#define LOC_BRK     LOC_IRQ
 
 #define BYTE(b)         ((b) & 0xFF)
 #define WORD(lo, hi)    (0xFFFF & ((BYTE(hi) << 8) | BYTE(lo)))
@@ -180,9 +177,19 @@ static inline byte stack_get(void)
     return peek(STACK);
 }
 
+static inline byte stack_get_sneaky(void)
+{
+    return peek(STACK);
+}
+
 static inline void stack_put(byte val)
 {
     poke(STACK, val);
+}
+
+static inline void stack_put_sneaky(byte val)
+{
+    poke_sneaky(STACK, val);
 }
 
 static inline byte stack_inc(void)
@@ -201,6 +208,12 @@ static inline void stack_push(byte val)
     (void) stack_dec();
 }
 
+static inline void stack_push_sneaky(byte val)
+{
+    stack_put_sneaky(val);
+    (void) stack_dec();
+}
+
 static inline void stack_push_flags_or(byte val)
 {
     stack_push(PFLAGS | (1 << PUNUSED) | val);
@@ -210,6 +223,12 @@ static inline byte stack_pop(void)
 {
     (void) stack_inc();
     return stack_get();
+}
+
+static inline byte stack_pop_sneaky(void)
+{
+    (void) stack_inc();
+    return stack_get_sneaky();
 }
 
 static inline byte pc_get_adv(void)
@@ -291,7 +310,7 @@ extern word print_disasm(FILE *f, word pos, Registers *regs);
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;
 static inline void cycle(void) { /* ++cycle_count; */ }
-extern sig_atomic_t sigint_received;
+extern volatile sig_atomic_t sigint_received;
 extern const char *default_romfname;
 extern bool validate_rom(unsigned char *buf, size_t sz);
 

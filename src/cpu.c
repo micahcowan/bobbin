@@ -31,9 +31,9 @@ void cpu_reset(void)
     (void) stack_dec();
     cycle(); /* end of cycle 5; fake push of status */
 
-    byte pcL = peek(LOC_RESET);
+    byte pcL = peek(VEC_RESET);
     cycle(); /* end of cycle 6; read vector low byte */
-    byte pcH = peek(LOC_RESET+1);
+    byte pcH = peek(VEC_RESET+1);
     go_to(WORD(pcL, pcH));
     cycle(); /* end of cycle 7 (8th); read vector high byte */
 }
@@ -1005,9 +1005,9 @@ void cpu_step(void)
                 stack_push_flags_or(PMASK(PBRK));
                 cycle(); // 5
 
-                byte pcL = peek(LOC_BRK);
+                byte pcL = peek(VEC_BRK);
                 cycle(); // 6
-                byte pcH = peek(LOC_BRK + 1);
+                byte pcH = peek(VEC_BRK + 1);
                 go_to(WORD(pcL, pcH));
                 PPUT(PINT,1);
                 cycle(); // 7
