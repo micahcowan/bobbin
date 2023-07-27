@@ -24,16 +24,23 @@ void bobbin_run(void)
 
     for (;;) /* ever */ {
         // Provide hooks the opportunity to alter the PC, here
-        unsigned int count = 0;
         const unsigned int max_count = 100;
+
         do {
-            if (count++ >= max_count) {
-                DIE(1,"Hooks changed PC %u times!\n", max_count);
-            }
-            current_pc_val = PC;
-            rh_prestep();
-        } while (current_pc_val != PC); // changed? loop back around!
-        // Check to run debugger, here
+            unsigned int count = 0;
+            do {
+                if (count++ >= max_count) {
+                    DIE(1,"Hooks changed PC %u times!\n", max_count);
+                }
+                current_pc_val = PC;
+                rh_prestep();
+            } while (current_pc_val != PC); // changed? loop back around!
+
+            debugger();
+        } while (current_pc_val != PC); // dbgr is allowed to change pc, too
+                                        // and since it was  user-requested,
+                                        // doesn't get count-limited.
+
         rh_step();
         cpu_step();
     }

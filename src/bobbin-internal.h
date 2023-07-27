@@ -236,6 +236,8 @@ struct IfaceDesc {
     void (*step)(void);
     int  (*peek)(word loc);
     int  (*poke)(word loc, byte val);
+    void (*enter_dbg)(FILE **inf, FILE **outf);
+    void (*exit_dbg)(void);
 };
 
 extern void interfaces_init(void);
@@ -249,6 +251,8 @@ extern int  iface_poke(word loc, byte val);
                                   // intercepted the write)
 
 extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
+extern void iface_enter_dbg(FILE **inf, FILE**outf);
+extern void iface_exit_dbg(void);
 
 /********** HOOK **********/
 
@@ -271,7 +275,9 @@ extern int  tracing(void);
 
 /********** DEBUG **********/
 
+extern void dbg_on(void);
 extern void debugger(void);
+extern bool debugging(void);
 
 /********** UTIL **********/
 

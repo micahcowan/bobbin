@@ -1,5 +1,6 @@
 #include "bobbin-internal.h"
 
+#include <stdio.h>
 #include <unistd.h>
 
 extern IfaceDesc simpleInterface;
@@ -74,4 +75,14 @@ int iface_peek(word loc)
 int iface_poke(word loc, byte val)
 {
     return iii->poke(loc, val);
+}
+
+void iface_enter_dbg(FILE **inf, FILE **outf)
+{
+    iii->enter_dbg(inf, outf);
+}
+
+void iface_exit_dbg(void)
+{
+    iii->exit_dbg();
 }

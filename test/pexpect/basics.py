@@ -35,7 +35,8 @@ def m_plus_simple(p):
 """\
 \r
 [Bobbin "simple" interactive mode.\r
- Ctrl-D at input to exit.]\r
+ Ctrl-D at input to exit.\r
+ Ctrl-C *TWICE* to enter debugger.]\r
 \r
 \r
 ]""", p.before)
@@ -60,7 +61,8 @@ def m_plus_simple_v(p):
 %(bobbin)s:   378ba00c86a64cca49cedaca7de8d5d351983ebc295d9d11e0752febfc346249\r
 \r
 [Bobbin "simple" interactive mode.\r
- Ctrl-D at input to exit.]\r
+ Ctrl-D at input to exit.\r
+ Ctrl-C *TWICE* to enter debugger.]\r
 \r
 \r
 ]""" % {"bobbin": BOBBIN}, p.before)
@@ -79,7 +81,8 @@ def m_plus_simple_v_v(p):
 %(bobbin)s:   378ba00c86a64cca49cedaca7de8d5d351983ebc295d9d11e0752febfc346249\r
 \r
 [Bobbin "simple" interactive mode.\r
- Ctrl-D at input to exit.]\r
+ Ctrl-D at input to exit.\r
+ Ctrl-C *TWICE* to enter debugger.]\r
 \r
 \r
 ]""" % {"bobbin": BOBBIN}, p.before)

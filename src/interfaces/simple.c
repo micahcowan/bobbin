@@ -12,10 +12,12 @@ static int saved_char = -1;
 static bool interactive;
 static bool output_seen;
 static int inputfd = -1;
+FILE *inf = NULL;
 static struct termios ios;
 static struct termios orig_ios;
-static bool canon = 1;
+static struct termios dbg_ios;
 static byte last_char_read;
+static byte last_char_consumed;
 static bool eof_found = 0;
 
 static enum {
@@ -40,6 +42,11 @@ unsigned char *lbuf_end = linebuf;
 #define OS_SUPPRESS_ALL     2
 int output_suppressed = OS_SUPPRESS_NONE;
 
+static inline bool is_canon(void)
+{
+    return (ios.c_lflag & ICANON) != 0;
+}
+
 static void restore_term(void)
 {
     ios = orig_ios;
@@ -48,7 +55,15 @@ static void restore_term(void)
         const char *err = strerror(errno);
         WARN("tcsetattr: %s", err);
     }
-    canon = 1;
+}
+
+static void set_ios(struct termios *my_ios)
+{
+    int e = tcsetattr(inputfd, TCSANOW, my_ios);
+    if (e < 0) {
+        const char *err = strerror(errno);
+        WARN("tcsetattr: %s", err);
+    }
 }
 
 static void set_noncanon(void)
@@ -61,12 +76,7 @@ static void set_noncanon(void)
                           //  - this is what an Apple does
     ios.c_cc[VMIN] = 0;
     ios.c_cc[VTIME] = 0;
-    int e = tcsetattr(inputfd, TCSANOW, &ios);
-    if (e < 0) {
-        const char *err = strerror(errno);
-        WARN("tcsetattr: %s", err);
-    }
-    canon = 0;
+    set_ios(&ios);
 }
 
 static void set_canon(void)
@@ -75,13 +85,7 @@ static void set_canon(void)
 
     // turn on canonical mode until we hit a newline
     ios.c_lflag |= ICANON | ECHO;
-    errno = 0;
-    int e = tcsetattr(inputfd, TCSANOW, &ios);
-    if (e < 0) {
-        const char *err = strerror(errno);
-        WARN("tcsetattr: %s", err);
-    }
-    canon = 1;
+    set_ios(&ios);
 }
 
 
@@ -118,7 +122,8 @@ static void set_interactive(void)
     // default. They can shut it up with --quiet
     if (WARN_OK) {
         fprintf(stderr, "\n[Bobbin \"simple\" interactive mode.\n"
-                " Ctrl-D at input to exit.]\n");
+                " Ctrl-D at input to exit.\n"
+                " Ctrl-C *TWICE* to enter debugger.]\n");
     }
 }
 
@@ -126,10 +131,20 @@ int read_char(void)
 {
     int c = -1;
 
+recheck:
+    c = -1;
     if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
         if (interactive) {
-            // Everything's fine
+            if (last_char_consumed == 0x03 || sigint_received > 1) {
+                // Take this to mean two consecutive Ctrl-C's, with no
+                // intervening user input. This should trigger the debugger.
+                dbg_on();
+                sigint_received = 0;
+                goto recheck; // go again, in case buffered chars
+            } else {
+                // Everything's fine
+            }
         } else if (cfg.remain_after_pipe) {
             // Flush remaining input and switch to interactive.
             lbuf_start = lbuf_end = linebuf;
@@ -143,6 +158,8 @@ int read_char(void)
         if (*lbuf_start == '\n')
             set_noncanon(); // may have just finished a GETLN
         c = util_fromascii(*lbuf_start);
+    } else if (debugging()) {
+        // Don't try to read any characters
     } else {
         errno = 0;
         ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
@@ -153,7 +170,7 @@ int read_char(void)
             // If < 0, it was just EAGAIN or EWOULDBLOCK,
             // not a "real" error
             if (interactive) {
-                if (nbytes == 0 && canon) {
+                if (nbytes == 0 && is_canon()) {
                     // 0 chars read in canonical mode.
                     // According to SUSv4, in non-canonical mode, a
                     // non-blocking terminal read may return 0 bytes instead
@@ -213,7 +230,10 @@ void consume_char(void)
         }
         ++lbuf_start;
     }
-    // else nothing - no keypress was ready
+    else {
+        // nothing - no keypress was ready
+    }
+    last_char_consumed = last_char_read;
 }
 
 static void iface_simple_init(void)
@@ -381,11 +401,47 @@ static int iface_simple_poke(word loc, byte val)
     return -1;
 }
 
+static void iface_simple_enter_dbg(FILE **in, FILE **out)
+{
+    if (!interactive) {
+        set_interactive();
+    }
+    dbg_ios = ios;
+    set_canon();
+
+    // Set input blocking.
+    int flags = fcntl(inputfd, F_GETFL);
+    (void) fcntl(inputfd, F_SETFL, flags & ~O_NONBLOCK);
+    if (inf != NULL) {
+        // Nothing to do, already have the FILE*.
+    } else if (inputfd == 0) {
+        inf = stdin;
+    } else {
+        errno = 0;
+        inf = fdopen(inputfd, "r");
+        if (inf == NULL)
+            DIE(2,"fdopen (/dev/tty): %s\n", strerror(errno));
+    }
+
+    *in = inf;
+    *out = stdout;
+}
+
+static void iface_simple_exit_dbg(void)
+{
+    set_ios(&dbg_ios);
+    int flags = fcntl(inputfd, F_GETFL);
+    // Set non-blocking.
+    (void) fcntl(inputfd, F_SETFL, flags | O_NONBLOCK);
+}
+
 IfaceDesc simpleInterface = {
     .init = iface_simple_init,
     .start= iface_simple_start,
     .prestep = iface_simple_prestep,
     .step = iface_simple_step,
     .peek = iface_simple_peek,
-    .poke = iface_simple_poke
+    .poke = iface_simple_poke,
+    .enter_dbg = iface_simple_enter_dbg,
+    .exit_dbg = iface_simple_exit_dbg,
 };
