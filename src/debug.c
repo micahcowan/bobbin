@@ -52,18 +52,17 @@ void debugger(void)
         }
     }
 
-    switch (linebuf[0]) {
-        case '\0':
-        case '\n':
-        case ' ':
+    bool unhandled = true;
+#define HAVE(val) STREQ((val), linebuf)
+    while(unhandled) {
+        unhandled = false;
+        if (HAVE("") || HAVE(" ")) {
             // Do nothing; execute the instruction and return here
             //  on the next one.
-            break;
-        case 'c':
+        } else if (HAVE("c")) {
             fputs("Continuing...\n", dbg_outf);
             debugging_flag = false;
-            break;
-        case 'm':
+        } else if (HAVE("m")) {
             // Swap ourselves out for the built-in Apple II system
             // monitor!
             fputs("Switching to monitor...\n", dbg_outf);
@@ -78,11 +77,14 @@ void debugger(void)
             // PC and the other registers will NOT be printed on entry
             // into the system monitor.
             debugging_flag = false;
-            break;
-        case 'q':
+        } else if (HAVE("q")) {
             fputs("Exiting.\n", dbg_outf);
             exit(0);
-            break;
+        } else {
+            unhandled = true; // Loop back around / try again
+            fputs("Unrecognized command!", dbg_outf);
+        }
+#undef HAVE
     }
 
     if (!debugging_flag)
