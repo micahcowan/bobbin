@@ -389,7 +389,9 @@ While one might be tempted to think that character input probably mirrors how ch
 
 If **bobbin** receives a `SIGINT` signal (often triggered by a user typing Ctrl-C), **bobbin** treats it exactly as a normal Ctrl-C keypress, except that if there is some input that **bobbin** has received but which hasn't yet been processed by the program running on the Apple \]\[, the Ctrl-C may jump to the front of the line, ahead of other characters that had actually been typed before it. Note that it is possible to configure a terminal to use some other keypress instead of Ctrl-C for sending `SIGINT`; in this case **bobbin** will still treat that character as if it had been a Ctrl-C.
 
-If `SIGINT` is received 3 times without any of them being processed by the program running on the Apple \]\[, then **bobbin** will conduct an emergency exit. This is likely to leave your terminal in an inconvenient processing mode; just press the Enter key, type "reset" and then the Enter key again; this should hopefully fix the matter.
+If **bobbin** receives a second `SIGINT` signal before the emulated Apple has had a chance to consume it as a keypress; or if Ctrl-C is pressed twice in a row without any intervening characters (even if the first Ctrl-C was in fact processed successfully as input to the emulated Apple), then **bobbin** will open a debugger interface.
+
+If `SIGINT` is received three times without any of them being handled, then **bobbin** will force an ungraceful exit.
 
 If **bobbin** is processing non-interactive input while a `SIGINT` is received, and the `--remain` option is active, it will do three things in succession: (1) it will send a Ctrl-C to the program on the Apple \]\[ (in BASIC, this usually has the effect of causing a program `BREAK`); (2) it will discard any pipe or redirected input that was still waiting to be processed by the Apple \]\['s program, and (3) it will immediately enter "interactive" mode, and process line inputs according to whatever setting of `--simple-input` may be active.
 
