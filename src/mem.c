@@ -164,7 +164,7 @@ void mem_init(void)
 
 byte peek(word loc)
 {
-    int t = trace_peek(loc);
+    int t = rh_peek(loc);
     if (t >= 0) {
         return (byte) t;
     }
@@ -174,7 +174,7 @@ byte peek(word loc)
 
 byte peek_sneaky(word loc)
 {
-    int t = -1; // trace_peek_sneaky(loc);
+    int t = -1; // rh_peek_sneaky(loc)?;
     if (t >= 0) {
         return (byte) t;
     }
@@ -193,11 +193,13 @@ byte peek_sneaky(word loc)
 
 void poke(word loc, byte val)
 {
+    // suppress_real_write = rh_poke(loc, val)...
     poke_sneaky(loc, val);
 }
 
 void poke_sneaky(word loc, byte val)
 {
+    // rh_poke_sneaky()?
     // XXX
     membuf[loc] = val;
 }

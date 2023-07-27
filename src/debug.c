@@ -7,7 +7,7 @@ char linebuf[256];
 
 void debugger(void)
 {
-    util_print_state(stdout);
+    util_print_state(stdout, current_pc(), &theCpu.regs);
     putchar('>');
     fflush(stdout);
     fgets(linebuf, sizeof linebuf, stdin);

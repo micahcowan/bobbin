@@ -27,14 +27,14 @@ int util_isprint(int c)
     return c >= 0x20 && c < 0x7F;
 }
 
-void util_print_state(FILE *f)
+void util_print_state(FILE *f, word pc, Registers *reg)
 {
     static const char fnams[] = "CZIDBUVN";
     // printf("\n12345678901234567890123456789012345678901234567890\n");
 
     // Print registers
     fprintf(f, "ACC: %02X  X: %02X  Y: %02X  SP: %02X", // takes 31 chars
-           ACC, XREG, YREG, SP);
+           reg->a, reg->x, reg->y, reg->sp);
     fprintf(f, "%8c", ' '); // bring it to 39 (first flag starts on #41)
 
     // Print status flags
@@ -42,7 +42,7 @@ void util_print_state(FILE *f)
         //if (i == PUNUSED) continue;
         fputc(' ', f);
         char c = fnams[i];
-        if (PTEST(i)) {
+        if (RPTEST(reg->p,i)) {
             fprintf(f, " [%c]", c);
         } else {
             fprintf(f, "  %c ", c);
@@ -51,8 +51,9 @@ void util_print_state(FILE *f)
     fputc('\n', f);
 
     // Print stack
-    fprintf(f, "STK: $1%02X:  (%02X)", SP, peek_sneaky(STACK));
-    byte sp = SP+1;
+    fprintf(f, "STK: $1%02X:  (%02X)", reg->sp,
+            peek_sneaky(WORD(reg->sp,0x01)));
+    byte sp = reg->sp+1;
     for (int i=0; i != 13; ++i) {
         if (!sp) fprintf(f, "  |");
         fprintf(f, "  %02X", peek_sneaky(WORD(sp++,0x1)));
@@ -60,5 +61,5 @@ void util_print_state(FILE *f)
     fputc('\n', f);
 
     // Print current location and instruction
-    (void) print_disasm(f, current_instruction, &theCpu.regs);
+    (void) print_disasm(f, pc, reg);
 }

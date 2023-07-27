@@ -989,7 +989,7 @@ void cpu_step(void)
                         op == 0? "BRK" : "ILLEGAL OP");
                     DIE(0, "  (CPU state follows.)\n");
 
-                    util_print_state(stderr);
+                    util_print_state(stderr, current_pc(), &theCpu.regs);
                     exit(3);
                 }
 

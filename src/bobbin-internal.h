@@ -26,6 +26,7 @@ typedef uint8_t     byte;
 #define LO(w)           (0x00FF & (w))
 
 extern void bobbin_run(void);
+extern word current_pc(void);
 
 /********** LOGGING **********/
 
@@ -160,7 +161,7 @@ extern void cpu_reset(void);
 extern void cpu_step(void);
 
 static inline void go_to(word w) {
-    theCpu.regs.pc = w;
+    PC = w;
 }
 
 /********** MEMORY **********/
@@ -231,6 +232,7 @@ typedef struct IfaceDesc IfaceDesc;
 struct IfaceDesc {
     void (*init)(void); // Process options
     void (*start)(void);// *Actually* start interface
+    void (*prestep)(void);
     void (*step)(void);
     int  (*peek)(word loc);
     int  (*poke)(word loc, byte val);
@@ -239,6 +241,7 @@ struct IfaceDesc {
 extern void interfaces_init(void);
 extern void interfaces_start(void);
 
+extern void iface_prestep(void);
 extern void iface_step(void);
 extern int  iface_poke(word loc, byte val);
                                   // if -1 is NOT returned, suppress
@@ -247,20 +250,24 @@ extern int  iface_poke(word loc, byte val);
 
 extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 
+/********** HOOK **********/
+
+extern void rh_prestep(void); // The only hooks allowed to examine and
+                              // change the PC, but NOT allowed to do
+                              // anything else.
+extern void rh_step(void);
+//extern int  rh_peek_sneaky(word loc);
+extern int  rh_peek(word loc);
+
 /********** TRACE **********/
 
 extern const char *trfile_name;
 extern FILE *trfile;
 
-extern word current_instruction;
-
+extern void trace_step(void);
 extern void trace_on(char *format, ...);
 extern void trace_off(void);
 extern int  tracing(void);
-
-extern void trace_instr(void);
-extern int  trace_peek_sneaky(word loc);
-extern int  trace_peek(word loc);
 
 /********** DEBUG **********/
 
@@ -268,7 +275,7 @@ extern void debugger(void);
 
 /********** UTIL **********/
 
-extern void util_print_state(FILE *f);
+extern void util_print_state(FILE *f, word pc, Registers *reg);
 extern int util_toascii(int c);
 extern int util_fromascii(int c);
 extern int util_isprint(int c);

@@ -319,9 +319,23 @@ static void prompt_wozbasic(void)
     }
 }
 
+static void iface_simple_prestep(void)
+{
+    if (current_pc() == 0xFF69) {
+        if (!mon_entered) {
+            mon_entered = true;
+            if (check_is_woz_rom()) {
+                // Special kludge: skip monitor at startup,
+                // go straight to Woz basic.
+                go_to(0xE000);
+            }
+        }
+    }
+}
+
 static void iface_simple_step(void)
 {
-    switch (current_instruction) {
+    switch (current_pc()) {
         // XXX these should check that firmware is active
         case 0xFDF0:
             vidout();
@@ -345,16 +359,6 @@ static void iface_simple_step(void)
             break;
         case 0xE006:
             prompt_wozbasic();
-            break;
-        case 0xFF69:
-            if (!mon_entered) {
-                mon_entered = true;
-                if (check_is_woz_rom()) {
-                    // Special kludge: skip monitor at startup,
-                    // go straight to Woz basic.
-                    go_to(0xE000);
-                }
-            }
             break;
     }
 }
@@ -380,6 +384,7 @@ static int iface_simple_poke(word loc, byte val)
 IfaceDesc simpleInterface = {
     .init = iface_simple_init,
     .start= iface_simple_start,
+    .prestep = iface_simple_prestep,
     .step = iface_simple_step,
     .peek = iface_simple_peek,
     .poke = iface_simple_poke
