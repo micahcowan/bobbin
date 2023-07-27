@@ -10,7 +10,7 @@ LD65 = @LD65@
 EXTRA_DIST = $(SRCS) example.cfg readme.txt
 CLEANFILES = $(OBJS) $(SRCS:%.ca65=%.lst) $(SRCS:%.ca65=%.map) $(SRCS:%.ca65=%.o) trace.log
 
-BOBBIN_TARGETS = $(top_builddir)/src/bobbin $(top_builddir)/src/fetch-roms
+BOBBIN_TARGETS = $(top_builddir)/src/bobbin
 
 all:
 check: $(OBJS) $(BOBBIN_TARGETS)

@@ -58,7 +58,7 @@ def m_plus_simple_v(p):
 """\
 %(bobbin)s: FOUND ROM file "../../src/roms/apple2plus.rom".\r
 %(bobbin)s: ROM file checksum is good:\r
-%(bobbin)s:   378ba00c86a64cca49cedaca7de8d5d351983ebc295d9d11e0752febfc346249\r
+%(bobbin)s:   fc3e9d41e9428534a883df5aa10eb55b73ea53d2fcbb3ee4f39bed1b07a82905\r
 \r
 [Bobbin "simple" interactive mode.\r
  Ctrl-D at input to exit.\r
@@ -78,7 +78,7 @@ def m_plus_simple_v_v(p):
 %(bobbin)s: Looking for ROM named "apple2plus.rom" in ../../src/roms...\r
 %(bobbin)s: FOUND ROM file "../../src/roms/apple2plus.rom".\r
 %(bobbin)s: ROM file checksum is good:\r
-%(bobbin)s:   378ba00c86a64cca49cedaca7de8d5d351983ebc295d9d11e0752febfc346249\r
+%(bobbin)s:   fc3e9d41e9428534a883df5aa10eb55b73ea53d2fcbb3ee4f39bed1b07a82905\r
 \r
 [Bobbin "simple" interactive mode.\r
  Ctrl-D at input to exit.\r

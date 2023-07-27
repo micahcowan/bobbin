@@ -12,15 +12,9 @@ noinst_PROGRAMS=sha256-verify
 BUILT_SOURCES = option-names.h machine-names.h help-text.h
 EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
-	     roms/fetch-roms.sh
+	     roms/apple2.rom roms/apple2plus.rom
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = roms/*.rom cscope.out trace.log
-
-all: do-fetch-roms
-
-.PHONY: do-fetch-roms
-do-fetch-roms: sha256-verify roms
-	mkdir -p roms && cd roms && $(abs_srcdir)/roms/fetch-roms.sh; true
 
 .PHONY: watch
 watch:
