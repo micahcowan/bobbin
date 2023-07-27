@@ -18,4 +18,4 @@ $(BOBBIN_TARGETS):
 	$(MAKE) -C $(top_builddir)/src all
 
 run-bobbin:
-	BOBBIN_ROMDIR=$(top_builddir)/src/roms $(top_builddir)/src/bobbin $(ARGS)
+	$(top_builddir)/src/bobbin $(ARGS)

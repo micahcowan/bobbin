@@ -24,8 +24,6 @@ def pfail():
     global status
     status = 1
 
-os.environ['BOBBIN_ROMDIR'] = '../../src/roms'
-
 spaces = re.compile("_")
 
 print()

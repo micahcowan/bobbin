@@ -20,8 +20,8 @@ static unsigned char *rombuf;
 
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
+    "./roms",        // also not a dirname; we'll use bobbin's dir instead
     ROMSRCHDIR "/roms",
-    "./roms",
 };
 static const char * const *romdirp = rom_dirs;
 static const char * const * const romdend = rom_dirs + (sizeof rom_dirs)/(sizeof rom_dirs[0]);
@@ -32,8 +32,23 @@ static const char *get_try_rom_path(const char *fname) {
 
     if (romdirp == &rom_dirs[0] && (env = getenv(*romdirp++)) != NULL) {
         dir = env;
+    } else if (romdirp == &rom_dirs[1]) {
+        ++romdirp; // for next call to get_try_rom_path()
+
+        // Check where bobbin's path from argv[0] is
+        char *slash = strrchr(program_name, '/');
+        if (slash == NULL) {
+            dir = "."; // fallback to cwd
+        } else {
+            if ((slash - program_name) > ((sizeof buf)-1))
+                goto realdir;
+            dir = buf;
+            size_t dirlen = slash - program_name;
+            memcpy(buf, program_name, dirlen);
+            (void) snprintf(&buf[dirlen], ((sizeof buf) - dirlen), "/roms");
+        }
     } else {
-realenv:
+realdir:
         if (romdirp != romdend) {
             dir = *romdirp++;
         }
@@ -42,7 +57,12 @@ realenv:
         }
     }
     VERBOSE("Looking for ROM named \"%s\" in %s...\n", fname, dir);
-    (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
+    if (dir != buf) {
+        (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
+    } else {
+        char *end = strchr(buf, 0);
+        (void) snprintf(end, (sizeof buf) - (end - buf), "/%s", fname);
+    }
     return buf;
 }
 
