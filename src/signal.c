@@ -6,16 +6,13 @@
 
 volatile sig_atomic_t sigint_received = 0;
 
-void handle_term(int s)
+void handle_int(int s)
 {
-    if (++sigint_received >= 3)
-    {
-        _Exit(s);
-    }
-    signal(SIGINT, handle_term);
+    ++sigint_received;
+    signal(SIGINT, handle_int);
 }
 
 void signals_init(void)
 {
-    signal(SIGINT, handle_term);
+    signal(SIGINT, handle_int);
 }

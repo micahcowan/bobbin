@@ -48,10 +48,14 @@ void debugger(void)
         char *s = fgets(linebuf, sizeof linebuf, dbg_inf);
         int err = errno;
         if (s == NULL) {
-            if (ferror(dbg_inf)) {
-                DIE(1,"\nDebugger line input: %s\n", strerror(err));
-            } else {
+            fputc('\n', dbg_outf);
+            if (feof(dbg_inf)) {
                 DIE(1,"\nEOF.\n");
+            } else if (err == EINTR) {
+                fputs("(Interrupt received. \"q\" to exit.)\n", dbg_outf);
+                continue; // loop back around
+            } else {
+                DIE(1,"\nDebugger line input: %s\n", strerror(err));
             }
         }
         char *nl;
