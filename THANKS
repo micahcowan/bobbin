@@ -1,10 +1,12 @@
--= THANKS GOES TO =-
+-= THANKS GO TO =-
 
 Kalus Dormann (Klaus2m5 on Github), for writing the exhaustive 6502 test
 battery that was critically important to verify bobbin's functionality
 
 Adam Barnes (amb5l on GitHub), for porting Dormann's test battery to the
 ca65 assembler.
+
+Bruce Clark, for writing the BCD-specific 6502 tests.
 
 Alain Mosnier <alain@wanamoon.net>, for creating the sha-256 module that
 bobbin uses to verify ROM checksums, and releasing it to the
