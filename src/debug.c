@@ -36,8 +36,10 @@ void debugger(void)
         iface_enter_dbg(&dbg_inf, &dbg_outf);
 
         fprintf(dbg_outf, "\n\n*** Welcome to Bobbin Debugger ***\n");
-        fprintf(dbg_outf, "  SPC = next intr, c = leave debugger,"
-                " m = Apple II monitor, q = quit bobbin.\n-----\n");
+        fprintf(dbg_outf, "  SPC = next intr, c = leave debugger"
+                " (continue execution), m = Apple II monitor\n"
+                "  q = quit bobbin, r or w = warm reset, rr = cold reset\n"
+                "-----\n");
     }
     bool unhandled = true;
     while(unhandled) {
