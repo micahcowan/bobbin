@@ -127,6 +127,32 @@ static void set_interactive(void)
     }
 }
 
+// Check for common VT100 left-/right-arrow key bindings
+// This won't work everywhere, and may rely on zero delays
+// between chars of the escape sequence, which is not
+// at all guaranteed.
+//
+// returns 0 if next isn't a recognized arrow-key escape sequence
+// (just a dumb-but-informed guess), and the Apple ][ equivalent key
+// if it is.
+byte is_arrow_key(void)
+{
+    byte c = 0;
+    if (*lbuf_start == '\x1B' // ESC
+        && lbuf_end > lbuf_start + 2
+        && (lbuf_start[1] == '[' || lbuf_start[1] == 'O')
+        && (lbuf_start[2] == 'C' || lbuf_start[2] == 'D')) {
+
+        if (lbuf_start[2] == 'D') {
+            c = 0x88; // backspace / left-arrow
+        } else {
+            c = 0x95; // right-arrow
+        }
+    }
+
+    return c;
+}
+
 int read_char(void)
 {
     int c = -1;
@@ -155,9 +181,16 @@ recheck:
     } else if (lbuf_start < lbuf_end) {
         // We have chars left from a buffered read, grab the next
         //  from that.
-        if (*lbuf_start == '\n')
-            set_noncanon(); // may have just finished a GETLN
-        c = util_fromascii(*lbuf_start);
+
+        byte a = is_arrow_key();
+        if (a != 0) {
+            c = a;
+        } else {
+            c = util_fromascii(*lbuf_start);
+
+            if (c == 0x8D) // CR
+                set_noncanon(); // may have just finished a GETLN
+        }
     } else if (debugging()) {
         // Don't try to read any characters
     } else {
@@ -228,7 +261,12 @@ void consume_char(void)
             && (*lbuf_start == '\n' || *lbuf_start == '\r')) {
             output_suppressed = OS_SUPPRESS_CR;
         }
-        ++lbuf_start;
+        byte a = is_arrow_key();
+        if (a != 0) {
+            lbuf_start += 3;
+        } else {
+            ++lbuf_start;
+        }
     }
     else {
         // nothing - no keypress was ready
