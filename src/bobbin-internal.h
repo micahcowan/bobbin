@@ -88,6 +88,7 @@ struct Config {
     bool            load_rom;
     const char *    ram_load_file;
     word            ram_load_loc;
+    bool            turbo;
 
     // "simple" interface config:
     bool            remain_after_pipe;
@@ -307,9 +308,13 @@ extern int util_isprint(int c);
 
 /* TBD */
 extern word print_disasm(FILE *f, word pos, Registers *regs);
+
+#define NS_PER_FRAME        16651559
+#define CYCLES_PER_FRAME    17030
+
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;
-static inline void cycle(void) { /* ++cycle_count; */ }
+static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
 extern const char *default_romfname;
 extern bool validate_rom(unsigned char *buf, size_t sz);

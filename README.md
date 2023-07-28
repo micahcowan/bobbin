@@ -135,6 +135,10 @@ Alias for `--interface=simple`.
 
 #### Machine configuration options
 
+##### --no-turbo
+
+Run at normal Apple \]\[ speed, instead of running as fast as possible.
+
 ##### --no-rom
 
 Refrain from loading a ROM file into the upper address space.

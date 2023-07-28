@@ -54,6 +54,8 @@ IN_SYNOPSIS && !/^$/ {
 NEED_DESC && !/^$/ {
     NEED_DESC = 0;
     gsub(/\*\*/,"");
+    gsub(/\\\]/,"]");
+    gsub(/\\\[/,"[");
     OUTPUT = "     " $0;
 }
 

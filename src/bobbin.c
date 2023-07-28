@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 extern void machine_init(void);
 extern void signals_init(void);
@@ -23,25 +24,49 @@ void bobbin_run(void)
     cpu_reset();
 
     for (;;) /* ever */ {
-        // Provide hooks the opportunity to alter the PC, here
-        const unsigned int max_count = 100;
-
+        struct timespec preframe;
+        if (!cfg.turbo) {
+            clock_gettime(CLOCK_MONOTONIC, &preframe);
+        }
+        cycle_count = 0;
         do {
-            unsigned int count = 0;
+            // Provide hooks the opportunity to alter the PC, here
+            const unsigned int max_count = 100;
+
             do {
-                if (count++ >= max_count) {
-                    DIE(1,"Hooks changed PC %u times!\n", max_count);
-                }
-                current_pc_val = PC;
-                rh_prestep();
-            } while (current_pc_val != PC); // changed? loop back around!
+                unsigned int count = 0;
+                do {
+                    if (count++ >= max_count) {
+                        DIE(1,"Hooks changed PC %u times!\n", max_count);
+                    }
+                    current_pc_val = PC;
+                    rh_prestep();
+                } while (current_pc_val != PC); // changed? loop back around!
 
-            debugger();
-        } while (current_pc_val != PC); // dbgr is allowed to change pc, too
-                                        // and since it was  user-requested,
-                                        // doesn't get count-limited.
+                debugger();
+            } while (current_pc_val != PC); // dbgr is allowed to change pc, too
+                                            // and since it was  user-requested,
+                                            // doesn't get count-limited.
 
-        rh_step();
-        cpu_step();
+            rh_step();
+            cpu_step();
+        } while (cycle_count < CYCLES_PER_FRAME);
+        struct timespec postframe;
+        if (!cfg.turbo) {
+            clock_gettime(CLOCK_MONOTONIC, &postframe);
+            long elapsed;
+            if (postframe.tv_sec == preframe.tv_sec) {
+                elapsed = postframe.tv_nsec - preframe.tv_nsec;
+            } else if (postframe.tv_sec == preframe.tv_sec + 1) {
+                elapsed = postframe.tv_nsec - preframe.tv_nsec + 1000000000;
+            } else {
+                elapsed = -1; // we've already surpassed,
+                             // no further waiting to do.
+            }
+
+            postframe.tv_sec = 0; postframe.tv_nsec = NS_PER_FRAME - elapsed;
+            (void) nanosleep(&postframe, NULL);
+        }
+        cycle_count %= CYCLES_PER_FRAME;
     }
 }
