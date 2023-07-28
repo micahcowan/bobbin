@@ -324,7 +324,7 @@ static bool check_is_woz_rom(void)
     static enum mon_rom_check_status status = MON_ROM_NOT_CHECKED;
     
     if (status == MON_ROM_NOT_CHECKED) {
-        status = mem_match(0xE006, 5, 0x85, 0x33, 0x4C, 0xED, 0xFD) ?
+        status = mem_match(INT_SETPROMPT, 5, 0x85, 0x33, 0x4C, 0xED, 0xFD) ?
                  MON_ROM_IS_WOZ : MON_ROM_NOT_WOZ;
     }
     return status == MON_ROM_IS_WOZ;
@@ -341,13 +341,13 @@ static void prompt_wozbasic(void)
 
 static void iface_simple_prestep(void)
 {
-    if (current_pc() == 0xFF69) {
+    if (current_pc() == MON_MONZ) {
         if (!mon_entered) {
             mon_entered = true;
             if (check_is_woz_rom()) {
                 // Special kludge: skip monitor at startup,
                 // go straight to Woz basic.
-                go_to(0xE000);
+                go_to(INT_BASIC);
             }
         }
     }
@@ -357,10 +357,10 @@ static void iface_simple_step(void)
 {
     switch (current_pc()) {
         // XXX these should check that firmware is active
-        case 0xFDF0:
+        case MON_COUT1:
             vidout();
             break;
-        case 0xFD75: // common part of GETLN used by
+        case MON_NXTCHR: // common part of GETLN used by
                      //  both AppleSoft and Woz basics
             if (!interactive) {
                 // Don't want to echo the input when it's piped in.
@@ -373,11 +373,11 @@ static void iface_simple_step(void)
                 set_canon();
             }
             break;
-        case 0xFD67:
-        case 0xFD6A:
+        case MON_GETLNZ:
+        case MON_GETLN:
             prompt();
             break;
-        case 0xE006:
+        case INT_SETPROMPT:
             prompt_wozbasic();
             break;
     }
@@ -387,9 +387,9 @@ static int iface_simple_peek(word loc)
 {
     word a = loc & 0xFFF0;
 
-    if (a == 0xC000) {
+    if (a == SS_KBD) {
         return read_char();
-    } else if (a == 0xC010) {
+    } else if (a == SS_KBDSTROBE) {
         consume_char();
     }
 
