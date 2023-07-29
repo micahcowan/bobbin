@@ -42,10 +42,10 @@ static void repaint_flash(bool flash)
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(4,y);
         for (int x=0; x != 40; ++x) {
-            byte c = peek_sneaky(base | x);
+            byte c = peek_sneaky(base + x);
             if (util_isflashing(c)) {
-                byte c = util_todisplay(peek_sneaky(base | x));
-                mvwaddch(win, y, x, c);
+                byte cd = util_todisplay(c);
+                mvwaddch(win, y, x, cd);
             }
         }
     }
@@ -61,7 +61,7 @@ static void refresh_video(bool flash)
         word base = get_line_base(4,y);
         wmove(win, y, 0);
         for (int x=0; x != 40; ++x) {
-            byte c = peek_sneaky(base | x);
+            byte c = peek_sneaky(base + x);
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, flash);
             if (cfl != last_was_flash) {
@@ -125,7 +125,7 @@ static bool if_tty_poke(word loc, byte val)
         byte y = get_line_for_addr(loc);
 
         int c = util_todisplay(val);
-        bool f = util_isflashing(val) && saved_flash;
+        bool f = util_isreversed(val, saved_flash);
         if (f) wattron(win, A_REVERSE);
         mvwaddch(win, y, x, c);
         if (f) wattroff(win, A_REVERSE);
@@ -157,6 +157,10 @@ static void if_tty_frame(bool flash)
     } else if (c == KEY_RIGHT) {
         typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
     } else if (c >= 0 && (c & 0x7F) == c) {
+        if (c == 0x0C) {
+            // Ctrl-L = refresh screen, but also passed thru
+            refresh_video(flash);
+        }
         typed_char = (0x80 | (c & 0x7F));
     }
 }
