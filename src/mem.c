@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 // Enough of a RAM buffer to provide 128k
@@ -149,6 +150,20 @@ void mem_init(void)
     for (size_t z=0; z != sizeof membuf; ++z) {
         if (!(z & 0x2))
             membuf[z] = 0xFF;
+    }
+
+    /* Seed random generator */
+    struct timespec tm;
+    clock_gettime(CLOCK_REALTIME, &tm);
+    srandom(tm.tv_nsec);
+
+    /* For now at least, do what AppleWin does, and
+     * set specific bytes to garbage. */
+    for (size_t z=0; z < sizeof membuf; z += 0x200) {
+        membuf[z + 0x28] = random();
+        membuf[z + 0x29] = random();
+        membuf[z + 0x68] = random();
+        membuf[z + 0x69] = random();
     }
 
     if (cfg.load_rom) {
