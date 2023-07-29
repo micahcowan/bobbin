@@ -47,6 +47,29 @@ static inline bool is_canon(void)
     return (ios.c_lflag & ICANON) != 0;
 }
 
+static void transition_tty(void)
+{
+    lbuf_start = lbuf_end = linebuf;
+    // close input, we want to make sure tty is fd 0
+    errno = 0;
+    close(0);
+    int err = errno;
+    errno = 0;
+    int fd = open("/dev/tty", O_RDONLY);
+    if (fd < 0) {
+        DIE(1,"Tried to --remain-tty, but couldn't open /dev/tty: %s\n",
+            strerror(errno));
+    } else if (fd != 0) {
+        DIE(1, "Couldn't reopen /dev/tty to fd 0: %s\n",
+            strerror(err? err : errno));
+    }
+
+    INFO("--remain-tty, switching to tty interface...\n");
+    cfg.interface = "tty";
+    interfaces_init();
+    interfaces_start();
+}
+
 static void restore_term(void)
 {
     ios = orig_ios;
@@ -175,6 +198,8 @@ recheck:
             // Flush remaining input and switch to interactive.
             lbuf_start = lbuf_end = linebuf;
             set_interactive();
+        } else if (cfg.remain_tty) {
+            transition_tty();
         } else {
             eof_found = true;
         }
@@ -224,6 +249,8 @@ recheck:
                 }
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
+            } else if (cfg.remain_tty) {
+                transition_tty();
             } else {
                 // End of redirected input and not remaining after.
                 eof_found = true;

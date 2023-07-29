@@ -196,6 +196,12 @@ Go interactive after input is exhausted.
 
 This option applies when **bobbin**'s input has been redirected, say from a file or pipe, and is not connected to the terminal. **Bobbin** ordinarly would quit once that input is exhausted, but if the `--remain` option is specified and **bobbin** is on a terminal, it will reconnect input through the terminal and continue executing with the `simple` interface.
 
+##### --remain-tty
+
+Go interactive after input is exhausted, *and* switch to `tty` interface.
+
+Same as `--remain`, except that after input has been exhausted, the display is switched to the full Apple \]\[ display emulation (the `tty` interface).
+
 ##### --simple-input *arg*
 
 `apple` (default), or `fgets`.

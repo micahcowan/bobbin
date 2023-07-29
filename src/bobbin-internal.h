@@ -98,6 +98,7 @@ struct Config {
 
     // "simple" interface config:
     bool            remain_after_pipe;
+    bool            remain_tty;
     const char *    simple_input_mode;
 
     // trace stuff

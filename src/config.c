@@ -95,6 +95,7 @@ const OptInfo options[] = {
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
+    { REMAIN_TTY_OPT_NAMES, T_BOOL, &cfg.remain_tty },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
     { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
@@ -236,7 +237,10 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                         DIE(2,"Argument to --%s is too large (max 0xFFFF).\n",
                             opt);
                     }
-                    (*(word *)info->arg) = ul;
+                    // need to make VERY sure that it's a word,
+                    // represented in Apple 's little-endian format
+                    // (regardless of native architecture).
+                    (*(word *)info->arg) = WORD(ul & 0x7F, (ul >> 8) & 0x7F);;
                 } else {
                     (*(unsigned long *)info->arg) = ul;
                 }
