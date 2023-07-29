@@ -85,7 +85,7 @@ static void if_tty_start(void)
     }
     // Init curses
     initscr();
-    cbreak();
+    raw(); //cbreak();
     noecho();
     nonl();
     curs_set(0);
@@ -155,6 +155,8 @@ static void if_tty_frame(bool flash)
         typed_char = 0x88; // Apple's backspace (Ctrl-H)
     } else if (c == KEY_RIGHT) {
         typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
+    } else if (c == 0x1A) {// We're in raw mode; this is Ctrl-Z
+        raise(SIGTSTP);
     } else if (c >= 0 && (c & 0x7F) == c) {
         if (c == 0x0C) {
             // Ctrl-L = refresh screen, but also passed thru
