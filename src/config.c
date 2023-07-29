@@ -237,10 +237,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                         DIE(2,"Argument to --%s is too large (max 0xFFFF).\n",
                             opt);
                     }
-                    // need to make VERY sure that it's a word,
-                    // represented in Apple 's little-endian format
-                    // (regardless of native architecture).
-                    (*(word *)info->arg) = WORD(ul & 0x7F, (ul >> 8) & 0x7F);;
+                    (*(word *)info->arg) = ul;
                 } else {
                     (*(unsigned long *)info->arg) = ul;
                 }
