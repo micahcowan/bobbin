@@ -83,9 +83,9 @@ int iface_peek(word loc)
     return iii->peek? iii->peek(loc) : -1;
 }
 
-int iface_poke(word loc, byte val)
+bool iface_poke(word loc, byte val)
 {
-    return iii->poke? iii->poke(loc, val) : -1;
+    return iii->poke? iii->poke(loc, val) : false;
 }
 
 void iface_frame(bool flash)

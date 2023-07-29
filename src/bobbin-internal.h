@@ -268,7 +268,7 @@ extern void interfaces_start(void);
 
 extern void iface_prestep(void);
 extern void iface_step(void);
-extern int  iface_poke(word loc, byte val);
+extern bool iface_poke(word loc, byte val);
                                   // if -1 is NOT returned, suppress
                                   // actual memory write (because iface
                                   // intercepted the write)
