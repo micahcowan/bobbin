@@ -97,7 +97,6 @@ static void if_tty_start(void)
     win = subwin(stdscr, 24, 40, 0, 0);
     keypad(win, true);
     nodelay(win, 1);
-    nodelay(stdscr, 1);
 
     // Draw current video memory (garbage)
     refresh_video(false);
@@ -142,7 +141,7 @@ static void if_tty_frame(bool flash)
 
     // NOTE: does auto-refresh of screen
     // put a regular wrefresh in here if getch() goes away
-    int c = getch();
+    int c = wgetch(win);
     if (sigint_received >= 2
         || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
         exit(0);
@@ -161,7 +160,7 @@ static void if_tty_frame(bool flash)
             // Ctrl-L = refresh screen, but also passed thru
             refresh_video(flash);
         }
-        typed_char = (0x80 | (c & 0x7F));
+        typed_char = util_fromascii(c & 0x7F);
     }
 }
 
