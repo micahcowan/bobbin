@@ -257,7 +257,7 @@ struct IfaceDesc {
     void (*prestep)(void);
     void (*step)(void);
     int  (*peek)(word loc);
-    int  (*poke)(word loc, byte val);
+    bool (*poke)(word loc, byte val);
     void (*frame)(bool flash);
     void (*enter_dbg)(FILE **inf, FILE **outf);
     void (*exit_dbg)(void);
@@ -285,6 +285,7 @@ extern void rh_prestep(void); // The only hooks allowed to examine and
                               // anything else.
 extern void rh_step(void);
 //extern int  rh_peek_sneaky(word loc);
+extern bool rh_poke(word loc, byte val);
 extern int  rh_peek(word loc);
 
 /********** TRACE **********/

@@ -20,6 +20,19 @@ static word get_line_base(byte page, byte y)
     return WORD(lo, hi);
 }
 
+static byte get_line_for_addr(word loc)
+{
+    loc &= 0x03F8; // discard uninteresting high bits
+    // lowest bit (0) of the line # is loc & 0x0080
+    // bits 1 and 2 are loc & 0x0300
+    byte y = (loc & 0x0380) >> 7;
+    // The remaining high bytes are determined by ranges
+    byte lo = loc & 0x7F;
+    y |= lo < 0x28? 0
+        : (lo < 0x50? 0x8 : 0x10);
+    return y;
+}
+
 static void repaint_flash(bool flash)
 {
     saved_flash = flash;
@@ -89,7 +102,20 @@ static void if_tty_start(void)
     refresh_video(false);
 }
 
-static void if_tty_step(void) {
+static bool if_tty_poke(word loc, byte val)
+{
+    byte x = loc & 0x7F;
+    if (loc >= 0x400 && loc < 0x800 && x < 120) {
+        x %= 40;
+        byte y = get_line_for_addr(loc);
+
+        int c = util_todisplay(val);
+        bool f = util_isflashing(val) && saved_flash;
+        if (f) wattron(win, A_REVERSE);
+        mvwaddch(win, y, x, c);
+        if (f) wattroff(win, A_REVERSE);
+    }
+    return false;
 }
 
 static void if_tty_frame(bool flash)
@@ -108,6 +134,6 @@ static void if_tty_frame(bool flash)
 
 IfaceDesc ttyInterface = {
     .start = if_tty_start,
-    .step = if_tty_step,
+    .poke  = if_tty_poke,
     .frame = if_tty_frame,
 };

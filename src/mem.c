@@ -193,8 +193,8 @@ byte peek_sneaky(word loc)
 
 void poke(word loc, byte val)
 {
-    // suppress_real_write = rh_poke(loc, val)...
-    poke_sneaky(loc, val);
+    if (!rh_poke(loc, val))
+        poke_sneaky(loc, val);
 }
 
 void poke_sneaky(word loc, byte val)

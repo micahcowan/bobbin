@@ -434,11 +434,6 @@ static int iface_simple_peek(word loc)
     return -1;
 }
 
-static int iface_simple_poke(word loc, byte val)
-{
-    return -1;
-}
-
 static void iface_simple_enter_dbg(FILE **in, FILE **out)
 {
     if (!interactive) {
@@ -479,7 +474,6 @@ IfaceDesc simpleInterface = {
     .prestep = iface_simple_prestep,
     .step = iface_simple_step,
     .peek = iface_simple_peek,
-    .poke = iface_simple_poke,
     .enter_dbg = iface_simple_enter_dbg,
     .exit_dbg = iface_simple_exit_dbg,
 };

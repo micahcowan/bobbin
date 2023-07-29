@@ -50,3 +50,13 @@ int rh_peek(word loc)
     // is called for.
     assert(pc == current_pc());
 }
+
+bool rh_poke(word loc, byte val)
+{
+    word pc = current_pc();
+    return iface_poke(loc, val);
+    // For "user" hooks, we should emit a warning, and reset PC after
+    // any hook that set it. But for our internal stuff, stronger action
+    // is called for.
+    assert(pc == current_pc());
+}
