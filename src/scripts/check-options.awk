@@ -22,7 +22,7 @@ IN_OPTIONS && /^[}];$/ {
 }
 
 IN_OPTIONS &&
-    /^  *[{] *[A-Z0-9_]*_OPT_NAMES *, *T_[A-Z0-9_]* *, *.*[}], *$/ {
+    /^  *[{] *[A-Z0-9_]*_OPT_NAMES *, *T_[A-Z0-9_]* *,/ {
 
     match($0, /^  *[{] */)
     start = RLENGTH

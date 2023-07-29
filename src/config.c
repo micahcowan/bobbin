@@ -19,6 +19,7 @@ Config cfg = {
     .ram_load_file = NULL,
     .ram_load_loc = 0,
     .turbo = true,
+    .turbo_was_set = false,
     .simple_input_mode = "apple",
     .die_on_brk = false,
     .trace_file = "trace.log",
@@ -44,6 +45,7 @@ struct OptInfo {
     const char * const *    names;
     OptType                 type;
     void *                  arg;
+    bool *                  was_set;
 };
 
 typedef const char * const AryOfStr;
@@ -84,7 +86,7 @@ const OptInfo options[] = {
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
     { VV_OPT_NAMES, T_FUNCTION, &vv },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
-    { TURBO_OPT_NAMES, T_BOOL, &cfg.turbo },
+    { TURBO_OPT_NAMES, T_BOOL, &cfg.turbo, &cfg.turbo_was_set },
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
@@ -96,8 +98,10 @@ const OptInfo options[] = {
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
     { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
     { TRACE_TO_OPT_NAMES, T_FN_ARG, &trace_to_fn },
-    { TRAP_FAILURE_OPT_NAMES, T_WORD_ARG, &cfg.trap_failure },
-    { TRAP_SUCCESS_OPT_NAMES, T_WORD_ARG, &cfg.trap_success },
+    { TRAP_FAILURE_OPT_NAMES, T_WORD_ARG, &cfg.trap_failure,
+        &cfg.trap_failure_on },
+    { TRAP_SUCCESS_OPT_NAMES, T_WORD_ARG, &cfg.trap_success,
+        &cfg.trap_success_on },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -154,6 +158,10 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                 info = NULL;
         }
         if (!info) DIE(2, "Unknown option \"--%s\".\n", opt);
+
+        // Mark the option as set.
+        if (info->was_set != NULL)
+            (*info->was_set) = true;
 
         switch (info->type) {
             case T_STRING_ARG:
@@ -219,13 +227,6 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                     DIE(2,"Could not parse numeric arg to --%s.\n", opt);
                 }
                 (*(word *)info->arg) = w;
-
-                // Special-case handling to indicate option was set
-                if (((word *)info->arg) == &cfg.trap_success) {
-                    cfg.trap_success_on = true;
-                } else if (((word *)info->arg) == &cfg.trap_failure) {
-                    cfg.trap_failure_on = true;
-                }
             }
                 break;
             case T_STRING_ARG:

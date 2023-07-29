@@ -66,6 +66,9 @@ static void refresh_video(bool flash)
 
 static void if_tty_start(void)
 {
+    if (!cfg.turbo_was_set) {
+        cfg.turbo = false; // default
+    }
     // Init curses
     initscr();
     cbreak();

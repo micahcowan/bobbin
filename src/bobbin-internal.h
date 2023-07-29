@@ -90,6 +90,7 @@ struct Config {
     const char *    ram_load_file;
     word            ram_load_loc;
     bool            turbo;
+    bool            turbo_was_set;
 
     // "simple" interface config:
     bool            remain_after_pipe;
