@@ -88,7 +88,7 @@ struct Config {
     size_t          amt_ram;
     bool            load_rom;
     const char *    ram_load_file;
-    word            ram_load_loc;
+    unsigned long   ram_load_loc;
     bool            turbo;
     bool            turbo_was_set;
 

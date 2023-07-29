@@ -33,6 +33,7 @@ typedef enum {
     T_BOOL = 0,
     T_STRING_ARG,
     T_WORD_ARG,
+    T_ULONG_ARG,
     T_FN_ARG,
     T_FUNCTION,
     T_INCREMENT,
@@ -90,7 +91,7 @@ const OptInfo options[] = {
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
-    { LOAD_AT_OPT_NAMES, T_WORD_ARG, &cfg.ram_load_loc },
+    { LOAD_AT_OPT_NAMES, T_ULONG_ARG, &cfg.ram_load_loc },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
@@ -167,6 +168,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
             case T_STRING_ARG:
             case T_FN_ARG:
             case T_WORD_ARG:
+            case T_ULONG_ARG:
             if (!arg) {
                 // See if there's a following arg
                 ++v;
@@ -213,6 +215,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                 goto recheck;
             }
                 break;
+            case T_ULONG_ARG:
             case T_WORD_ARG:
             {
                 char *end;
@@ -220,13 +223,21 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                     ++arg;
                 }
                 errno = 0;
-                word w = strtoul(arg, &end, 16);
+                unsigned long ul = strtoul(arg, &end, 16);
                 if (*end != '\0') {
                     DIE(2,"Garbage at end of arg to --%s.\n", opt);
                 } else if (errno == ERANGE || errno == EINVAL) {
                     DIE(2,"Could not parse numeric arg to --%s.\n", opt);
                 }
-                (*(word *)info->arg) = w;
+                if (info->type == T_WORD_ARG) {
+                    if (ul > 65535) {
+                        DIE(2,"Argument to --%s is too large (max 0xFFFF).\n",
+                            opt);
+                    }
+                    (*(word *)info->arg) = ul;
+                } else {
+                    (*(unsigned long *)info->arg) = ul;
+                }
             }
                 break;
             case T_STRING_ARG:
