@@ -6,6 +6,7 @@
 
 static WINDOW *win;
 static bool saved_flash;
+static byte typed_char = '\0';
 
 static void tty_atexit(void)
 {
@@ -102,6 +103,20 @@ static void if_tty_start(void)
     refresh_video(false);
 }
 
+static int if_tty_peek(word loc)
+{
+    word a = loc & 0xFFF0;
+
+    if (a == SS_KBD) {
+        return typed_char;
+    } else if (a == SS_KBDSTROBE) {
+        sigint_received = 0;
+        typed_char &= 0x7F; // Clear high-bit (key avail)
+    }
+
+    return -1;
+}
+
 static bool if_tty_poke(word loc, byte val)
 {
     byte x = loc & 0x7F;
@@ -128,12 +143,27 @@ static void if_tty_frame(bool flash)
     // NOTE: does auto-refresh of screen
     // put a regular wrefresh in here if getch() goes away
     int c = getch();
-    if (c == 'q' || c == 'Q')
+    if (sigint_received >= 2
+        || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
         exit(0);
+    }
+    if (sigint_received > 0) {
+        typed_char = 0x83; // Ctrl-C
+    }
+    if (c == ERR) {
+        // No char read; nothing to do.
+    } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
+        typed_char = 0x88; // Apple's backspace (Ctrl-H)
+    } else if (c == KEY_RIGHT) {
+        typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
+    } else if (c >= 0 && (c & 0x7F) == c) {
+        typed_char = (0x80 | (c & 0x7F));
+    }
 }
 
 IfaceDesc ttyInterface = {
     .start = if_tty_start,
     .poke  = if_tty_poke,
+    .peek  = if_tty_peek,
     .frame = if_tty_frame,
 };

@@ -28,6 +28,7 @@ void debugger(void)
 {
     if (!debugging_flag && sigint_received < 2) return;
     else debugging_flag = true;
+    if (STREQ(cfg.interface, "tty")) return; // for now
     sigint_received = 0;
 
     if (print_message) {
