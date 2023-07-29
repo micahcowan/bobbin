@@ -27,6 +27,7 @@ void dbg_on(void)
 void debugger(void)
 {
     if (!debugging_flag && sigint_received < 2) return;
+    else debugging_flag = true;
     sigint_received = 0;
 
     if (print_message) {
