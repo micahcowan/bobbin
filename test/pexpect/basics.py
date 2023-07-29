@@ -14,18 +14,6 @@ def no_args(p):
 %(bobbin)s: Exiting (2).\r
 """ % {"bobbin": BOBBIN}, p.before)
 
-@bobbin('-m plus')
-def m_plus_only(p):
-    p.expect(EOF)
-    global BOBBIN
-    return want_got(
-"""\
-%(bobbin)s: default interface is "tty" when stdin is a tty; but that\r
-%(bobbin)s: interface is not yet implemented in this development version.\r
-%(bobbin)s: Try invoking with --simple.\r
-%(bobbin)s: Exiting (2).\r
-""" % {"bobbin": BOBBIN}, p.before)
-
 @bobbin('-m plus --simple')
 def m_plus_simple(p):
     got = p.expect([EOF, TIMEOUT])
