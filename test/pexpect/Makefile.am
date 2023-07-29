@@ -7,7 +7,7 @@ distclean-local:
 	rm -fr __pycache__
 
 check: $(BOBBIN_TARGETS)
-	if test '$(PYTHON)' != : ; then \
+	if test 'x$(PYTHON)' != x: -a 'x$(PYTHON)' != x; then \
 	    PYTHONPATH=$(srcdir) $(PYTHON) $(srcdir)/run_tests.py $(CHECK_VERBOSE); \
 	else \
 	    exec >&2; \

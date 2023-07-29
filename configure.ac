@@ -2,7 +2,6 @@ AC_INIT([bobbin], [v0.2.1-dev], [micah@addictivecode.org])
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE([foreign])
 AC_PROG_CC
-AM_PATH_PYTHON(3,,[:])
 AC_PATH_PROG([CA65], [ca65], [:])
 AC_PATH_PROG([LD65], [ld65], [:])
 AC_SUBST(CA65)
@@ -23,11 +22,20 @@ AS_IF([test "x$with_curses" != "xno"],
          AC_DEFINE([HAVE_LIBCURSES], [1],
                    [Define if you have libcurses])
          ],
-        [if text "x$with_curses" != "check"; then
+        [if test "x$with_curses" != "check"; then
             AC_MSG_FAILURE([--with-curses was given, but libcurses not found])
-         fi
+         fi;
         ]
     )])
+
+AM_PATH_PYTHON([3],,[:])
+AS_IF([test "x$PYTHON" != "x" -a "x$PYTHON" != "x:"],
+    [AC_MSG_CHECKING([for python pexpect module])
+     AS_IF(["$PYTHON" -c 'import pexpect' >/dev/null 2>&1],
+           [AC_MSG_RESULT([yes])],
+           [AC_MSG_RESULT([no])
+            AC_MSG_WARN([pexpect not found, disabling python tests])
+            PYTHON=''])])
 
 AC_CONFIG_HEADERS([src/ac-config.h])
 AC_CONFIG_FILES([
