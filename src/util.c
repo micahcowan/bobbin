@@ -2,13 +2,33 @@
 
 #include <stdio.h>
 
+bool util_isflashing(int c)
+{
+    return c >= 0x40 && c < 0x80;
+}
+
+bool util_isreversed(int c, bool flash)
+{
+    return (c < 0x40 || (flash && c < 0x80));
+}
+
+int util_todisplay(int c)
+{
+    if (c < 0) return c;
+    // XXX Should check for lowercase capability (Apple IIe) here
+    c &= 0x3F;
+    c ^= 0x20;
+    c += 0x20;
+    return c;
+}
+
 int util_toascii(int c)
 {
     if (c < 0) return c;
     c &= 0x7F;
     // XXX Should check for lowercase capability (Apple IIe) here
     if (c >= 0x60)
-        c -= 0x40;
+        c -= 0x20;
     return c & 0x7F;
 }
 

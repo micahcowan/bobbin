@@ -16,6 +16,7 @@ py-compile
 trace.log
 cscope.out
 *.o
+src/ac-config.h
 src/bobbin
 src/sha256-verify
 src/6502*.bin
@@ -25,6 +26,7 @@ test/tests6502/*.map
 src/option-names.h
 src/help-text.h
 src/machine-names.h
+src/stamp-h1
 test/pexpect/__pycache__
 test/pexpect/bobbin
 *.pyc

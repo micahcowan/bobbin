@@ -5,7 +5,10 @@ ROMSRCHDIR=$(datarootdir)/$(PACKAGE_TARNAME)
 AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(ROMSRCHDIR)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
-bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c hook.c sha-256.c sha-256.h bobbin-internal.h apple2.h
+bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c hook.c sha-256.c sha-256.h bobbin-internal.h apple2.h ac-config.h
+bobbin_LDADD=$(BOBBIN_MAYBE_TTY) $(LIBCURSES)
+bobbin_DEPENDENCIES=$(BOBBIN_MAYBE_TTY)
+EXTRA_bobbin_SOURCES=interfaces/tty.c
 sha256_verify_SOURCES=sha256-verify.c sha-256.c
 bin_PROGRAMS=bobbin
 noinst_PROGRAMS=sha256-verify

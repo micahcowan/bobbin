@@ -1,11 +1,14 @@
 #include "bobbin-internal.h"
 
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 extern void machine_init(void);
 extern void signals_init(void);
+
+uintmax_t frame_count = 0;
 
 word current_pc_val;
 word current_pc(void) {
@@ -14,6 +17,8 @@ word current_pc(void) {
 
 void bobbin_run(void)
 {
+    setlocale(LC_ALL, "");
+
     signals_init();
     machine_init();
     interfaces_init();
@@ -51,8 +56,10 @@ void bobbin_run(void)
             rh_step();
             cpu_step();
         } while (cycle_count < CYCLES_PER_FRAME);
-        struct timespec postframe;
+        frame_count += cycle_count / CYCLES_PER_FRAME;
+        iface_frame(frame_count % 60 >= 30);
         if (!cfg.turbo) {
+            struct timespec postframe;
             clock_gettime(CLOCK_MONOTONIC, &postframe);
             long elapsed;
             if (postframe.tv_sec == preframe.tv_sec) {

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ac-config.h"
 #include "apple2.h"
 
 typedef uint16_t    word;
@@ -256,6 +257,7 @@ struct IfaceDesc {
     void (*step)(void);
     int  (*peek)(word loc);
     int  (*poke)(word loc, byte val);
+    void (*frame)(bool flash);
     void (*enter_dbg)(FILE **inf, FILE **outf);
     void (*exit_dbg)(void);
 };
@@ -271,6 +273,7 @@ extern int  iface_poke(word loc, byte val);
                                   // intercepted the write)
 
 extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
+extern void iface_frame(bool flash);
 extern void iface_enter_dbg(FILE **inf, FILE**outf);
 extern void iface_exit_dbg(void);
 
@@ -302,6 +305,9 @@ extern bool debugging(void);
 /********** UTIL **********/
 
 extern void util_print_state(FILE *f, word pc, Registers *reg);
+extern bool util_isflashing(int c);
+extern bool util_isreversed(int c, bool flash);
+extern int util_todisplay(int c);
 extern int util_toascii(int c);
 extern int util_fromascii(int c);
 extern int util_isprint(int c);
@@ -314,6 +320,7 @@ extern word print_disasm(FILE *f, word pos, Registers *regs);
 
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;
+extern uintmax_t frame_count;
 static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
 extern const char *default_romfname;
