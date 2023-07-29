@@ -160,7 +160,7 @@ A file's contents are mapped into RAM pretty much as one would expect: if a file
 - Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank.
 - File locations `$C000` thru `$CFFF`, and `$1C000` thru `$1CFFF`, are *not* mapped into their corrsponding locations in addressable memory as described in the previous bullet point, since RAM is never mapped to those locations (they are reserved for slotted peripheral firmware). They are instead mapped to the "alternate" 4k RAM banks ("main RAM bank 1" and "auxilliary RAM bank 2", respectively), which are accessed at region `$D000` thru `$DFFF` (but *only* when appropriate soft switches have been activated).
 
-If the file's contents would exceed the end of even auxilliary memory (128k), additional contents are silently discarded.
+If the file's contents would exceed the end of even auxilliary memory (128k), **bobbin** will exit with an error.
 
 ##### --load-at, --load-loc  *arg*
 
@@ -171,6 +171,14 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 ##### --start-at, --start-loc
 
 Specify an initial start position in place of what's in the reset vector.
+
+##### --delay-until-pc, --delay-until *arg*
+
+Delays the effects of `--load` (RAM) and `--start-at`, until PC is *arg*.
+
+The primary intent of this option is to allow the Apple \]\[ to run through its usual boot-up code, and then load new contents into memory and jump to a new, post-boot-sequence "start". This makes it easy to boot the emulator into your favorite code, without involving a disk-load.
+
+**Bobbin**'s developer likes to use the value `FD75`, which jumps to your code as soon as BASIC (whether AppleSoft or Integer) tries to prompt the user for input.
 
 ##### --ram *arg*
 

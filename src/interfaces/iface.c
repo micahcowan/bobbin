@@ -105,3 +105,9 @@ void iface_exit_dbg(void)
     if (iii->exit_dbg)
         iii->exit_dbg();
 }
+
+void iface_display_touched(void)
+{
+    if (iii->display_touched)
+        iii->display_touched();
+}

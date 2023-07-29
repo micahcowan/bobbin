@@ -93,6 +93,8 @@ struct Config {
     bool            turbo_was_set;
     word            start_loc;
     bool            start_loc_set;
+    word            delay_until;
+    bool            delay_set;
 
     // "simple" interface config:
     bool            remain_after_pipe;
@@ -176,6 +178,7 @@ extern void poke(word loc, byte val);
 extern byte peek_sneaky(word loc);
 extern void poke_sneaky(word loc, byte val);
 extern bool mem_match(word loc, unsigned int nargs, ...);
+extern void load_ram_finish(void);
 
 static inline byte stack_get(void)
 {
@@ -263,6 +266,8 @@ struct IfaceDesc {
     void (*frame)(bool flash);
     void (*enter_dbg)(FILE **inf, FILE **outf);
     void (*exit_dbg)(void);
+    void (*display_touched)(void); // Display memory may have updated
+                                   // behind the scenes: redraw!
 };
 
 extern void interfaces_init(void);
@@ -279,6 +284,7 @@ extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 extern void iface_frame(bool flash);
 extern void iface_enter_dbg(FILE **inf, FILE**outf);
 extern void iface_exit_dbg(void);
+extern void iface_display_touched(void);
 
 /********** HOOK **********/
 
@@ -289,6 +295,7 @@ extern void rh_step(void);
 //extern int  rh_peek_sneaky(word loc);
 extern bool rh_poke(word loc, byte val);
 extern int  rh_peek(word loc);
+extern void rh_display_touched(void);
 
 /********** TRACE **********/
 

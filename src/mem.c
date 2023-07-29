@@ -18,6 +18,8 @@ static byte membuf[128 * 1024];
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
+static unsigned char *ramloadbuf;
+static size_t        ramloadsz;
 
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
@@ -102,42 +104,64 @@ static void load_rom(void)
             (size_t)(12 * 1024));
     }
 
+    errno = 0;
     rombuf = mmap(NULL, 12 * 1024, PROT_READ, MAP_PRIVATE, fd, 0);
     if (rombuf == NULL) {
-        perror("Couldn't map in ROM file");
-        exit(1);
+        DIE(1, "Couldn't map in ROM file: %s\n", strerror(errno));
     }
     close(fd); // safe to close now.
 
     validate_rom(rombuf, 12 * 1024);
 }
 
-static void load_ram(void)
+void load_ram_finish(void)
 {
-    errno = 0;
-    FILE *file = fopen(cfg.ram_load_file, "rb");
-    if (file == NULL) {
-        DIE(1, "Couldn't open --load file \"%s\": %s\n",
-            cfg.ram_load_file, strerror(errno));
-    }
+    memcpy(&membuf[cfg.ram_load_loc], ramloadbuf, ramloadsz);
 
-    errno = 0;
-    size_t rb = fread(&membuf[cfg.ram_load_loc], 1,
-                      (sizeof membuf) - cfg.ram_load_loc, file);
-    int err = errno;
-    if (ferror(file)) {
-        DIE(1, "Error reading from --load file \"%s\": %s\n",
-            cfg.ram_load_file, strerror(err));
-    }
-
-    INFO("%zu bytes read into RAM from file \"%s\",\n",
-         (size_t)rb, cfg.ram_load_file);
+    INFO("%zu bytes loaded into RAM from file \"%s\",\n",
+         ramloadsz, cfg.ram_load_file);
     INFO("  starting at memory location $%04X.\n",
          (unsigned int)cfg.ram_load_loc);
     // Warning, this ^ is a lie for some values ($C000 - $CFFF), and
     //  aux mem locations
+}
 
-    fclose(file);
+static void load_ram(void)
+{
+    errno = 0;
+    int fd = open(cfg.ram_load_file, O_RDONLY);
+    if (fd < 0) {
+        DIE(1, "Couldn't open --load file \"%s\": %s\n",
+            cfg.ram_load_file, strerror(errno));
+    }
+
+    struct stat st;
+    errno = 0;
+    int err = fstat(fd, &st);
+    if (err < 0) {
+        err = errno;
+        DIE(1, "Couldn't stat --load file \"%s\": %s\n", cfg.ram_load_file, strerror(err));
+    }
+    ramloadsz = st.st_size;
+
+    if ((ramloadsz + cfg.ram_load_loc) > (sizeof membuf)) {
+        DIE(1, "--load file \"%s\" would exceed the end of memory!\n",
+            cfg.ram_load_file);
+    }
+
+    errno = 0;
+    ramloadbuf = mmap(NULL, ramloadsz, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (ramloadbuf == NULL) {
+        DIE(1, "Couldn't map in --load file: %s\n", strerror(errno));
+    }
+    close(fd); // safe to close now.
+
+    if (cfg.delay_set) {
+        INFO("--load file \"%s\" succeeded; delaying as requested.\n",
+             cfg.ram_load_file);
+    } else {
+        load_ram_finish();
+    }
 }
 
 void mem_init(void)

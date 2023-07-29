@@ -26,6 +26,14 @@ static void trap_step(void)
 
 void rh_prestep(void)
 {
+    if (cfg.delay_set && PC == cfg.delay_until) {
+        cfg.delay_set = false; // XXX better ways to do this...
+        if (cfg.start_loc_set) {
+            PC = cfg.start_loc;
+        }
+        load_ram_finish();
+        rh_display_touched();
+    }
     iface_prestep();
 }
 
@@ -59,4 +67,9 @@ bool rh_poke(word loc, byte val)
     // any hook that set it. But for our internal stuff, stronger action
     // is called for.
     assert(pc == current_pc());
+}
+
+void rh_display_touched(void)
+{
+    iface_display_touched();
 }

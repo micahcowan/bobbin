@@ -166,9 +166,16 @@ static void if_tty_frame(bool flash)
     }
 }
 
+static void if_tty_display_touched(void)
+{
+    if (win)
+        touchwin(win);
+}
+
 IfaceDesc ttyInterface = {
     .start = if_tty_start,
     .poke  = if_tty_poke,
     .peek  = if_tty_peek,
     .frame = if_tty_frame,
+    .display_touched = if_tty_display_touched,
 };

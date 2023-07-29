@@ -28,7 +28,7 @@ void bobbin_run(void)
 
     cpu_reset();
 
-    if (cfg.start_loc_set) {
+    if (cfg.start_loc_set && !cfg.delay_set) {
         PC = cfg.start_loc;
     }
 
