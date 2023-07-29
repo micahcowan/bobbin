@@ -28,6 +28,10 @@ void bobbin_run(void)
 
     cpu_reset();
 
+    if (cfg.start_loc_set) {
+        PC = cfg.start_loc;
+    }
+
     for (;;) /* ever */ {
         struct timespec preframe;
         if (!cfg.turbo) {

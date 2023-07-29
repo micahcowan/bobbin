@@ -162,11 +162,15 @@ A file's contents are mapped into RAM pretty much as one would expect: if a file
 
 If the file's contents would exceed the end of even auxilliary memory (128k), additional contents are silently discarded.
 
-##### --load-at *arg*
+##### --load-at, --load-loc  *arg*
 
 RAM location to load file from `--load`.
 
 The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
+
+##### --start-at, --start-loc
+
+Specify an initial start position in place of what's in the reset vector.
 
 ##### --ram *arg*
 

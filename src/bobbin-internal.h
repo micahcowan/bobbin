@@ -91,6 +91,8 @@ struct Config {
     unsigned long   ram_load_loc;
     bool            turbo;
     bool            turbo_was_set;
+    word            start_loc;
+    bool            start_loc_set;
 
     // "simple" interface config:
     bool            remain_after_pipe;

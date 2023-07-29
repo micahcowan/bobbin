@@ -103,6 +103,7 @@ const OptInfo options[] = {
         &cfg.trap_failure_on },
     { TRAP_SUCCESS_OPT_NAMES, T_WORD_ARG, &cfg.trap_success,
         &cfg.trap_success_on },
+    { START_AT_OPT_NAMES, T_WORD_ARG, &cfg.start_loc, &cfg.start_loc_set },
 };
 
 static const OptInfo *find_option(const char *opt)
