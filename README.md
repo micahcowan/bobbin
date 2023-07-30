@@ -81,8 +81,7 @@ $ ./bobbin -m plus
 ### Synopsis
 
 **bobbin --help**<br />
-**bobbin --simple -m** *machine* \[ *options* \]<br />
-**bobbin -m** *machine* \[ *options* \] **&lt;** *file*
+**bobbin -m** *machine* \[ *options* \]<br />
 
 ### Options
 
@@ -118,10 +117,12 @@ This is currently a required argument, to tell **bobbin** what type of Apple \]\
 
 Valid values are:
 <!--MACHINES-->
- - `original`. Aliases: `\]\[`, `II`, `two`, `woz`, `int`, `integer`.<br />
+ - `original`. Aliases: `][`, `II`, `two`, `woz`, `int`, `integer`.<br />
    Selects an original, non-autostart Apple \]\[ with Integer BASIC loaded. The `simple` interface boots directly into Integer BASIC (unlike the real machine); all other interfaces boot directly to the system monitor (actual machine behavior).
  - `plus`. Aliases: `+`, `][+`, `II+`, `twoplus`, `autostart`, `applesoft`, `asoft`.<br />
    Selects an Apple \]\[+ (or, equivalently an original Apple \]\[ with the autostart, AppleSoft BASIC firmware). Boots into AppleSoft.
+
+Note: some shells (notably zsh) will not allow you to type `][` as a bare string in a command invocation, you most wrap it with single-or-double-quotes (in which case it's probably easier to use one of the other aliases instead.)
 
 Planned future values:
  - `twoey`. Aliases: `][e`, `IIe`.<br />
@@ -134,7 +135,7 @@ Planned future values:
 
 Select the user interface.
 
-This is currently a required argument, unless **bobbin**'s input is from a file or pipe rather than a terminal. The default value, `tty`, has not yet been implemented. Currently only `simple` is supported. You may also specify `--simple`, instead of `--if simple`. See the section on [the "simple" interface](#the-simple-interface), below, for quite a lot of detail.
+If standard input is from a terminal, then the default value is `tty`, which provides a full, in-terminal display of the emulated Apple \]\['s screen contents; if standard input is coming from something else (file or pipe), the `simple` interface, which uses a line-oriented I/O interface, is used instead. This is currently a required argument, unless **bobbin**'s input is from a file or pipe rather than a terminal. The default value, `tty`, has not yet been implemented. Currently only `simple` is supported. You may also specify `--simple`, instead of `--if simple`. See the section on [the "simple" interface](#the-simple-interface), below, for quite a lot of detail.the `
 
 ##### --simple
 
@@ -146,13 +147,15 @@ Alias for `--interface=simple`.
 
 Watch the `--load` file for changes, and reboot with new version if it does.
 
-(This feature currently only works via the Linux inotify API.)
+If used in combination with `--delay-until-pc` (see below), `--watch` ensures that the machine is rebooted with, once again, a cleared (garbage-filled) RAM, and will wait, once again, for execution to reach the designated location, before reloading the RAM from `--load` (and jumping execution to a new spot, if `--start-loc` was specified (see below).
+
+(This feature currently only works via the Linux inotify API. A fallback method is planned, for when inotify is not available.)
 
 #### Machine configuration options
 
-##### --no-turbo
+##### --turbo
 
-Run at normal Apple \]\[ speed, instead of running as fast as possible.
+Run as fast as possible - don't throttle speed to 1.023 MHz. This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed.
 
 ##### --no-rom
 
@@ -172,7 +175,7 @@ Note that, if the loaded file overlaps ROM space (`$D000` thru `$FFFF`), the RAM
 
 A file's contents are mapped into RAM pretty much as one would expect: if a file is loaded into the start of RAM, at `$0000`, then all the locations in the file will correspond to the same loctions in RAM, *with the following exceptions*:
 
-- Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank.
+- Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank. Note that auxilliary RAM is not accessible within the emulation, if the selected machine type is original \]\[, or \]\[+.
 - File locations `$C000` thru `$CFFF`, and `$1C000` thru `$1CFFF`, are *not* mapped into their corrsponding locations in addressable memory as described in the previous bullet point, since RAM is never mapped to those locations (they are reserved for slotted peripheral firmware). They are instead mapped to the "alternate" 4k RAM banks ("main RAM bank 1" and "auxilliary RAM bank 2", respectively), which are accessed at region `$D000` thru `$DFFF` (but *only* when appropriate soft switches have been activated).
 
 If the file's contents would exceed the end of even auxilliary memory (128k), **bobbin** will exit with an error.
@@ -201,7 +204,7 @@ Select how much RAM is installed on the machine, in kilobytes.
 
 The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. (*Note: Language Card emulation is not yet implemented.*) If you specify 128k, then the top 64k of that will be used for so-called *auxiliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
 
-Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxiliary memory are implemented yet.
+Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. The values 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxiliary memory are implemented yet.
 
 #### "Simple" interface options
 
@@ -272,11 +275,15 @@ To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl
 
 Note that at least one shell—**zsh**, which is the default shell on Mac OS—does not accept `][` or `][+` unquoted; you would need to place them in single-quotes, or simply use one of the other aliases for the same machine.
 
-## The "simple" interface
+## User Interfaces (--iface)
 
-Just as with the machine type, a different default (called `tty`) is planned for what interface **bobbin** uses to display the emulation, and to accept user input. It is not necessary to specify the interface if **bobbin**'s standard input is being redirected from a file or a pipe, but it *is* necessary if **bobbin**'s program input is connected to a terminal. Even though at present there is only one supported interface, you must specify `--iface simple` (or just `--simple`) on the command-line for an interactive session with **bobbin**.
+### The "simple" interface
 
-### Interactive "simple" interface
+The `simple` interface is accessed via the `--iface simple` (or just `--simple`) option, and also is the default when standard input is not from the terminal (e.g., file or pipe). It provides a line-oriented interface, and is largely similar to the experience of using an Apple \]\[ over a serial connection: cursor position is ignored, and characters are printed sequentially. The cursor may be backed up if the user, or the emulated program, types a backspace character, but the cursor will never travel upwards on the screen.
+
+There are two "input modes" for the `simple` interface (`apple` and `fgets`), which select how input behaves when **bobbin** detects that the emulated program desires a full line of input. See below for more detail.
+
+#### Interactive "simple" interface
 
 The most straightforward way to use the `simple` interface is interactively. If you run **bobbin** like:
 
@@ -284,9 +291,9 @@ The most straightforward way to use the `simple` interface is interactively. If 
 $ ./bobbin -m plus --simple
 ```
 
-You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, and because the interface is in your terminal, it's a lightweight way to "check something real quick" without having to fire up a more graphics-oriented emulation program.
+You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, or to "check something real quick" about how things work with an Apple \]\[ machine.
 
-### Non-interactive, input-redirected "simple" interface
+#### Non-interactive, input-redirected "simple" interface
 
 You can also just pipe some input into **bobbin**. **bobbin** will execute the commands found in your input, and then exit.
 
@@ -333,7 +340,7 @@ This mode is very useful for testing that a program you're writing is working as
 
 Note that all the `]` prompts printed by the emulated Apple `\]\[+ have been suppressed, so as not to clutter up the output.
 
-### Mixed-interactivity via `--remain`
+#### Mixed-interactivity via `--remain`
 
 If you specify the `--remain` option, then **bobbin** will start in non-interactive mode, suppressing prompts, until all of its input has been consumed. It will then remain open, and switch to user input until the user types Ctrl-D (and any prompts the Apple emits will output successfully).
 
@@ -356,11 +363,13 @@ Well, it's true that nothing visible has happened yet. But type `LIST` and hit E
 
 This mode is handy for trying out/experimenting with your Apple programs.
 
-### Choosing your flavor of input mode with `--simple-input`
+There is also the `--remain-tty` option, which does the same thing as `--remain`, except after reading your BASIC program or commands at input, it switches to the full "screen emulation" provided by the `tty` interface (instead of remaining at the line-oriented `simple` interface).
+
+#### Choosing your flavor of input mode with `--simple-input`
 
 There are currently two different "input modes" available for the `--simple` interface to use when it detects that a line of input is being requested during an interactive user session, selected by the option `--simple-input`. This option has zero effect on any behavior while **bobbin** is reading input from a pipe or a file—or anything that isn't a terminal. It also has no effect on how input is handled when a program running on the Apple is reading a single keypress—nor when an unrecognized routine is being used to fetch an input line. This is because **bobbin** cheats to detect "line" input, by knowing where in the firmware the line-input routine lives—if that's not the routine being used to fetch input, **bobbin** can't tell the difference between fetching a keypress or fetching a whole line of input.
 
-#### `--simple-input apple`
+##### `--simple-input apple`
 
 The default (`--simple-input apple`) is to pass every character through directly to the emulated Apple, and let it handle echoing the characters back, and backspacing over characters&mdash;what you see is fairly close to what you'd see on real Apple ][ hardware (in terms of input behavior, anyway). This mode provides the classic Apple \]\[ behavior in which backspacing over characters leaves them visible on the line, and the right-arrow key moves the cursor back over them.
 
@@ -388,7 +397,7 @@ Our advice is to refrain from using the Esc key at line inputs. If you want to c
 
 The developer prefers `--simple-input apple` over `--simple-input fgets` for two reasons: (a) it is visually much closer to what the emulated Apple is actually seeing/processing, and (b) it keeps the interface experience perfectly consistent, in the event that a program is using its own bespoke line-input routine (which **bobbin** cannot detect). Since, in `apple` mode, no distinction is attempted between handling normal keypresses, versus handling a line of input, those two cases do not differ.
 
-#### `--simple-input fgets`
+##### `--simple-input fgets`
 
 *(Warning, the developer reserves the right to remove this mode in the future, unless someone informs him that they love and vastly prefer this option.)*
 
@@ -408,7 +417,7 @@ When the line is done being typed, and is ready to send as input to the emulated
 
 Note that the characters you type in `fgets` mode are not the actual characters the Apple \]\[ will see. Any lowercase characters are converted to uppercase, because an unmodified Apple \]\[ did not have lowercase characters, nor any means to type them. This probably won't surprise you, but what *may* surprise you is that some of the punctuation you type may be similarly transformed, as well. The original Apple \]\[ did not have the punctuation characters `{|}~` and \`; these are swapped out for `@[\\]` and `^`. Note that these same transformations are performed on piped input as well, and in `--simple-mode apple` processing (where it is immediately visible when entered).
 
-#### Non-interactive line input
+##### Non-interactive line input
 
 When **bobbin** detects that a line of input is being fetched, it suppresses output while that line is being read (just as described at the end of [the `--simple-input fgets` section](#--simple-input-fgets) just above. This is to support a familiar interface similar to other standard I/O tools: input comes into a program, output comes out. If output weren't suppressed during line input, the Apple would echo it back in the output. If you pipe a thousand-line BASIC program into **bobbin**, you'll probably be annoyed if you have to wade through those thousand lines you already had, just to get to the "good part" (the BASIC program's output).
 
@@ -416,7 +425,7 @@ For the same reasons, during non-terminal input, the `simple` interface also sup
 
 There is no option to control the input-mode used for non-interactive input. The developer's in-my-head name for it is "pipe" mode.
 
-#### How the `--simple` interface distinguishes line-input from keypresses
+##### How the `--simple` interface distinguishes line-input from keypresses
 
 **Bobbin** watches the Apple \]\['s 6502 CPU register called the PC (program counter) register, which tracks the location in memory where the Apple is currently executing code. If it reaches a place in the firmware that **bobbin** knows corresponds to a particular place in the Apple \]\[ firmware "monitor" program known as `GETLN`, then the specialized "line input" behavior is triggered. The locations used to match against the PC to determine if `GETLN` is running, are `$FD75` (`NXTCHAR`), `$FD67` (`GETLNZ`), and `$FD6A` (`GETLN`). The latter two locations are only used in non-interactive ("pipe") mode, to suppress prompt-printing, while the first location is used both to suppress output in non-interactive mode, and also to trigger "fgets" line input mode (when `--simple-input fgets` is specified). If the non-autostart, Integer BASIC firmware is loaded, an additional location is used for prompt-detection on the program counter: `$E006`.
 
@@ -424,7 +433,7 @@ Character output is detected when the program counter reaches `$FDF0` (`COUT1`).
 
 While one might be tempted to think that character input probably mirrors how character output is done&mdash;matching the program counter against a memory location like `$FD1B` (`KEYIN`), it is actually detected in a completely different way: by trapping memory reads from special memory locations `$C00x` and `$C01x` (where `x` here represents any hexadecimal nybble value). The former location is used by an Apple \]\[ program to read whether a character is available to be read, and what its value is, while the `$C01x` memory is used just to tell the Apple \]\[ key-handling hardware that we've accepted the keypress, and that it shouldn't set the "key-is-ready" bit at `$c00x` until the user presses another key. **Bobbin** needs to use this method for providing user input, rather than checking for entry into a subroutine, because many, many programs use that method directly to read keypresses, and if **bobbin** didn't handle them, those programs might loop forever, always waiting for a keypress that **bobbin** would never know to deliver.
 
-#### Additional details of bobbin's I/O processing
+##### Additional details of bobbin's I/O processing
 
 If **bobbin** receives a `SIGINT` signal (often triggered by a user typing Ctrl-C), **bobbin** treats it exactly as a normal Ctrl-C keypress, except that if there is some input that **bobbin** has received but which hasn't yet been processed by the program running on the Apple \]\[, the Ctrl-C may jump to the front of the line, ahead of other characters that had actually been typed before it. Note that it is possible to configure a terminal to use some other keypress instead of Ctrl-C for sending `SIGINT`; in this case **bobbin** will still treat that character as if it had been a Ctrl-C.
 
