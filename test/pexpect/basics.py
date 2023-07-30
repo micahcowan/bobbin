@@ -42,9 +42,10 @@ def m_plus_simple_v(p):
     if got != 1:
         fail("got EOF")
     global BOBBIN
+    before = p.before
+    before = re.sub('^[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus\.rom"\.\r\n', '', before)
     return want_got(
 """\
-%(bobbin)s: FOUND ROM file "../../src/roms/apple2plus.rom".\r
 %(bobbin)s: ROM file checksum is good:\r
 %(bobbin)s:   fc3e9d41e9428534a883df5aa10eb55b73ea53d2fcbb3ee4f39bed1b07a82905\r
 \r
@@ -53,7 +54,7 @@ def m_plus_simple_v(p):
  Ctrl-C *TWICE* to enter debugger.]\r
 \r
 \r
-]""" % {"bobbin": BOBBIN}, p.before)
+]""" % {"bobbin": BOBBIN}, before)
 
 @bobbin('-m plus --simple -v -v')
 def m_plus_simple_v_v(p):
@@ -61,10 +62,11 @@ def m_plus_simple_v_v(p):
     if got != 1:
         fail("got EOF")
     global BOBBIN
+    before = p.before
+    before = re.sub('^[^\n]*bobbin: Looking for ROM named "apple2plus.rom" in [^\n]*/roms...\r\n', '', before)
+    before = re.sub('^[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus\.rom"\.\r\n', '', before)
     return want_got(
 """\
-%(bobbin)s: Looking for ROM named "apple2plus.rom" in ../../src/roms...\r
-%(bobbin)s: FOUND ROM file "../../src/roms/apple2plus.rom".\r
 %(bobbin)s: ROM file checksum is good:\r
 %(bobbin)s:   fc3e9d41e9428534a883df5aa10eb55b73ea53d2fcbb3ee4f39bed1b07a82905\r
 \r
@@ -73,4 +75,4 @@ def m_plus_simple_v_v(p):
  Ctrl-C *TWICE* to enter debugger.]\r
 \r
 \r
-]""" % {"bobbin": BOBBIN}, p.before)
+]""" % {"bobbin": BOBBIN}, before)

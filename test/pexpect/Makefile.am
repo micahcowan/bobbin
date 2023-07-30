@@ -8,7 +8,7 @@ distclean-local:
 
 check: $(BOBBIN_TARGETS)
 	if test 'x$(PYTHON)' != x: -a 'x$(PYTHON)' != x; then \
-	    PYTHONPATH=$(srcdir) $(PYTHON) $(srcdir)/run_tests.py $(CHECK_VERBOSE); \
+	    BOBBIN_ROMDIR=$(top_srcdir)/src/roms PYTHONPATH=$(srcdir) $(PYTHON) $(srcdir)/run_tests.py $(CHECK_VERBOSE); \
 	else \
 	    exec >&2; \
 	    echo; echo '***' No python 3, so SKIPPING pexpect tests; echo; \

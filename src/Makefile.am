@@ -15,7 +15,7 @@ noinst_PROGRAMS=sha256-verify
 BUILT_SOURCES = option-names.h machine-names.h help-text.h
 EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
-	     roms/apple2.rom roms/apple2plus.rom
+	     roms/apple2.rom roms/apple2plus.rom $(BUILT_SOURCES)
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = roms/*.rom cscope.out trace.log
 
