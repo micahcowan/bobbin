@@ -93,9 +93,13 @@ Note: **bobbin**'s option parser treats **--option** and **-option** the same. O
 <!--START-OPTIONS-->
 #### Basic Options
 
+##### -V, --version
+
+Display version info and exit.
+
 ##### -h, --help
 
-Display basic information on how to use **bobbin**.
+Display basic information on how to use **bobbin**, and exit.
 
 ##### -v, --verbose
 

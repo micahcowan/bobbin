@@ -74,6 +74,8 @@ struct fnarg { void (*fn)(const char *s); };
 
 void do_vv(void) { cfg.squawk_level += 2; }
 struct fn vv = {do_vv};
+void do_version(void);
+struct fn version = {do_version};
 void do_help(void);
 struct fn help = {do_help};
 void do_ram(const char *s);
@@ -82,6 +84,7 @@ void do_trace_to(const char *s);
 struct fnarg trace_to_fn = {do_trace_to};
 
 const OptInfo options[] = {
+    { VERSION_OPT_NAMES, T_FUNCTION, &version },
     { HELP_OPT_NAMES, T_FUNCTION, &help },
     { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
@@ -257,6 +260,32 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                            //  and just  housekeeping
     }
 } // do_config()
+
+void do_version(void)
+{
+    fputs(
+PACKAGE " " PACKAGE_VERSION "\n"
+PACKAGE_URL "\n"
+"Copyright (C) 2023 Micah J Cowan <micah@addictivecode.org>\n"
+"Licensed under the MIT license (see included LICENSE file)\n"
+"\n"
+"This build of bobbin includes: "
+#ifdef HAVE_LIBCURSES
+"+"
+#else
+"-"
+#endif
+"tty, "
+#ifdef HAVE_SYS_INOTIFY_H
+"+"
+#else
+"-"
+#endif
+"inotify"
+"\n"
+        , stdout);
+    exit(0);
+}
 
 void do_help(void)
 {
