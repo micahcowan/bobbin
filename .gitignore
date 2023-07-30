@@ -1,6 +1,8 @@
 .dirstamp
 aclocal.m4
 autom4te.cache
+bobbin-v*.tar.gz
+bobbin-v*.zip
 build
 compile
 configure
