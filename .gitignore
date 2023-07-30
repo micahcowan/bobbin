@@ -17,6 +17,7 @@ trace.log
 cscope.out
 *.o
 src/ac-config.h
+src/ac-config.h.in~
 src/bobbin
 src/sha256-verify
 src/6502*.bin

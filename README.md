@@ -133,6 +133,14 @@ This is currently a required argument, unless **bobbin**'s input is from a file 
 
 Alias for `--interface=simple`.
 
+#### Special options
+
+##### --watch
+
+Watch the `--load` file for changes, and reboot with new version if it does.
+
+(This feature currently only works via the Linux inotify API.)
+
 #### Machine configuration options
 
 ##### --no-turbo

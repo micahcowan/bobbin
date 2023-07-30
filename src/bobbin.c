@@ -24,6 +24,7 @@ void bobbin_run(void)
     interfaces_init();
     mem_init(); // Loads ROM files. Nothing past this point
                 // should be validating options or arguments.
+    setup_watches();
     interfaces_start();
 
     cpu_reset();
@@ -33,6 +34,7 @@ void bobbin_run(void)
     }
 
     for (;;) /* ever */ {
+        if (check_watches()) frame_count = 0;
         struct timespec preframe;
         if (!cfg.turbo) {
             clock_gettime(CLOCK_MONOTONIC, &preframe);

@@ -28,6 +28,8 @@ AS_IF([test "x$with_curses" != "xno"],
         ]
     )])
 
+AC_CHECK_FUNC([inotify_add_watch],[AC_CHECK_HEADERS([sys/inotify.h])])
+
 AM_PATH_PYTHON([3],,[:])
 AS_IF([test "x$PYTHON" != "x" -a "x$PYTHON" != "x:"],
     [AC_MSG_CHECKING([for python pexpect module])

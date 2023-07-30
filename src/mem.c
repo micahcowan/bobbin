@@ -164,12 +164,8 @@ static void load_ram(void)
     }
 }
 
-void mem_init(void)
+static void fillmem(void)
 {
-    if (cfg.ram_load_loc >= sizeof membuf) {
-        DIE(2, "--load-at value must be less than $20000 (128k).\n");
-    }
-
     /* Immitate the on-boot memory pattern. */
     for (size_t z=0; z != sizeof membuf; ++z) {
         if (!(z & 0x2))
@@ -189,6 +185,15 @@ void mem_init(void)
         membuf[z + 0x68] = random();
         membuf[z + 0x69] = random();
     }
+}
+
+void mem_init(void)
+{
+    if (cfg.ram_load_loc >= sizeof membuf) {
+        DIE(2, "--load-at value must be less than $20000 (128k).\n");
+    }
+
+    fillmem();
 
     if (cfg.load_rom) {
         load_rom();
@@ -197,6 +202,18 @@ void mem_init(void)
     }
 
     if (cfg.ram_load_file != NULL) {
+        load_ram();
+    }
+}
+
+void mem_reboot(void)
+{
+    fillmem();
+
+    if (cfg.ram_load_file != NULL) {
+        if (ramloadbuf != NULL) {
+            munmap(ramloadbuf, ramloadsz);
+        }
         load_ram();
     }
 }

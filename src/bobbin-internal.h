@@ -110,6 +110,9 @@ struct Config {
     word            trap_success;
     bool            trap_failure_on;
     word            trap_failure;
+
+    // special options
+    bool            watch;
 };
 extern Config cfg;
 
@@ -172,6 +175,7 @@ static inline void go_to(word w) {
 /********** MEMORY **********/
 
 extern void mem_init(void);
+extern void mem_reboot(void);
 extern byte peek(word loc);
 extern void poke(word loc, byte val);
 // These versions don't trigger debugger break-on-memory,
@@ -296,6 +300,7 @@ extern void rh_step(void);
 //extern int  rh_peek_sneaky(word loc);
 extern bool rh_poke(word loc, byte val);
 extern int  rh_peek(word loc);
+extern void rh_reboot(void);
 extern void rh_display_touched(void);
 
 /********** TRACE **********/
@@ -323,6 +328,11 @@ extern int util_todisplay(int c);
 extern int util_toascii(int c);
 extern int util_fromascii(int c);
 extern int util_isprint(int c);
+
+/********** WATCH **********/
+
+extern void setup_watches(void);
+extern bool check_watches(void);
 
 /* TBD */
 extern word print_disasm(FILE *f, word pos, Registers *regs);

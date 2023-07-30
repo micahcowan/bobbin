@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+static bool did_delayed_jmp = false;
+
 static void trap_step(void)
 {
     if (cfg.trap_failure_on && current_pc() == cfg.trap_failure) {
@@ -26,8 +28,8 @@ static void trap_step(void)
 
 void rh_prestep(void)
 {
-    if (cfg.delay_set && PC == cfg.delay_until) {
-        cfg.delay_set = false; // XXX better ways to do this...
+    if (cfg.delay_set && PC == cfg.delay_until && !did_delayed_jmp) {
+        did_delayed_jmp = true;
         if (cfg.start_loc_set) {
             PC = cfg.start_loc;
         }
@@ -72,4 +74,13 @@ bool rh_poke(word loc, byte val)
 void rh_display_touched(void)
 {
     iface_display_touched();
+}
+
+void rh_reboot(void)
+{
+    mem_reboot();
+    //iface_reboot();
+    iface_display_touched();
+    cpu_reset();
+    did_delayed_jmp = false;
 }
