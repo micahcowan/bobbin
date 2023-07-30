@@ -145,7 +145,7 @@ Alias for `--interface=simple`.
 
 ##### --watch
 
-Watch the `--load` file for changes, and reboot with new version if it does.
+Watch the `--load` file for changes; reboot with new version if it does.
 
 If used in combination with `--delay-until-pc` (see below), `--watch` ensures that the machine is rebooted with, once again, a cleared (garbage-filled) RAM, and will wait, once again, for execution to reach the designated location, before reloading the RAM from `--load` (and jumping execution to a new spot, if `--start-loc` was specified (see below).
 
@@ -155,7 +155,9 @@ If used in combination with `--delay-until-pc` (see below), `--watch` ensures th
 
 ##### --turbo
 
-Run as fast as possible - don't throttle speed to 1.023 MHz. This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed.
+Run as fast as possible - don't throttle speed to 1.023 MHz.
+
+This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed.
 
 ##### --no-rom
 
