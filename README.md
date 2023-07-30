@@ -110,6 +110,14 @@ Normally **bobbin** only produces information about program-ending errors, or wa
 
 Don't produce warnings, only errors.
 
+##### -i, --input *arg*
+
+Input filename. `-` means standard input (and is usually redundant).
+
+##### -o, --output *arg*
+
+Output filename. `-` means standard output (and is usually redundant).
+
 #### Essential Options
 
 ##### -m, --machine, --mach *arg*
@@ -153,6 +161,18 @@ Watch the `--load` file for changes; reboot with new version if it does.
 If used in combination with `--delay-until-pc` (see below), `--watch` ensures that the machine is rebooted with, once again, a cleared (garbage-filled) RAM, and will wait, once again, for execution to reach the designated location, before reloading the RAM from `--load` (and jumping execution to a new spot, if `--start-loc` was specified (see below).
 
 (This feature currently only works via the Linux inotify API. A fallback method is planned, for when inotify is not available.)
+
+##### --tokenize
+
+Reads in a AppleSoft BASIC listing, outputs AppleSoft tokenized binary.
+
+Expects AppleSoft BASIC on the standard input (or whatever you specified with `-i`), and will output the tokenized binary version. **Bobbin** tokenizes the output by running the input through an emulated Apple machine, and then when input has ended, saving the program at `$801` to the output file (specified with `-o`).
+
+This option implies `-m plus`, and **bobbin** wil refuse to run if you specify some other value for `-m`. When the Apple \]\[e is supported, **bobbin** will make that the default instead (at which point, lowercase input will be accepted instead of translated to uppercase as it is currently).
+
+If a line that doesn't begin with a number is entered, or AppleSoft gives an error on line input, **bobbin** will exit wtih an error.
+
+**Bobbin** will refuse to run with this option if it detects that output is directed to a tty.
 
 #### Machine configuration options
 
