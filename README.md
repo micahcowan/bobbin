@@ -277,6 +277,18 @@ Note that at least one shell—**zsh**, which is the default shell on Mac OS—d
 
 ## User Interfaces (--iface)
 
+### The "tty" interface
+
+The `tty` interface is used by default when you start **bobbin** on the command-line&mdash;unless standard input is being redirected from a file or pipe (or is otherwise not connected to a terminal). It provides a display of the actual emulated machine's screen contents, inside your terminal, using the standard Unix **curses** (or **ncurses**) library.
+
+To exit the interface, type Ctrl-C twice in succession (a single Ctrl-C will be passed through to the emulated Apple; it typically has the effect of `BREAK`ing a running BASIC program. We recognize that it is very easy to accidentally type Ctrl-C a second time after having done so once; in the very nearfuture it's expected that the second Ctrl-C will enter the debugger (described below), or else a more lightweight interface. (The `tty` interface is still under very active development, even relative to the rest of the emulator.)
+
+The `tty` is a few steps closer to "realistic" than the strictly line-oriented `simple` interface, and is adequate for most strictly-textual software that runs on 8-bit Apple machines. However, there are important drawbacks and caveats:
+
+ - In 40-column mode, the screen has a strange aspect-ratio on most terminals. This is because typical terminal emulators use fonts that look good at 80 columns by 25 lines, and so are half the width needed to make 40 columns look "full".
+ - Only ASCII (and Unicode) characters are available. This means that the various "mousetext" characters available from the Apple \]\[e and onwards, are not available for display on a Unix terminal. Actually, Unicode *does* include the Apple mousetext characters as part of the standard, but as of now they are not widely implemented, so no attempt is currently being made for **bobbin** to use them at the terminal interface.
+ - Even after Apple \]\[e emulation is supported, this interface (as well as the `simple` one) will remain unable to support the often-important "any key" functionality of the keyboard strobe software switch. The reason being that Unix-style terminals do not have commonly have a way to detect if a key is currently being pressed, so we don't have this information to pass along to the Apple \]\[e. Therefore, if a piece of software (usually a game), perhaps after detecting that it's running in an "Apple \]\[e", depends on this functionality, it will not behave correctly under the `tty` interface.
+
 ### The "simple" interface
 
 The `simple` interface is accessed via the `--iface simple` (or just `--simple`) option, and also is the default when standard input is not from the terminal (e.g., file or pipe). It provides a line-oriented interface, and is largely similar to the experience of using an Apple \]\[ over a serial connection: cursor position is ignored, and characters are printed sequentially. The cursor may be backed up if the user, or the emulated program, types a backspace character, but the cursor will never travel upwards on the screen.
@@ -437,7 +449,7 @@ While one might be tempted to think that character input probably mirrors how ch
 
 If **bobbin** receives a `SIGINT` signal (often triggered by a user typing Ctrl-C), **bobbin** treats it exactly as a normal Ctrl-C keypress, except that if there is some input that **bobbin** has received but which hasn't yet been processed by the program running on the Apple \]\[, the Ctrl-C may jump to the front of the line, ahead of other characters that had actually been typed before it. Note that it is possible to configure a terminal to use some other keypress instead of Ctrl-C for sending `SIGINT`; in this case **bobbin** will still treat that character as if it had been a Ctrl-C.
 
-If **bobbin** receives a second `SIGINT` signal before the emulated Apple has had a chance to consume it as a keypress; or if Ctrl-C is pressed twice in a row without any intervening characters (even if the first Ctrl-C was in fact processed successfully as input to the emulated Apple), then **bobbin** will open a debugger interface.
+If **bobbin** receives a second `SIGINT` signal before the emulated Apple has had a chance to consume it as a keypress; or if Ctrl-C is pressed twice in a row without any intervening characters (even if the first Ctrl-C was in fact processed successfully as input to the emulated Apple), then **bobbin** will open a debugger interface. This interface enables you, among other things, to type the "reset" key (performing either a "warm" or "cold" reset), to jump directly into the Apple monitor, or to step through the currently-running machine code.
 
 If **bobbin** is processing non-interactive input while a `SIGINT` is received, and the `--remain` option is active, it will do three things in succession: (1) it will send a Ctrl-C to the program on the Apple \]\[ (in BASIC, this usually has the effect of causing a program `BREAK`); (2) it will discard any pipe or redirected input that was still waiting to be processed by the Apple \]\['s program, and (3) it will immediately enter "interactive" mode, and process line inputs according to whatever setting of `--simple-input` may be active.
 
