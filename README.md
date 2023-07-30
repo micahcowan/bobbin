@@ -454,3 +454,40 @@ If **bobbin** receives a second `SIGINT` signal before the emulated Apple has ha
 If **bobbin** is processing non-interactive input while a `SIGINT` is received, and the `--remain` option is active, it will do three things in succession: (1) it will send a Ctrl-C to the program on the Apple \]\[ (in BASIC, this usually has the effect of causing a program `BREAK`); (2) it will discard any pipe or redirected input that was still waiting to be processed by the Apple \]\['s program, and (3) it will immediately enter "interactive" mode, and process line inputs according to whatever setting of `--simple-input` may be active.
 
 In the `--simple` interface, if a Ctrl-D is input by the user, then it indicates that **bobbin** should exit (**bobbin** may see a Ctrl-D entered directly, or it may "percieve" it via a return from `read()` that indicated no bytes remained to be read). **Bobbin** does not exit *immediately* upon receipt of a Ctrl-D. Instead, it waits until the program in the Apple \]\[ has caught up with the user input, up to the point when the Ctrl-D was typed, and issues a carriage return character. Only when the Apple \]\[ program indicates "consumption" of that carriage return, does **bobbin** then exit. This is to make the behavior consistent with other programs at a terminal.
+
+### Bobbin's built-in debugger
+
+The debugger is currently only available from the `simple` interface, though availability in some form is planned for the `tty` interface as well. It is entered from `simple` by typing Ctrl-C twice in succession (**note:** doing this in the `tty` interface simply exits the emulator, at the moment).
+
+When you enter the debugger, you'll see a message like the following:
+
+```
+*** Welcome to Bobbin Debugger ***
+  SPC = next intr, c = leave debugger (continue execution), m = Apple II monitor
+  q = quit bobbin, r or w = warm reset, rr = cold reset
+-----
+ACC: A0  X: 00  Y: 05  SP: F6          [N]   V   [U]   B    D    I    Z    C
+STK: $1F6:  (FE)  3A  F5  84  FF  F8  E6  00  85  E8  |  FF  FF  00  00
+0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
+>
+```
+
+As the introduction states, you can type `c` to get back out of the debugger. You can type `r` or `w` to perform a "warm reset" (same as Ctrl-RESET on a real machine), or type `rr` to perform a "hard reset" (same as Open-Apple Ctrl-RESET on a real machine). Bobbin doesn't currently emulate the Open-Apple key, so it just directly invalidates the "powered-up"/warm-reset verification byte before issuing the reset.
+
+You can also jump to the system monitor by typing `m`. In order to encourage the monitor to print the value of the PC and the other registers on entry, `m` actually simulates the `BRK` signal (which occurs when the 6502 `BRK` instruction (`$00`) is executed).
+
+Taking a closer look at this portion of output from the debugger:
+
+```
+ACC: A0  X: 00  Y: 05  SP: F6          [N]   V   [U]   B    D    I    Z    C
+STK: $1F6:  (FE)  3A  F5  84  FF  F8  E6  00  85  E8  |  FF  FF  00  00
+0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
+```
+
+You can see that the values of the accumulator (A or ACC), the index registers X and Y, and the Stack Pointer, are printed first. Following that is a breakout of the processor flags register. Any flags enclosed in `[`square braces`]` are "set" (bit value 1); any that aren't are "reset" (or "unset"&mdash;bit value 0).
+
+Next, a slice of the contents of the stack are displayed. The value at the current Stack Pointer (in this example, `$F6`, so this is the value at location `$1F6`) is printed first, in parentheses to indicate that this value doesn't have meaning right now. It is followed by the values at increasing location, the items that have been "pushed" onto the stack, from most- to least-recently-pushed. If you see a `|` bar, it indicates wraparound between the value at `$1FF`, to the value at `$100`.
+
+On the third line, we have the Program Counter value, followed by the opcode and any arguments at that location, a disassembly of those, and finally any memory locations of interest. Since the `LDA ($28),y` instruction first looks at the 16-bit word starting at location `$28`, and then adds the value from the Y index register to that before reading a value from the resulting memory location, we first see the two bytes located at `$28`&mdash;`$D0` and `$07`, which (in the Apple \]\['s little-endian environment) represents memory location `$0705`&mdash;followed by the memory contents at `$07D5`&mdash;or, `$07D0` plus the contents of the Y register (5). The first of those values at `$07D5` are what will be stored in the accumulator by this `LDA` instruction.
+
+You can step through successive lines of code by simply hitting return. As the debugger is still in early stages of development (like the rest of **bobbin**, there isn't much else to do in the debugger right now.
