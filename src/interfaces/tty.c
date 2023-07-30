@@ -98,6 +98,12 @@ static void if_tty_start(void)
     keypad(win, true);
     nodelay(win, 1);
 
+    move(0,40);
+    vline('|', 25);
+    move(24,0);
+    hline('-',41);
+    refresh();
+
     // Draw current video memory (garbage)
     refresh_video(false);
 }
@@ -168,8 +174,10 @@ static void if_tty_frame(bool flash)
 
 static void if_tty_display_touched(void)
 {
-    if (win)
+    if (win) {
+        refresh();
         touchwin(win);
+    }
 }
 
 IfaceDesc ttyInterface = {
