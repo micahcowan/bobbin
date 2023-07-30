@@ -13,3 +13,24 @@ bobbin uses to verify ROM checksums, and releasing it to the
 public domain.
 
 James Hall, who helped early on with testing and feedback
+
+Steven Hugg (sehugg on Github), author, and creator of 8bitworkshop.com,
+an excelent in-browser IDE for a staggeringly large variety of 8-bit
+computers and video game consoles. One of 8bitworkshop.com's most
+notable features is that it compiles and emulates your code *as you
+type*, so that as you make changes in your code, the changes appear
+almost instantaneously in the accompanying emulator window.
+.
+This dramatically shrank my development cycle, from
+"code -> compile -> make a disk image -> fire up an emulator -> load the
+disk image -> test -> debug", to simply "code -> debug", and
+revolutionized my programming productivity.
+.
+This "bobbin" project was directly inspired by that rapid dev cycle, as
+I wanted to return to using a Unix terminal, with my favorite editor
+(vim) and a full-featured git implementation, while still being able to
+have an emulator that can constantly refresh itself in response to
+updated build results (this is provided by bobbin's --watch option),
+though I must also separately set up a build environment that watches
+changes in the source files (that part is outside bobbin's scope: I use
+the Linux tool "inotifywait" to accomplish it).
