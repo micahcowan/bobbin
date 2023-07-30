@@ -7,22 +7,29 @@
 **Please note:** the video shows the use of command-line options `--simple` and `-m ][`. In the latest version of the **bobbin**, you must use `-m ][+` (or `-m plus`), and also add `--simple-input fgets`, to obtain approximately the same results as shown in the video. If you use `-m ][` as shown in the video (and if your shell even allows that), instead of the correct `-m ][+`, then **bobbin** will drop you directly into *Integer* (Woz) BASIC, instead of AppleSoft.
 <br />
 
-[![a2vimode showcase video](https://img.youtube.com/vi/zMlG5CRfRDA/0.jpg)](https://youtu.be/zMlG5CRfRDA)
+[![bobbin showcase video](https://img.youtube.com/vi/zMlG5CRfRDA/0.jpg)](https://youtu.be/zMlG5CRfRDA)
+
+And here's another video (clickable) that showcases additional features in a more recent version of **bobbin** (~two weeks of work):
+
+[![bobbin part 2](https://img.youtube.com/vi/yIJ4bPOrrko/0.jpg)](https://www.youtube.com/watch?v=yIJ4bPOrrko)
+
+***Note***: the video above showcases the latest features, with which this README file has not *quite* caught up. The developer expects to remedy this very soon. Please be patient!
 
 ## Overview
 
 ### Current features
 
 - Emualates an Apple \]\[+ (well really just a 6502, some RAM and the Apple ][ firmware)
-- Simplistic text-entry interface, roughly equivalent to using an Apple ][ via serial connection
+- Two available interfaces, both for running within a Unix-style terminal program
+ - Simplistic text-entry interface, roughly equivalent to using an Apple ][ via serial connection
+ - Complete screen-contents emulation via the curses library (anyone up for Apple \]\[-over-telnet?)
 - Can accept redirected input (Integer BASIC program, AppleSoft program, or hex entry via monitor)
-- Not rate-limited, so runs in "turbo mode"
+- Can automatically watch a binary file for changes, and reload itself instantly when it's updated
+- Can delay loading/running a binary file until the system has completed the basic boot-up
 
 ### Planned features
 
-- Full Apple \]\[ text page contents emulated to the tty (ncurses-like interface, as the default) (anyone up for Apple \]\[-over-telnet?)
-- Watch a specified binary or disk-image file for changes, and automatically reload/run the emulation (for constant, instantaneous feedback during Apple \]\[ program development)
-- Run in "turbo mode" until boot-up is finished, or a certain point in a program is reached. then switch to 1MHz mode to continue running
+- Disk drive emulation (probably including .woz)
 - Full graphics (not to the terminal) and sound emulation, of course
 - Emulate an enhanced Apple //e by default
 - Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
@@ -31,9 +38,8 @@
 
 ### Known issues
 
-- No way to send Ctrl-RESET (coming soon)
+- No way to send Ctrl-RESET within the "tty" interface
 - No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
-- Currently always runs in "turbo mode", many times faster than a "real" Apple ][ machine. Rate-limiting will be added soon.
 - The language card is not currently emulated, nor are the vast majority of software switches/special memory locations. It's just (the documented ops for) a 6502 CPU, RAM, and the firmware ROM.
 - The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
 - No disk emulation yet. That will obviously be very handy, and is a planned feature.
@@ -46,25 +52,26 @@ $ ./configure
 $ make
 ```
 
-You must have GNU autoconf and automake installed for the `autoreconf`
-part to work
+### Build dependencies
+
+Bobbin is written in SUSv4 / POSIX-compliant C (with some reasonable additional assumptions, such as an ASCII-compatible environment). It assumes it is running on a SUSv4-compliant Unix-like environment. Even if you are running on an operating system that is not, itself, Unix-like, there are likely Unix-like environments that it can host. The developer uses **bobbin** primarily on a Windows 11 system, hosting Ubuntu via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+You need to have GNU autoconf and automake installed, to run the `autoreconf` command shown above. This step is *not* necessary for the release source packages (the ones that are *not* named "Source Code", even though they do in fact consist of just the source code, with the `./configure` script included (no need for the GNU autotools).
+
+In addition, you will need the *development files* for a Unix **curses** or **nurses** implementation. This means header files (`<curses.h>`), and library-file symlinks suitable for development. Your system's packaging system may call it something like **libncurses-dev**, or **ncurses-devel**.
+
+The `--watch` feature currently requires Linux, and its **inotify** facility.
+
+To run the included (as-yet incomplete) tests, you must also have available:
+ - the ca65 assembler and ld65 linker, from [the cc65 project](https://cc65.github.io/).
+ - Python 3, and the Python **pexpect** module.
+
+### Trying it out!
+
 Once it has built successfully, try:
 
 ```
-$ ./bobbin -m plus --simple
-./bobbin: Looking for ROM named "apple2plus.rom" in /usr/share/bobbin/roms...
-./bobbin: Looking for ROM named "apple2plus.rom" in ./roms...
-./bobbin: FOUND ROM file "./roms/apple2plus.rom".
-[Bobbin "simple" interactive mode.
- Ctrl-D at input to exit.]
-
-
-]W$="WORLD"
-
-]PRINT "HELLO, ";W$
-HELLO, WORLD
-
-]^D
+$ ./bobbin -m plus
 ```
 
 ## Using Bobbin
