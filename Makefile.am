@@ -1,2 +1,2 @@
-EXTRA_DIST = README.md
+dist_doc_DATA = README.md LICENSE THANKS
 SUBDIRS = src test

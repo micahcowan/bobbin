@@ -22,7 +22,7 @@ BEGIN {
 /^#/ {
     if (IN_SYNOPSIS) {
         o("")
-        o("See the included README.md for much, much more detail.")
+        o("See " DOCDIR "/README.md for much, much more detail.")
     }
     IN_SYNOPSIS = 0;
 }

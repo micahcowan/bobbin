@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS=subdir-objects
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
 # XXX: ROMSRCHDIR should be decided in ./configure script
-ROMSRCHDIR=$(datarootdir)/$(PACKAGE_TARNAME)
-AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(ROMSRCHDIR)"'
+romdir=$(pkgdatadir)/roms
+AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(romdir)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
 bobbin_SOURCES=main.c bobbin.c config.c cpu.c mem.c trace.c interfaces/iface.c interfaces/simple.c util.c signal.c debug.c disasm.c machine.c hook.c watch.c sha-256.c sha-256.h bobbin-internal.h apple2.h ac-config.h
@@ -15,7 +15,9 @@ noinst_PROGRAMS=sha256-verify
 BUILT_SOURCES = option-names.h machine-names.h help-text.h
 EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
-	     roms/apple2.rom roms/apple2plus.rom $(BUILT_SOURCES)
+	     $(BUILT_SOURCES)
+A2ROMS=roms/apple2.rom roms/apple2plus.rom
+dist_rom_DATA=$(A2ROMS)
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = roms/*.rom cscope.out trace.log
 
@@ -44,7 +46,7 @@ option-names.h: ../README.md scripts/gen-options.awk
 	mv $@.out $@
 
 help-text.h: ../README.md scripts/gen-help.awk
-	$(AWK) -f $(srcdir)/scripts/gen-help.awk < $< > $@.out
+	$(AWK) -f $(srcdir)/scripts/gen-help.awk -v DOCDIR=$(docdir) < $< > $@.out
 	mv $@.out $@
 
 machine-names.h: ../README.md scripts/gen-machines.awk

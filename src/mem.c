@@ -24,7 +24,7 @@ static size_t        ramloadsz;
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
     "./roms",        // also not a dirname; we'll use bobbin's dir instead
-    ROMSRCHDIR "/roms",
+    ROMSRCHDIR,
 };
 static const char * const *romdirp = rom_dirs;
 static const char * const * const romdend = rom_dirs + (sizeof rom_dirs)/(sizeof rom_dirs[0]);
