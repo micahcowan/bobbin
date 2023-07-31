@@ -78,6 +78,15 @@ static void refresh_video(bool flash)
     wattrset(win, A_NORMAL);
 }
 
+static void draw_border(void)
+{
+    move(0,40);
+    vline('|', 25);
+    move(24,0);
+    hline('-',41);
+    refresh();
+}
+
 static void if_tty_start(void)
 {
     if (!cfg.turbo_was_set) {
@@ -98,11 +107,7 @@ static void if_tty_start(void)
     keypad(win, true);
     nodelay(win, 1);
 
-    move(0,40);
-    vline('|', 25);
-    move(24,0);
-    hline('-',41);
-    refresh();
+    draw_border();
 
     // Draw current video memory (garbage)
     refresh_video(false);
@@ -165,13 +170,12 @@ static void if_tty_frame(bool flash)
         raise(SIGTSTP);
     } else if (c == 0x0C) {
         // Ctrl-L = refresh screen
-        // ...doesn't work?!
-        WARN("Ctrl-L\n");
-        refresh_video(flash);
-        touchwin(stdscr);
+        clear();
         refresh();
-        touchwin(win);
+        wclear(win);
+        refresh_video(flash);
         wrefresh(win);
+        draw_border(); // does refresh();
     } else if (c >= 0 && (c & 0x7F) == c) {
         typed_char = util_fromascii(c & 0x7F);
     }
