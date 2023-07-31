@@ -1,4 +1,4 @@
-AC_INIT([bobbin], [v0.3], [micah@addictivecode.org],,
+AC_INIT([bobbin], [0.4-dev], [micah@addictivecode.org],,
         [https://github.com/micahcowan/bobbin/])
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE([foreign dist-zip])
