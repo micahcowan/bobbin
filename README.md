@@ -192,9 +192,9 @@ RAM location to load file from `--load`.
 
 The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
 
-##### --load-basic *arg*
+##### --load-basic-bin *arg*
 
-Load specified AppleSoft BASIC file at boot.
+Load tokenized (binary) AppleSoft BASIC file at boot.
 
 This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until FD75`, except that it does some additional "fixup" to connect it to the BASIC interpreter.
 

@@ -114,9 +114,192 @@ static void load_rom(void)
     validate_rom(rombuf, 12 * 1024);
 }
 
+bool check_asoft_link(unsigned char *buf, size_t start, size_t sz,
+                      word w, long *chlenp)
+{
+    long chlen;
+    bool val = true;
+    for (chlen = 0; chlen < 65536; ++chlen) {
+        if (w == 0x0000) {
+            val = true;
+            break;
+        } else if (w < start || w > start + sz - sizeof(word)) {
+            val = false;
+            break;
+        } else {
+            // next link
+            w = WORD(buf[w - start], buf[w - start + 1]);
+        }
+    }
+    if (chlen == 65536)
+        chlen = -1;
+    if (val)
+        *chlenp = chlen;
+    return val;
+}
+
+static void adjust_asoft_start(unsigned char **bufp, size_t *szp)
+{
+    /*
+       If we're loading an AppleSoft BASIC file, there is some
+       possibility that the first two bytes are not actually part of
+       the AppleSoft program to load, but are a word representing
+       the size of the file, minus one (= size of program, plus one?)
+       Apparently this is how Apple DOS stores the file, and there
+       are tokenizer programs that output this way.
+
+       In every case where we determine tha word 0 is a file length and
+       not the first BASIC link, we complain with a warning to avoid
+       tokenizers that prefix a file length header word.
+
+       If word zero is not the file length, word zero is the first BASIC
+       link. But check it anyway, and error if it's invalid.
+
+       Otheriwse, if word zero is not a valid BASIC link, then we assume
+       it's a file length and skip it.
+
+       Otherwise, if word zero is a valid BASIC link, and word one is not,
+       we assume word zero is the first BASIC link (and word one is
+       the first line number).
+
+       If both word zero and word one are valid BASIC links, we
+       use word zero, UNLESS it appears to have a loop in the chain
+       while word one doesn't, in which case we use word one.
+
+       The notion of a "valid BASIC link" is determined as:
+         (a) it refers to a memory location that resides within the
+             loaded file's range, or else has the value zero.
+         (b) if it refers to a memory location, the value at that
+             location must itself a valid BASIC link (this definition
+             is recursive)
+       Chain linkage is only followed up to 65,535 links. If linkage
+       exceeds this number (may be a looping chain), it is still
+       considered a "valid BASIC link", but the chain length is reported
+       as -1, for the purposes of comparing chain lengths (see above, in
+       the case where both words zero and one are "valid BASIC links").
+
+       Note that things like backwards-links, or links that jump forward
+       by more than 256 bytes, or line numbers whose values jump around,
+       are not checked (even though it is not normally possible to
+       create such programs), because people do pull shenanigans with
+       the BASIC program representation, and we want to be as permissive
+       as possible.
+
+       It is possible, though unlikely, for a value to be both a valid
+       file length, *and* a valid BASIC link, if the file length is
+       greater than the --load-at location (or default $801), and the
+       value of that file length as a memory pointer just so happens to
+       fall at a valid link.
+
+       It is similarly possible, though unlikely, for a value to be both
+       a valid line number, and a valid BASIC link.
+    */
+    if (*szp < sizeof (word)) {
+        DIE(0, "--load-basic-bin: file \"%s\" has insufficient length (%zu)\n",
+            cfg.ram_load_file, *szp);
+        DIE(2, "  to be a valid AppleSoft BASIC program binary.\n");
+    }
+
+    INFO("Determining whether AppleSoft program in file \"%s\" begins\n",
+         cfg.ram_load_file);
+    INFO("  at the first word, or the second.\n");
+
+    bool adjusted = false;
+    const word lenval = (*szp)-1;
+    word w0 = WORD((*bufp)[0], (*bufp)[1]);
+    long w0chain;
+    bool w0valid = check_asoft_link(*bufp, cfg.ram_load_loc, *szp,
+                                    w0, &w0chain);
+#define VPFX "    ..."
+    if (w0valid) {
+        VERBOSE(VPFX "word 0 is a valid BASIC chain of length %ld.\n",
+                w0chain);
+    } else {
+        VERBOSE(VPFX "word 0 is not a valid BASIC chain.\n");
+    }
+
+    bool is_lenval = (w0 == lenval);
+    VERBOSE(VPFX "word 0 is%s a valid file length.\n", is_lenval? "" : " not");
+    if (is_lenval) {
+        // Nothing to do yet, futher checking is required.
+    } else if (!w0valid) {
+        // Not the length value, but also not a valid BASIC link. Error.
+        DIE(0, "First word of --load-basic-bin file \"%s\" is neither a\n",
+            cfg.ram_load_file);
+        DIE(0, "  valid filesize value, nor a valid AppleSoft link!\n");
+        DIE(2, "  Not a valud AppleSoft BASIC program binary.\n");
+    } else {
+        // is not the length value, but is a BASIC link. We have enough info.
+        goto no_adjust;
+    }
+
+    // From here on out, we know word zero was a valid file length!
+
+    long w1chain;
+    bool w1valid =
+        (*szp > 2 * sizeof (word)) // don't read word 1 if it doesn't exist
+        && check_asoft_link(*bufp + sizeof (word), cfg.ram_load_loc,
+                            *szp - sizeof (word),
+                            WORD((*bufp)[2], (*bufp)[3]), // w1
+                            &w1chain);
+    if (w1valid) {
+        VERBOSE(VPFX "word 1 is a valid BASIC chain of length %ld.\n",
+                w1chain);
+    } else {
+        VERBOSE(VPFX "word 1 is not a valid BASIC chain.\n");
+    }
+
+    if (w0valid) {
+        // handled further below
+    } else if (!w1valid) {
+        DIE(0, "Neither word 0 nor word 1 are valid AppleSoft BASIC links.\n");
+        DIE(0, "--load-basic-bin file \"%s\" is not an AppleSoft BASIC\n",
+            cfg.ram_load_file);
+        DIE(2, "  program binary.\n");
+    } else {
+        goto adjust; // word 0 is the length value, is not a valid link.
+    }
+
+    // Okay, both word 0 and word 1 are vaild BASIC links...
+    WARN("AMBIGUOUS BASIC FILE! Word 0 and word 1 of --load-basic-bin\n");
+    WARN("  file \"%s\" are BOTH valid program starts, but word 0\n",
+         cfg.ram_load_file);
+    WARN("  could ALSO be a valid file length header.\n");
+    WARN("If the program listing appears to be wrong, please use a\n");
+    WARN("  different AppleSoft tokenizer program\n");
+    WARN("  (such as `bobbin --tokenize`), and start with a line\n");
+    WARN("  number below 2000.\n");
+    if (w0chain == -1 && w1chain != -1) {
+        WARN("Using word 1, as word 0 appears to be an infinite chain.\n");
+        goto adjust;
+    }
+    goto no_adjust;
+
+#undef VPFX
+adjust:
+    WARN("file-length prefix detected for AppleSoft binary\n");
+    WARN("  file \"%s\". Please use a tokenizer\n",
+         cfg.ram_load_file);
+    WARN("  that doesn't write this prefix (such as bobbin --tokenize.\n");
+    adjusted = true;
+    *bufp += 2;
+    *szp -= 2;
+    // fall through
+no_adjust:
+    INFO("Determination: AppleSoft program begins at word %s.\n",
+         adjusted? "one" : "zero");
+}
+
 void load_ram_finish(void)
 {
-    memcpy(&membuf[cfg.ram_load_loc], ramloadbuf, ramloadsz);
+    unsigned char *buf = ramloadbuf;
+    size_t sz = ramloadsz;
+
+    if (cfg.basic_fixup) {
+        adjust_asoft_start(&buf, &sz);
+    }
+
+    memcpy(&membuf[cfg.ram_load_loc], buf, sz);
 
     INFO("%zu bytes loaded into RAM from file \"%s\",\n",
          ramloadsz, cfg.ram_load_file);
@@ -138,6 +321,10 @@ void load_ram_finish(void)
         poke_sneaky(ZP_ARYTAB+1, hi);
         poke_sneaky(ZP_STREND, lo);
         poke_sneaky(ZP_STREND+1, hi);
+        INFO("--load-basic-bin: AppleSoft settings adjusted.\n");
+        VERBOSE("BASIC program start = $%X, end = $%X.\n",
+                (unsigned int)(cfg.ram_load_loc),
+                (unsigned int)WORD(lo, hi));
     }
 }
 

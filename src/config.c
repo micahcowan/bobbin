@@ -97,7 +97,7 @@ const OptInfo options[] = {
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
     { LOAD_AT_OPT_NAMES, T_ULONG_ARG, &cfg.ram_load_loc },
-    { LOAD_BASIC_OPT_NAMES, T_FN_ARG, &load_basic, &cfg.basic_fixup },
+    { LOAD_BASIC_BIN_OPT_NAMES, T_FN_ARG, &load_basic, &cfg.basic_fixup },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
