@@ -124,6 +124,21 @@ void load_ram_finish(void)
          (unsigned int)cfg.ram_load_loc);
     // Warning, this ^ is a lie for some values ($C000 - $CFFF), and
     //  aux mem locations
+
+    if (cfg.basic_fixup) {
+        // This was an AppleSoft BASIC file. Fixup some
+        // zero-page values.
+        poke_sneaky(ZP_TXTTAB, LO(cfg.ram_load_loc)   /* s/b $01 */);
+        poke_sneaky(ZP_TXTTAB+1, HI(cfg.ram_load_loc) /* s/b $08 */);
+        byte lo = LO(cfg.ram_load_loc + ramloadsz);
+        byte hi = HI(cfg.ram_load_loc + ramloadsz);
+        poke_sneaky(ZP_VARTAB, lo);
+        poke_sneaky(ZP_VARTAB+1, hi);
+        poke_sneaky(ZP_ARYTAB, lo);
+        poke_sneaky(ZP_ARYTAB+1, hi);
+        poke_sneaky(ZP_STREND, lo);
+        poke_sneaky(ZP_STREND+1, hi);
+    }
 }
 
 static void load_ram(void)

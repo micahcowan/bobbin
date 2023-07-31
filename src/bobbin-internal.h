@@ -89,6 +89,7 @@ struct Config {
     bool            load_rom;
     const char *    ram_load_file;
     unsigned long   ram_load_loc;
+    bool            basic_fixup;
     bool            turbo;
     bool            turbo_was_set;
     word            start_loc;

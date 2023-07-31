@@ -3,6 +3,7 @@
 
 /*
    Prefixes:
+     ZP  - Zero-Page RZM location used by f/w
      LOC - RAM location used by f/w
      SS  - Soft Switches and other $C0XX stuff
      FP  - AppleSoft BASIC (floating point) f/w
@@ -11,6 +12,14 @@
      OLD - pre-Autostart F8 ROM
      VEC - one of the address vectors in the last six bytes of firmware
 */
+
+#define ZP_TXTTAB       0x67
+#define ZP_VARTAB       0x69 // LOMEM
+#define ZP_ARYTAB       0x6B
+#define ZP_STREND       0x6D
+#define ZP_FRETOP       0x6F
+#define ZP_MEMSIZE      0x73 // HIMEM
+#define ZP_PRGEND       0xAF
 
 #define LOC_SOFTEV      0x03F2
 #define LOC_PWREDUP     0x03F4

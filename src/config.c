@@ -82,6 +82,8 @@ void do_ram(const char *s);
 struct fnarg ramfn = {do_ram};
 void do_trace_to(const char *s);
 struct fnarg trace_to_fn = {do_trace_to};
+void do_load_basic(const char *s);
+struct fnarg load_basic = {do_load_basic};
 
 const OptInfo options[] = {
     { VERSION_OPT_NAMES, T_FUNCTION, &version },
@@ -95,6 +97,7 @@ const OptInfo options[] = {
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
     { LOAD_AT_OPT_NAMES, T_ULONG_ARG, &cfg.ram_load_loc },
+    { LOAD_BASIC_OPT_NAMES, T_FN_ARG, &load_basic, &cfg.basic_fixup },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
@@ -293,7 +296,8 @@ void do_help(void)
     exit(0);
 }
 
-void do_ram(const char *v) {
+void do_ram(const char *v)
+{
     char *end_;
     unsigned char *end; // C standard says char might be signed,
                         // but that args to tolower() must be an int value.
@@ -335,7 +339,8 @@ void do_ram(const char *v) {
     cfg.amt_ram = amt * 1024;
 }
 
-void do_trace_to(const char *arg) {
+void do_trace_to(const char *arg)
+{
     char *end;
     errno = 0;
     cfg.trace_end = strtoumax(arg, &end, 10);
@@ -360,4 +365,15 @@ void do_trace_to(const char *arg) {
     }
 
     ++cfg.trace_end;
+}
+
+void do_load_basic(const char *arg)
+{
+    // For right now, fake out as if user had specified some other options.
+    // The general option handler has also set cfg.basic_fixup, to indicate
+    // that special things should happen after load.
+    cfg.ram_load_file = arg;
+    cfg.ram_load_loc = 0x801;
+    cfg.delay_until = 0xFD75;
+    cfg.delay_set = true;
 }
