@@ -15,7 +15,6 @@ static int inputfd = -1;
 FILE *inf = NULL;
 static struct termios ios;
 static struct termios orig_ios;
-static struct termios dbg_ios;
 static byte last_char_read;
 static byte last_char_consumed;
 static bool eof_found = 0;
@@ -76,7 +75,7 @@ static void restore_term(void)
     int e = tcsetattr(inputfd, TCSANOW, &ios);
     if (e < 0) {
         const char *err = strerror(errno);
-        WARN("tcsetattr: %s", err);
+        WARN("tcsetattr: %s\n", err);
     }
 }
 
@@ -85,7 +84,7 @@ static void set_ios(struct termios *my_ios)
     int e = tcsetattr(inputfd, TCSANOW, my_ios);
     if (e < 0) {
         const char *err = strerror(errno);
-        WARN("tcsetattr: %s", err);
+        WARN("tcsetattr: %s\n", err);
     }
 }
 
@@ -466,7 +465,6 @@ static void iface_simple_enter_dbg(FILE **in, FILE **out)
     if (!interactive) {
         set_interactive();
     }
-    dbg_ios = ios;
     set_canon();
 
     // Set input blocking.
@@ -489,7 +487,7 @@ static void iface_simple_enter_dbg(FILE **in, FILE **out)
 
 static void iface_simple_exit_dbg(void)
 {
-    set_ios(&dbg_ios);
+    set_noncanon();
     int flags = fcntl(inputfd, F_GETFL);
     // Set non-blocking.
     (void) fcntl(inputfd, F_SETFL, flags | O_NONBLOCK);
