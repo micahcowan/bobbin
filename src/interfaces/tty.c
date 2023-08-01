@@ -181,6 +181,15 @@ static void if_tty_frame(bool flash)
     }
 }
 
+static void if_tty_step(void)
+{
+    // XXX more checking s/b done here to make sure we're where we think
+    // we are.
+    if (current_pc() == 0xFBD9) {
+        beep();
+    }
+}
+
 static void if_tty_display_touched(void)
 {
     if (win) {
@@ -191,6 +200,7 @@ static void if_tty_display_touched(void)
 
 IfaceDesc ttyInterface = {
     .start = if_tty_start,
+    .step  = if_tty_step,
     .poke  = if_tty_poke,
     .peek  = if_tty_peek,
     .frame = if_tty_frame,
