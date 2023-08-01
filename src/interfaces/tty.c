@@ -4,6 +4,9 @@
 
 #include <curses.h>
 
+static const word text_size = 0x400;
+static byte text_page = 0x4;
+
 static WINDOW *win;
 static bool saved_flash;
 static byte typed_char = '\0';
@@ -40,7 +43,7 @@ static void repaint_flash(bool flash)
     wattrset(win, A_NORMAL);
     if (flash) wattron(win, A_REVERSE);
     for (int y=0; y != 24; ++y) {
-        word base = get_line_base(4,y);
+        word base = get_line_base(text_page, y);
         for (int x=0; x != 40; ++x) {
             byte c = peek_sneaky(base + x);
             if (util_isflashing(c)) {
@@ -58,7 +61,7 @@ static void refresh_video(bool flash)
     wattrset(win, A_NORMAL);
     bool last_was_flash = false;
     for (int y=0; y != 24; ++y) {
-        word base = get_line_base(4,y);
+        word base = get_line_base(text_page, y);
         wmove(win, y, 0);
         for (int x=0; x != 40; ++x) {
             byte c = peek_sneaky(base + x);
@@ -113,6 +116,23 @@ static void if_tty_start(void)
     refresh_video(false);
 }
 
+static void if_tty_peek_or_poke(word loc)
+{
+    word prev = text_page;
+    switch (loc) {
+        case 0xC054:
+            text_page = 0x04;
+            if (prev != text_page)
+                refresh_video(saved_flash);
+            break;
+        case 0xC055:
+            text_page = 0x08;
+            if (prev != text_page)
+                refresh_video(saved_flash);
+            break;
+    }
+}
+
 static int if_tty_peek(word loc)
 {
     word a = loc & 0xFFF0;
@@ -122,6 +142,8 @@ static int if_tty_peek(word loc)
     } else if (a == SS_KBDSTROBE) {
         sigint_received = 0;
         typed_char &= 0x7F; // Clear high-bit (key avail)
+    } else {
+        if_tty_peek_or_poke(loc);
     }
 
     return -1;
@@ -130,7 +152,8 @@ static int if_tty_peek(word loc)
 static bool if_tty_poke(word loc, byte val)
 {
     byte x = loc & 0x7F;
-    if (loc >= 0x400 && loc < 0x800 && x < 120) {
+    word pg = WORD(0, text_page);
+    if (loc >= pg  && loc < (pg + text_size) && x < 120) {
         x %= 40;
         byte y = get_line_for_addr(loc);
 
@@ -139,7 +162,10 @@ static bool if_tty_poke(word loc, byte val)
         if (f) wattron(win, A_REVERSE);
         mvwaddch(win, y, x, c);
         if (f) wattroff(win, A_REVERSE);
+    } else {
+        if_tty_peek_or_poke(loc);
     }
+
     return false;
 }
 
