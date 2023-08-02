@@ -44,10 +44,12 @@ STARTED && /^##### / {
     sub (/$/,"\"");
     gsub(/"--*/,"\"");
     match($0,/"/);
-    # Replace "no- at the start of (just) the first option
+    # Replace "no-" at the start of (just) the first option
     if (substr($0,RSTART,4) == "\"no-") {
         sub("\"no-","\"")
     }
+    # Remove any other options that begin with "no-"
+    gsub(", \"no-[^\"]*\"","")
     print "static AryOfStr " name "_OPT_NAMES[] = {"  $0 ", NULL};";
 }
 

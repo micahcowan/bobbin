@@ -13,12 +13,12 @@ static void trap_step(void)
                 peek_sneaky(0x200));
 
         // Get PC for if we did an RTS
-        byte sp = SP;
-        byte lo = peek_sneaky(++sp);
-        byte hi = peek_sneaky(++sp);
-        word pc = WORD(lo, hi)+1;
-        pc -= 3; // back up to the instr that "called" us.
-        util_print_state(stderr, pc, &theCpu.regs);
+        Registers regs = theCpu.regs;
+        byte lo = peek_sneaky(0x100 | ++regs.sp);
+        byte hi = peek_sneaky(0x100 | ++regs.sp);
+        regs.pc = WORD(lo, hi)+1;
+        regs.pc -= 3; // back up to the instr that "called" us.
+        util_print_state(stderr, regs.pc, &regs);
         exit(3);
     } else if (cfg.trap_success_on && current_pc() == cfg.trap_success) {
         fputs(".-= !!! REPORT SUCCESS !!! =-.\n", stderr);

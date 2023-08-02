@@ -414,6 +414,12 @@ static void iface_simple_prestep(void)
                 go_to(INT_BASIC);
             }
         }
+    } else if (cfg.trap_print_on && current_pc() == cfg.trap_print) {
+        putchar(ACC); // No translation, this is ASCII.
+        // Now enact a return
+        byte lo = stack_pop_sneaky();
+        byte hi = stack_pop_sneaky();
+        go_to(WORD(lo, hi)+1);
     }
 }
 

@@ -4,7 +4,7 @@
 /*
    Prefixes:
      ZP  - Zero-Page RZM location used by f/w
-     LOC - RAM location used by f/w
+     LOC - (mostly) RAM location used by f/w. Or catch-all.
      SS  - Soft Switches and other $C0XX stuff
      FP  - AppleSoft BASIC (floating point) f/w
      INT - Integer BASIC f/w
@@ -24,10 +24,20 @@
 #define LOC_SOFTEV      0x03F2
 #define LOC_PWREDUP     0x03F4
 
+#define SS_START        0xC000
 #define SS_KBD          0xC000
 #define SS_KBDSTROBE    0xC010
+#define SS_LANG_CARD    0xC080
+#define LOC_BSR1_START  0xC000 /* This refers to where it is in membuf,
+                                  not address-space */
 
+#define LOC_ROM_START   0xD000
+#define LOC_BSR1_END    0xD000
+#define LOC_BSR2_START  0xD000
+#define LOC_BSR_START   0xD000
 #define INT_BASIC       0xE000 /* jmp to cold start */
+#define LOC_BSR2_END    0xE000
+#define LOC_BSR_END     0xE000
 #define INT_BASIC2      0xE003 /* jmp to warm start */
 #define INT_SETPROMPT   0xE006
 

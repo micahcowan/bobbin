@@ -1,3 +1,5 @@
+;#options --no-rom
+;
 ; Verify decimal mode behavior
 ; Written by Bruce Clark.  This code is public domain.
 ; see http://www.6502.org/tutorials/decimal_mode.html

@@ -71,12 +71,14 @@ void util_print_state(FILE *f, word pc, Registers *reg)
     fputc('\n', f);
 
     // Print stack
-    fprintf(f, "STK: $1%02X:  (%02X)", reg->sp,
-            peek_sneaky(WORD(reg->sp,0x01)));
-    byte sp = reg->sp+1;
+    byte sp = reg->sp - 3;
+    fprintf(f, "STK: $1%02X:", sp);
     for (int i=0; i != 13; ++i) {
         if (!sp) fprintf(f, "  |");
-        fprintf(f, "  %02X", peek_sneaky(WORD(sp++,0x1)));
+        if (sp == reg->sp)
+            fprintf(f, "  (%02X)", peek_sneaky(WORD(sp++,0x1)));
+        else
+            fprintf(f, "  %02X", peek_sneaky(WORD(sp++,0x1)));
     }
     fputc('\n', f);
 

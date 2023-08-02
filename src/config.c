@@ -11,22 +11,13 @@
 
 Config cfg = {
     .squawk_level = DEFAULT_LEVEL,
-    .remain_after_pipe = false,
-    .interface = NULL,
     .machine = "//e",
     .amt_ram = 128 * 1024,
     .load_rom = true,
-    .ram_load_file = NULL,
-    .ram_load_loc = 0,
+    .lang_card = true,
     .turbo = true,
-    .turbo_was_set = false,
     .simple_input_mode = "apple",
-    .die_on_brk = false,
     .trace_file = "trace.log",
-    .trace_start = 0,
-    .trace_end = 0,
-    .trap_success_on = false,
-    .trap_failure_on = false,
 };
 
 typedef enum {
@@ -92,8 +83,10 @@ const OptInfo options[] = {
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
     { VV_OPT_NAMES, T_FUNCTION, &vv },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
+    { LANG_CARD_OPT_NAMES, T_BOOL, &cfg.lang_card, &cfg.lang_card_set },
     { TURBO_OPT_NAMES, T_BOOL, &cfg.turbo, &cfg.turbo_was_set },
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
+    { ROM_FILE_OPT_NAMES, T_STRING_ARG, &cfg.rom_load_file },
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
     { LOAD_AT_OPT_NAMES, T_ULONG_ARG, &cfg.ram_load_loc },
@@ -110,6 +103,8 @@ const OptInfo options[] = {
         &cfg.trap_failure_on },
     { TRAP_SUCCESS_OPT_NAMES, T_WORD_ARG, &cfg.trap_success,
         &cfg.trap_success_on },
+    { TRAP_PRINT_OPT_NAMES, T_WORD_ARG, &cfg.trap_print,
+        &cfg.trap_print_on },
     { START_AT_OPT_NAMES, T_WORD_ARG, &cfg.start_loc, &cfg.start_loc_set },
     { DELAY_UNTIL_PC_OPT_NAMES, T_WORD_ARG, &cfg.delay_until, &cfg.delay_set },
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
@@ -336,6 +331,10 @@ void do_ram(const char *v)
         WARN("  Proceeding anyway.\n");
     }
 
+    if (amt < 64) {
+        cfg.lang_card = false;
+    }
+
     cfg.amt_ram = amt * 1024;
 }
 
@@ -348,8 +347,11 @@ void do_trace_to(const char *arg)
         DIE(2, "Couldn't parse numeric arg to --trace-to.\n");
     }
     if (*end == '\0') {
-        cfg.trace_start = cfg.trace_end - 255;
-    } else if (*end == '!') {
+        if (cfg.trace_end < 255)
+            cfg.trace_start = 0;
+        else
+            cfg.trace_start = cfg.trace_end - 255;
+    } else if (*end == ':') {
         arg = end + 1;
         errno = 0;
         unsigned long count = strtoul(arg, &end, 10);

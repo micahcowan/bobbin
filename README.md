@@ -40,7 +40,6 @@ And here's another video (clickable) that showcases additional features in a mor
 
 - No way to send Ctrl-RESET within the "tty" interface
 - No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
-- The language card is not currently emulated, nor are the vast majority of software switches/special memory locations. It's just (the documented ops for) a 6502 CPU, RAM, and the firmware ROM.
 - The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
 - No disk emulation yet. That will obviously be very handy, and is a planned feature.
 
@@ -157,11 +156,21 @@ If used in combination with `--delay-until-pc` (see below), `--watch` ensures th
 
 #### Machine configuration options
 
-##### --turbo
+##### --turbo, --no-turbo
 
 Run as fast as possible - don't throttle speed to 1.023 MHz.
 
 This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed.
+
+##### --no-lang-card
+
+Disable the language card.
+
+##### --rom-file *arg*
+
+Use the specified file as the firmware ROM.
+
+The file size must exactly match the expected size for the emulated machine. For `original` and `plus`, that means exactly 12kib. For `twoey` it means 16kib, and for `enhanced` it's 32kib.
 
 ##### --no-rom
 
@@ -214,9 +223,9 @@ The primary intent of this option is to allow the Apple \]\[ to run through its 
 
 Select how much RAM is installed on the machine, in kilobytes.
 
-The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. (*Note: Language Card emulation is not yet implemented.*) If you specify 128k, then the top 64k of that will be used for so-called *auxiliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
+The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. If you specify 128k, then the top 64k of that will be used for so-called *auxiliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
 
-Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. The values 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while they are accepted, currently no values about 48 have any impact on the emulation, as neither the language card nor auxiliary memory are implemented yet.
+Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. The values 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while it is accepted, the `128` value currently has no effect, as auxiliary memory hasn't been implemented yet.
 
 #### "Simple" interface options
 
@@ -246,11 +255,11 @@ This option has no effect while **bobbin** is not reading from a terminal.
 
 Exit emulation with an error, if a BRK or illegal opcode is encountered.
 
-##### --trace-to *m*\[!*n*\]
+##### --trace-to *m*\[:*n*\]
 
 Trace N instructions before/including M (default N = 256).
 
-This feature is intended for use with the `--trap-failure` feature. If the failure trao is triggered, it will output the instruction number where it did. You can then plug that number into this option, followed by an exclamation point and the number of instructions *before* the number you gave, that should be logged to the trace file (`trace.log` by default; adjustable with `--trace-file`). As an example, if the failure traps at instruction *12564*, then `--trap-failure 12564!100` would start logging instructions, register values, and (explicit) memory accesses starting at instruction *12465*. If instruction *12564* is reached, the trace logging ends. If instruction *12564* does not trigger the failure trap, then execution will still continue, but no more information will be output to the trace-log file.
+This feature is intended for use with the `--trap-failure` feature. If the failure trao is triggered, it will output the instruction number where it did. You can then plug that number into this option, followed by a colon and the number of instructions *before* the number you gave, that should be logged to the trace file (`trace.log` by default; adjustable with `--trace-file`). As an example, if the failure traps at instruction *12564*, then `--trap-failure 12564:100` would start logging instructions, register values, and (explicit) memory accesses starting at instruction *12465*. If instruction *12564* is reached, the trace logging ends. If instruction *12564* does not trigger the failure trap, then execution will still continue, but no more information will be output to the trace-log file.
 
 This feature is used by **bobbin**'s build system to debug the emulator's correctness. It could also be used for Apple developers to examine unexpected behavior in their software via automated tests.
 
@@ -273,6 +282,12 @@ Exit emulator, reporting success, if execution reaches this location.
 The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
 
 Together with `--trap-success`, this option can be used to run automated tests on your Apple \]\[ code, since it will cause the emulator to exit with a suitable exit status.
+
+##### --trap-print *arg*
+
+Print the ASCII char in ACC and return, if execution reaches this location.
+
+Unlike the other two `--trap-*` options, this does not cause **bobbin** to exit; only to print a character. Only works in the `simple` interface.
 
 <!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate

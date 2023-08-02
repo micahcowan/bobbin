@@ -89,9 +89,12 @@ struct Config {
     bool            load_rom;
     const char *    ram_load_file;
     unsigned long   ram_load_loc;
+    const char *    rom_load_file;
     bool            basic_fixup;
     bool            turbo;
     bool            turbo_was_set;
+    bool            lang_card;
+    bool            lang_card_set;
     word            start_loc;
     bool            start_loc_set;
     word            delay_until;
@@ -111,6 +114,8 @@ struct Config {
     word            trap_success;
     bool            trap_failure_on;
     word            trap_failure;
+    bool            trap_print_on;
+    word            trap_print;
 
     // special options
     bool            watch;

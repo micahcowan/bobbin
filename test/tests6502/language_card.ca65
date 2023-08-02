@@ -1,0 +1,202 @@
+;#options -m plus --rom-file test.rom --trap-print 0003 --die-on-brk
+
+Failure = $1
+Success = $2
+PrintC  = $3
+
+READBSR2 = $C080
+WRITEBSR2= $C081
+OFFBSR2  = $C082
+RDWRBSR2 = $C083
+READBSR1 = $C088
+WRITEBSR1= $C089
+OFFBSR1  = $C08A
+RDWRBSR1 = $C08B
+
+BORDER = $E000
+
+.macro write seq
+    ldy #15
+:
+    lda seq,y
+    sta BORDER-8,y
+    dey
+    bpl :-
+.endmacro
+
+.macro verify_ seq
+:
+    lda seq,y
+    cmp BORDER-8,y
+    bne :+
+    iny
+    dex
+    bne :-
+    beq :++
+:
+    ; failed!
+    lda #<seq
+    ldx #>seq
+    jsr fail
+:
+.endmacro
+
+.macro verify seqA, seqB
+    ldy #0
+    ldx #8
+    verify_ seqA
+    ldx #8
+    verify_ seqB
+.endmacro
+
+.macro tcase num
+    lda #num
+    sta testcase
+.endmacro
+
+.ZEROPAGE
+
+; skip ahead in zero page
+.res $60,0
+
+tweaked:
+    .res 1,0
+SEQ:
+    .res 2,0
+
+.DATA
+testcase:
+    .byte $FF
+seq1:
+    .byte $8B, $61, $60, $16, $05, $00, $AF, $65
+    .byte $72, $59, $65, $51, $7F, $3E, $95, $09
+seq2:
+    .byte $02, $72, $19, $7B, $6D, $63, $FB, $3C
+    .byte $73, $1F, $91, $70, $00, $78, $1B, $06
+seq3:
+    .byte $51, $27, $53, $65, $D7, $63, $15, $4C
+    .byte $B8, $25, $3A, $7B, $6C, $20, $AF, $29
+seq4:
+    .byte $60, $72, $87, $1C, $53, $75, $B4, $4A
+    .byte $3C, $0E, $61, $32, $BF, $30, $C9, $5D
+seq5:
+    .byte $32, $3F, $78, $1F, $92, $3F, $1D, $0C
+    .byte $DA, $60, $C3, $47, $E5, $7E, $FB, $26
+romSeq:
+    .byte $F8, $F9, $FA, $FB, $FC, $FD, $FE, $FF
+    .byte $00, $01, $02, $03, $04, $05, $06, $07
+
+.CODE
+
+    ; Note, we only test OFFBSR2, not OFFBSR1. I think that's
+    ; probably fine.
+Start:
+.macro tests tweak
+    ; First, test that the computer booted with ROM read, bank 2 write
+    write seq1
+    tcase 0
+    verify romSeq, romSeq
+    ; Now check that bank 2 reads back as we wrote it
+    bit READBSR2 | tweak
+    tcase 1
+    verify seq1, seq1
+    ; Check that writes to bank 1 work (with ROM selected for read)
+    bit WRITEBSR1 | tweak
+    bit WRITEBSR1 | tweak
+    write seq2
+    ; Read back ROM
+    tcase 2
+    verify romSeq, romSeq
+    ; Read back bank 1
+    bit READBSR1 | tweak
+    tcase 3
+    verify seq2, seq2
+    ; Switch to reading bank 2 again, verify the bytes up to and
+    ;  past the boundary
+    bit READBSR2 | tweak
+    tcase 4
+    verify seq1, seq2
+    ; Switch back to ROM, write-protect
+    bit OFFBSR2 | tweak
+    write seq3
+    tcase 5
+    verify romSeq, romSeq
+    ; Verify no writes happened (not bank 1, not bank 2)
+    bit READBSR1 | tweak
+    tcase 6
+    verify seq2, seq2
+    bit READBSR2 | tweak
+    tcase 7
+    verify seq1, seq2
+    ; Switch to read bank 2, write-protect, verify writes don't work
+    write seq3
+    tcase 8
+    verify seq1, seq2
+    ; ...and that they didn't somehow magically make their way to bank 1
+    bit READBSR1 | tweak
+    tcase 9
+    verify seq2, seq2
+    ; Switch to read bank 1, write-protect, verify writes don't work
+    write seq3
+    tcase $0A
+    verify seq2, seq2
+    ; ...and that they didn't somehow magically make their way to bank 2
+    bit READBSR2 | tweak
+    tcase $0B
+    verify seq1, seq2
+    ; Verify that if we explicitly set ROM read, bank 2 write, that works
+    bit WRITEBSR2 | tweak
+    bit WRITEBSR2 | tweak
+    write seq3
+    tcase $0C
+    verify romSeq, romSeq
+    bit RDWRBSR2 | tweak
+    bit RDWRBSR2 | tweak
+    verify seq3, seq3
+    ; Verify the RDWR switches
+    write seq4
+    tcase $0D
+    verify seq4, seq4
+    bit RDWRBSR1 | tweak
+    bit RDWRBSR1 | tweak
+    tcase $0E
+    verify seq2, seq4
+    write seq5
+    tcase $0F
+    verify seq5, seq5
+.endmacro
+    lda #$0
+    sta tweaked
+    tests $0
+    ; Now, DO IT ALL OVER AGAIN, with bit 2 (#$04) set in the switch addresses
+    dec tweaked
+    ; (first set things up the way the tests expect for "power-on"
+    bit WRITEBSR2 | $4
+    bit WRITEBSR2 | $4
+    tests $4
+    ; XXX Now, verify that reading only once at a write-enable location,
+    ;   does not in fact write-enable.
+    ; FIXME: need to check behavior on a real Apple II, and test for
+    ;   accuracy: what happens when you read one write-enable location,
+    ;   and then another? Actually, Sather ][ 5-28/29 covers this
+    jsr Success
+    brk
+fail:
+    sta SEQ
+    stx SEQ+1
+    ; XXX Might want to print messages/comparisons here
+.if 0
+    lda #'E'
+    jsr PrintC
+    lda #'R'
+    jsr PrintC
+    jsr PrintC
+    lda #$0A ; newline
+    jsr PrintC
+.endif
+    jsr Failure
+    brk
+
+.segment "VECTORS"
+    .word $FFFF
+    .word Start

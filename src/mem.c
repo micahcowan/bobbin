@@ -16,6 +16,14 @@
 //  are read at alternate banks of RAM for locations $D000 - $DFFF
 static byte membuf[128 * 1024];
 
+bool lc_prewrite;
+bool lc_write = true;
+               // ^ note that the value of this is the opposite of the real
+               // hardware flip-flop... but using write == true to mean
+               // you _can't_ write would be confusing...
+bool lc_bank_one = false;
+bool lc_read_bsr = false;
+
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
 static unsigned char *ramloadbuf;
@@ -76,17 +84,28 @@ static void load_rom(void)
     const char *last_tried_path;
     int err = 0;
     int fd = -1;
-    while (fd < 0
-            && (rompath = get_try_rom_path(default_romfname)) != NULL) {
+
+    if (cfg.rom_load_file) {
         errno = 0;
-        last_tried_path = rompath;
-        fd = open(rompath, O_RDONLY);
-        err = errno;
-    }
-    if (fd < 0) {
-        DIE(1, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
+        VERBOSE("Loading user rom file \"%s\"\n", cfg.rom_load_file);
+        fd = open(cfg.rom_load_file, O_RDONLY);
+        if (fd < 0) {
+            DIE(1, "Couldn't open ROM file \"%s\": %s\n", cfg.rom_load_file,
+                strerror(err));
+        }
     } else {
-        INFO("FOUND ROM file \"%s\".\n", rompath);
+        while (fd < 0
+                && (rompath = get_try_rom_path(default_romfname)) != NULL) {
+            errno = 0;
+            last_tried_path = rompath;
+            fd = open(rompath, O_RDONLY);
+            err = errno;
+        }
+        if (fd < 0) {
+            DIE(1, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
+        } else {
+            INFO("FOUND ROM file \"%s\".\n", rompath);
+        }
     }
 
     struct stat st;
@@ -111,7 +130,8 @@ static void load_rom(void)
     }
     close(fd); // safe to close now.
 
-    validate_rom(rombuf, 12 * 1024);
+    if (!cfg.rom_load_file)
+        validate_rom(rombuf, 12 * 1024);
 }
 
 bool check_asoft_link(unsigned char *buf, size_t start, size_t sz,
@@ -389,6 +409,14 @@ static void fillmem(void)
     }
 }
 
+void mem_init_langcard(void)
+{
+    lc_prewrite = false;
+    lc_write = true;
+    lc_bank_one = false;
+    lc_read_bsr = false;
+}
+
 void mem_init(void)
 {
     if (cfg.ram_load_loc >= sizeof membuf) {
@@ -406,6 +434,8 @@ void mem_init(void)
     if (cfg.ram_load_file != NULL) {
         load_ram();
     }
+
+    mem_init_langcard();
 }
 
 void mem_reboot(void)
@@ -418,11 +448,67 @@ void mem_reboot(void)
         }
         load_ram();
     }
+
+    mem_init_langcard();
+}
+
+static int maybe_language_card(word loc, bool write)
+{
+    if ((loc & 0xFFF0) != SS_LANG_CARD) return -1;
+    if (write)
+        lc_prewrite = false;
+
+    if ( ! (loc & 0x0001)) {
+        lc_prewrite = lc_write = false;
+    } else {
+        if (lc_prewrite) lc_write = true;
+        if (!write) lc_prewrite = true;
+    }
+
+    lc_bank_one = (loc & 0x0008) != 0;
+    lc_read_bsr = ((loc & 0x0002) >> 1) == (loc & 0x0001);
+
+    return 0; // s/b floating bus
+}
+
+static byte lc_peek(word loc)
+{
+    byte val;
+    if (rombuf && (!cfg.lang_card || !lc_read_bsr)) {
+        val = rombuf[loc - LOC_ROM_START];
+    } else if (cfg.lang_card && lc_bank_one && loc < LOC_BSR_END) {
+        val = membuf[loc - (LOC_BSR_START - LOC_BSR1_START)];
+    } else {
+        // Either there's no language card enabled and no ROM,
+        // Or the language card is set to bank two, or we're
+        //   outside the banked-ram region (0xD000-0xE000)
+        val = membuf[loc];
+    }
+    return val;
+}
+
+static bool lc_poke(word loc, byte val)
+{
+    if (loc < LOC_BSR_START) return false; // write not ours to handle
+    if ((rombuf && !cfg.lang_card) || (cfg.lang_card && !lc_write))
+        return true; // throw away write
+
+    if (cfg.lang_card && lc_bank_one && loc < LOC_BSR_END) {
+        membuf[loc - (LOC_BSR_START - LOC_BSR1_START)] = val;
+    } else {
+        // Either language card write is enabled for bank two,
+        // or language card write is enabled and we're not in $Dxxx,
+        // or else there's no language card, and also no ROM
+        // (all-ram memory configuration, e.g. for testing).
+        membuf[loc] = val;
+    }
+    return true;
 }
 
 byte peek(word loc)
 {
     int t = rh_peek(loc);
+    if (t < 0) maybe_language_card(loc, false);
     if (t >= 0) {
         return (byte) t;
     }
@@ -437,12 +523,12 @@ byte peek_sneaky(word loc)
         return (byte) t;
     }
 
-    if (rombuf && loc >= 0xD000) {
-        return rombuf[loc - 0xD000];
+    if (loc >= LOC_ROM_START) {
+        return lc_peek(loc);
     }
-    else if ((loc >= cfg.amt_ram && loc < 0xC000)
-             || (loc >= 0xC000 && loc < 0xD000)) {
-        return 0;
+    else if ((loc >= cfg.amt_ram && loc < SS_START)
+             || (loc >= SS_START && loc < LOC_ROM_START)) {
+        return 0; // s/b floating bus? not sure, in sneaky
     }
     else {
         return membuf[loc];
@@ -451,8 +537,13 @@ byte peek_sneaky(word loc)
 
 void poke(word loc, byte val)
 {
-    if (!rh_poke(loc, val))
-        poke_sneaky(loc, val);
+    if (rh_poke(loc, val))
+        return;
+    if (maybe_language_card(loc, true) >= 0)
+        return;
+    if (lc_poke(loc, val))
+        return;
+    poke_sneaky(loc, val);
 }
 
 void poke_sneaky(word loc, byte val)
