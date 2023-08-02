@@ -13,6 +13,7 @@ static bool saved_flash;
 static bool refresh_overlay = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
 static unsigned long overlay_timer = 0;
+static int msg_attr;
 static byte typed_char = '\0';
 
 static void tty_atexit(void)
@@ -87,11 +88,12 @@ static void refresh_video(bool flash)
 
 static void clear_overlay(void)
 {
+    wattrset(win, A_NORMAL);
     wattron(msgwin, COLOR_PAIR(0));
     wclear(msgwin);
     wmove(msgwin, 0, 0);
     wrefresh(msgwin);
-    wattron(msgwin, COLOR_PAIR(1));
+    wattron(msgwin, msg_attr);
     refresh_video(saved_flash);
 }
 
@@ -128,6 +130,9 @@ static void if_tty_start(void)
 
     // Create a window at the top-left of the screen
     win = subwin(stdscr, 24, 40, 0, 0);
+    if (win == NULL) {
+        DIE(1, "curses: Couldn't allocate messages window.\n");
+    }
     keypad(win, true);
     nodelay(win, 1);
 
@@ -135,13 +140,12 @@ static void if_tty_start(void)
 
     // Messaging window test
     msgwin = newwin(24, 40, 0, 0);
-    init_pair(1, COLOR_BLACK, COLOR_CYAN);
-    wattron(msgwin, COLOR_PAIR(1));
-    wprintw(msgwin, "Here is a line of text.\n");
-    wprintw(msgwin, "Here is another!\n");
-    wprintw(msgwin, "...and yet another.\n");
-    wrefresh(msgwin);
-    overlay_timer = overlay_wait;
+    if (msgwin == NULL) {
+        DIE(1, "curses: Couldn't allocate messages window.\n");
+    }
+    init_pair(1, COLOR_CYAN, COLOR_BLACK);
+    msg_attr = has_colors()? COLOR_PAIR(1) : A_REVERSE;
+    wattron(msgwin, msg_attr);
 
     // Draw current video memory (garbage)
     refresh_video(false);
