@@ -57,6 +57,7 @@ void debugger(void)
                 DIE(1,"\nEOF.\n");
             } else if (err == EINTR) {
                 fputs("(Interrupt received. \"q\" to exit.)\n", dbg_outf);
+                sigint_received = 0;
                 continue; // loop back around
             } else {
                 DIE(1,"\nDebugger line input: %s\n", strerror(err));

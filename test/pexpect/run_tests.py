@@ -1,3 +1,4 @@
+from debug import *
 from basics import *
 from asoft import *
 import pexpect
