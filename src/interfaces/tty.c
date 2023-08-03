@@ -153,6 +153,7 @@ static void if_tty_start(void)
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     msg_attr = has_colors()? COLOR_PAIR(1) : A_REVERSE;
     wattron(msgwin, msg_attr);
+    scrollok(msgwin, true);
 
     // Draw current video memory (garbage)
     refresh_video(false);
