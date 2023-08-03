@@ -40,8 +40,8 @@ void debugger(void)
                 "  q = quit bobbin, r or w = warm reset, rr = cold reset\n"
                 "-----\n");
     }
-    bool unhandled = true;
-    while(unhandled) {
+    bool handled = false;
+    while(!handled) {
         util_print_state(stdout, current_pc(), &theCpu.regs);
         fputc('>', stdout);
         fflush(stdout);
@@ -66,54 +66,22 @@ void debugger(void)
         }
 
 #define HAVE(val) STREQ((val), linebuf)
-        unhandled = false;
+        handled = command_do(linebuf, printf);
+        debugging_flag = !handled;
+
+        if (handled)
+            break;
+
+        // not yet handled by non-debugger commands...
+        handled = true; // ...but for now assume it will have been
         if (HAVE("") || HAVE(" ")) {
             // Do nothing; execute the instruction and return here
             //  on the next one.
         } else if (HAVE("c")) {
             fputs("Continuing...\n", stdout);
             debugging_flag = false;
-        } else if (HAVE("m")) {
-            // Swap ourselves out for the built-in Apple II system
-            // monitor!
-            fputs("Switching to monitor...\n", stdout);
-            // Behave as if it were a BRK.
-            // Push stuff to stack...
-            stack_push_sneaky(HI(PC));
-            stack_push_sneaky(LO(PC));
-            stack_push_sneaky(PFLAGS | PMASK(PUNUSED) | PMASK(PBRK));
-            go_to(WORD(peek_sneaky(VEC_BRK),peek_sneaky(VEC_BRK+1)));
-            // ^ Note: some autostart ROMs have
-            // OLDRST instead of BREAK, in VEC_BRK, with the result that
-            // PC and the other registers will NOT be printed on entry
-            // into the system monitor.
-            debugging_flag = false;
-        } else if (HAVE("r") || HAVE("w")) {
-            cpu_reset();
-            debugging_flag = false;
-        } else if (HAVE("rr")) {
-            cpu_reset();
-            debugging_flag = false;
-            // Hard reset. Invalidate the user reset vector directly
-            // (rather than doing open-apple emulation or something)
-            // Just copy the high byte of the vector into the
-            // "powered up" check; then it can't possibly be the
-            // correctly XOR-ed version.
-            byte b = peek_sneaky(LOC_SOFTEV+1);
-            poke_sneaky(LOC_PWREDUP, b);
-        } else if (HAVE("^C")) {
-            // XXX in future this will be replaced by a "send" command
-            // that can do other things besides just ^C. ^? or ^D for
-            // instance
-            // Send an interrupt back through to the emulation, and
-            // continue.
-            sigint_received = 1;
-            debugging_flag = false;
-        } else if (HAVE("q")) {
-            fputs("Exiting.\n", stdout);
-            exit(0);
         } else {
-            unhandled = true; // Loop back around / try again
+            handled = false; // Loop back around / try again
             fputs("Unrecognized command!\n", stdout);
         }
 #undef HAVE

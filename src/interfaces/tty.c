@@ -12,10 +12,29 @@ static WINDOW *msgwin;
 static bool saved_flash;
 static bool refresh_overlay = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
+static const unsigned long overlay_long_wait = 600; // 10 seconds
 static unsigned long overlay_timer = 0;
 static int msg_attr;
 static int cmd_attr;
 static byte typed_char = '\0';
+
+static void draw_border(void);
+static void do_overlay(int offset);
+static void repaint_flash(bool flash);
+static void refresh_video(bool flash);
+static void clear_overlay(void);
+static void do_overlay_timer(void);
+static void if_tty_start(void);
+static void if_tty_peek_or_poke(word loc);
+static int if_tty_peek(word loc);
+static bool if_tty_poke(word loc, byte val);
+static void if_tty_unhook(void);
+static void redraw(bool force, int overlay_offset);
+static void breakout(void);
+static void if_tty_frame(bool flash);
+static void if_tty_step(void);
+static void if_tty_display_touched(void);
+static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args);
 
 static void tty_atexit(void)
 {
@@ -57,7 +76,7 @@ static void draw_border(void)
     }
 }
 
-static void do_overlay(void)
+static void do_overlay(int offset)
 {
     int y, x;
     getyx(msgwin, y, x);
@@ -65,7 +84,7 @@ static void do_overlay(void)
     if (x == 0 && y == 0) return;
     int maxy, maxx;
     getmaxyx(stdscr, maxy, maxx);
-    int err = copywin(msgwin, stdscr, 0, 0, maxy - 1 - y + (x? 0: 1), 0, maxy-1, maxx-1, false);
+    int err = copywin(msgwin, stdscr, 0, 0, maxy - 1 - y + (x? 0: 1) - offset, 0, maxy-1, maxx-1, false);
 }
 
 static void repaint_flash(bool flash)
@@ -101,7 +120,7 @@ static void refresh_video(bool flash)
         }
     }
 
-    do_overlay();
+    do_overlay(0);
 }
 
 static void clear_overlay(void)
@@ -220,20 +239,33 @@ static void if_tty_unhook(void)
     (void) endwin();
 }
 
-static void redraw(void)
+static void redraw(bool force, int overlay_offset)
 {
     clear();
-    refresh();
+    if (force) refresh();
     refresh_video(saved_flash);
-    do_overlay();
+    do_overlay(overlay_offset);
     refresh();
+}
+
+int squawk_print(const char *fmt, ...)
+{
+    va_list arg;
+    va_start(arg, fmt);
+
+    if_tty_squawk(-1, false, fmt, arg);
+    va_end(arg);
+    return 0;
 }
 
 static void breakout(void)
 {
     char buf[1024];
 
+    redraw(true, 2);
+
     attron(cmd_attr);
+    mvprintw(LINES-2, 0, "CMD ENTRY. q = quit. h = help.");
     mvaddch(LINES-1, 0, ':');
     refresh();
     //noraw();
@@ -241,15 +273,17 @@ static void breakout(void)
     echo();
 
     int err = getnstr(buf, sizeof buf);
-    if (STREQ(buf,"q")) {
-        exit(0);
+    bool handled = command_do(buf, squawk_print);
+    if (!handled && buf[0] != '\0') {
+        squawk_print("Unrecognized command: %s\n", buf);
     }
 
     noecho();
     nodelay(stdscr, true);
     attroff(msg_attr);
 
-    redraw();
+    redraw(false, 0);
+    overlay_timer = overlay_long_wait;
 }
 
 static void if_tty_frame(bool flash)
@@ -261,7 +295,7 @@ static void if_tty_frame(bool flash)
     }
     if (refresh_overlay) {
         refresh_overlay = false;
-        do_overlay();
+        do_overlay(0);
         refresh();
     }
 
@@ -285,7 +319,7 @@ static void if_tty_frame(bool flash)
         raise(SIGTSTP);
     } else if (c == 0x0C) {
         // Ctrl-L = refresh screen
-        redraw();
+        redraw(true, 0);
     } else if (c >= 0 && (c & 0x7F) == c) {
         typed_char = util_fromascii(c & 0x7F);
     }

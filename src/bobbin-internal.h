@@ -324,6 +324,11 @@ extern int  tracing(void);
 
 /********** DEBUG **********/
 
+typedef int (*printer)(const char * fmt, ...);
+bool command_do(const char *line, printer pr);
+
+/********** DEBUG **********/
+
 extern void dbg_on(void);
 extern void debugger(void);
 extern bool debugging(void);
