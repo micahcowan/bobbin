@@ -44,10 +44,16 @@ static byte get_line_for_addr(word loc)
 
 static void draw_border(void)
 {
-    move(0,40);
-    vline('|', 25);
-    move(24,0);
-    hline('-',41);
+    int y, x;
+    getmaxyx(stdscr, y, x);
+    if (x > 40) {
+        move(0,40);
+        vline('|', y >= 25? 25: y);
+    }
+    if (y > 24) {
+        move(24,0);
+        hline('-', x >= 41? 41: x);
+    }
 }
 
 static void do_overlay(void)
