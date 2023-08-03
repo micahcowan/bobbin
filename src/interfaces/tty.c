@@ -8,7 +8,6 @@
 static const word text_size = 0x400;
 static byte text_page = 0x4;
 
-static WINDOW *win;
 static WINDOW *msgwin;
 static bool saved_flash;
 static bool refresh_overlay = false;
@@ -43,44 +42,55 @@ static byte get_line_for_addr(word loc)
     return y;
 }
 
+static void draw_border(void)
+{
+    move(0,40);
+    vline('|', 25);
+    move(24,0);
+    hline('-',41);
+}
+
 static void do_overlay(void)
 {
     int y, x;
     getyx(msgwin, y, x);
     if (x == 0 && y == 0) return;
-    copywin(msgwin, win, 0, 0, 23 - y + (x? 0: 1), 0, 23, 39, false);
+    int maxy, maxx;
+    getmaxyx(stdscr, maxy, maxx);
+    draw_border();
+    int err = copywin(msgwin, stdscr, 0, 0, maxy - 1 - y + (x? 0: 1), 0, maxy-1, maxx-1, false);
 }
 
 static void repaint_flash(bool flash)
 {
     saved_flash = flash;
-    wattrset(win, A_NORMAL);
-    if (flash) wattron(win, A_REVERSE);
+    attrset(A_NORMAL);
+    if (flash) attron(A_REVERSE);
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(text_page, y);
         for (int x=0; x != 40; ++x) {
             byte c = peek_sneaky(base + x);
             if (util_isflashing(c)) {
                 byte cd = util_todisplay(c);
-                mvwaddch(win, y, x, cd);
+                mvaddch(y, x, cd);
             }
         }
     }
-    wattrset(win, A_NORMAL);
+    attrset(A_NORMAL);
 }
 
 static void refresh_video(bool flash)
 {
     saved_flash = flash;
-    wattrset(win, A_NORMAL);
+    attrset(A_NORMAL);
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(text_page, y);
-        wmove(win, y, 0);
+        move(y, 0);
         for (int x=0; x != 40; ++x) {
             byte c = peek_sneaky(base + x);
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, flash);
-            waddch(win, cd | (cfl? A_REVERSE: 0));
+            addch(cd | (cfl? A_REVERSE: 0));
         }
     }
 
@@ -89,13 +99,16 @@ static void refresh_video(bool flash)
 
 static void clear_overlay(void)
 {
-    wattrset(win, A_NORMAL);
+    attrset(A_NORMAL);
     wattron(msgwin, COLOR_PAIR(0));
-    wclear(msgwin);
+    werase(msgwin);
     wmove(msgwin, 0, 0);
-    wrefresh(msgwin);
+    //wrefresh(msgwin);
     wattron(msgwin, msg_attr);
+    erase();
     refresh_video(saved_flash);
+    draw_border();
+    refresh();
 }
 
 static void do_overlay_timer(void)
@@ -104,21 +117,13 @@ static void do_overlay_timer(void)
     if (--overlay_timer == 0) clear_overlay();
 }
 
-static void draw_border(void)
-{
-    move(0,40);
-    vline('|', 25);
-    move(24,0);
-    hline('-',41);
-    refresh();
-}
-
 static void if_tty_start(void)
 {
     if (!cfg.turbo_was_set) {
         cfg.turbo = false; // default
     }
     // Init curses
+    //use_tioctl(true);
     initscr();
     start_color();
     raw(); //cbreak();
@@ -129,18 +134,13 @@ static void if_tty_start(void)
     // Ensure we quit gracefully
     atexit(tty_atexit);
 
-    // Create a window at the top-left of the screen
-    win = subwin(stdscr, 24, 40, 0, 0);
-    if (win == NULL) {
-        DIE(1, "curses: Couldn't allocate messages window.\n");
-    }
-    keypad(win, true);
-    nodelay(win, 1);
+    keypad(stdscr, true);
+    nodelay(stdscr, 1);
 
     draw_border();
 
     // Messaging window test
-    msgwin = newwin(24, 40, 0, 0);
+    msgwin = newpad(LINES, COLS);
     if (msgwin == NULL) {
         DIE(1, "curses: Couldn't allocate messages window.\n");
     }
@@ -150,6 +150,7 @@ static void if_tty_start(void)
 
     // Draw current video memory (garbage)
     refresh_video(false);
+    refresh();
 }
 
 static void if_tty_peek_or_poke(word loc)
@@ -195,7 +196,7 @@ static bool if_tty_poke(word loc, byte val)
 
         int c = util_todisplay(val);
         if (util_isreversed(val, saved_flash)) c |= A_REVERSE;
-        mvwaddch(win, y, x, c);
+        mvaddch(y, x, c);
         refresh_overlay = true;
     } else {
         if_tty_peek_or_poke(loc);
@@ -214,12 +215,12 @@ static void if_tty_frame(bool flash)
     if (refresh_overlay) {
         refresh_overlay = false;
         do_overlay();
+        refresh();
     }
-    wrefresh(win);
 
     // NOTE: does auto-refresh of screen
     // put a regular wrefresh in here if getch() goes away
-    int c = wgetch(win);
+    int c = getch();
     if (sigint_received >= 2
         || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
         DIE(0,"Received:");
@@ -241,10 +242,9 @@ static void if_tty_frame(bool flash)
         // Ctrl-L = refresh screen
         clear();
         refresh();
-        wclear(win);
         refresh_video(flash);
-        wrefresh(win);
-        draw_border(); // does refresh();
+        do_overlay();
+        refresh();
     } else if (c >= 0 && (c & 0x7F) == c) {
         typed_char = util_fromascii(c & 0x7F);
     }
@@ -261,9 +261,9 @@ static void if_tty_step(void)
 
 static void if_tty_display_touched(void)
 {
-    if (win) {
+    if (stdscr) {
         refresh();
-        touchwin(win);
+        touchwin(stdscr);
     }
 }
 
@@ -276,8 +276,8 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 {
     if (!msgwin) return false;
     vw_printw(msgwin, fmt, args);
-    wrefresh(msgwin);
     overlay_timer = overlay_wait;
+    refresh_overlay = true;
     return true; // suppress normal (stderr) squawking
 }
 
