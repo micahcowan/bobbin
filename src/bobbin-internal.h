@@ -178,9 +178,17 @@ static inline void go_to(word w) {
     PC = w;
 }
 
+/********** MACHINE **********/
+
+size_t expected_rom_size(void);
+extern const char *default_romfname;
+extern bool validate_rom(unsigned char *buf, size_t sz);
+extern bool machine_is_iie(void);
+
 /********** MEMORY **********/
 
 extern void mem_init(void);
+extern void mem_reset(void);
 extern void mem_reboot(void);
 extern byte peek(word loc);
 extern void poke(word loc, byte val);
@@ -359,7 +367,5 @@ extern uintmax_t instr_count;
 extern uintmax_t frame_count;
 static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
-extern const char *default_romfname;
-extern bool validate_rom(unsigned char *buf, size_t sz);
 
 #endif /* BOBBIN_INTERNAL_H */

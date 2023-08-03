@@ -30,6 +30,11 @@ static const Sha256Sum PLUS_SUM_B
       0xa8, 0x83, 0xdf, 0x5a, 0xa1, 0x0e, 0xb5, 0x5b,
       0x73, 0xea, 0x53, 0xd2, 0xfc, 0xbb, 0x3e, 0xe4,
       0xf3, 0x9b, 0xed, 0x1b, 0x07, 0xa8, 0x29, 0x05 };
+static const Sha256Sum TWOEY_SUM_A
+ = {  0x1f, 0xb8, 0x12, 0x58, 0x4c, 0x66, 0x33, 0xfa,
+      0x16, 0xb7, 0x7b, 0x20, 0x91, 0x59, 0x86, 0xed,
+      0x11, 0x78, 0xd1, 0xe6, 0xfc, 0x07, 0xa6, 0x47,
+      0xf7, 0xee, 0x8d, 0x4e, 0x6a, 0xb9, 0xd4, 0x0b };
 static const Sha256Sum ZERO_SUM
   = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -44,6 +49,11 @@ static const Sha256SumPtrAry ORIGINAL_SUMS = {
 static const Sha256SumPtrAry PLUS_SUMS = {
     PLUS_SUM_A, // Perhaps an older version sent to dealers?
     PLUS_SUM_B, // this is the preferred one, fixed BRK vector
+    NULL,
+};
+
+static const Sha256SumPtrAry TWOEY_SUMS = {
+    TWOEY_SUM_A,
     NULL,
 };
 
@@ -63,11 +73,13 @@ struct Alias {
 static const Alias aliases[] = {
     { ORIGINAL_SUMS, ORIGINAL_ALIASES },
     { PLUS_SUMS, PLUS_ALIASES },
-    { PLACEHOLDER_SUMS, TWOEY_ALIASES },
+    { TWOEY_SUMS, TWOEY_ALIASES },
     { PLACEHOLDER_SUMS, ENHANCED_ALIASES },
 };
 
 static Sha256SumPtrPtr   acceptable_sums = NULL;
+
+static size_t expected_size;
 
 static const char *find_alias(const char *machine)
 {
@@ -141,6 +153,7 @@ bool validate_rom(unsigned char *buf, size_t sz)
 }
 
 const char *default_romfname;
+static bool is_iie = false;
 
 void machine_init(void)
 {
@@ -157,13 +170,26 @@ void machine_init(void)
         DIE(2,"Try invoking with -m ][+ or -m plus\n");
     }
     if (orig == TWOEY_TAG) {
-        DIE(2, "This development version does not yet "
-               "support machine \"%s\".\n", cfg.machine);
+        default_romfname = "apple2e.rom";
+        expected_size = 16 * 1024;
+        is_iie = true;
     }
     if (orig == ORIGINAL_TAG) {
         default_romfname = "apple2.rom";
+        expected_size = 12 * 1024;
     }
     if (orig == PLUS_TAG) {
         default_romfname = "apple2plus.rom";
+        expected_size = 12 * 1024;
     }
+}
+
+size_t expected_rom_size(void)
+{
+    return expected_size;
+}
+
+bool machine_is_iie(void)
+{
+    return is_iie;
 }

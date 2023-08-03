@@ -30,7 +30,9 @@
 #define SS_LANG_CARD    0xC080
 #define LOC_BSR1_START  0xC000 /* This refers to where it is in membuf,
                                   not address-space */
+#define LOC_SLOTS_START 0xC100
 
+#define LOC_SLOTS_END   0xD000
 #define LOC_ROM_START   0xD000
 #define LOC_BSR1_END    0xD000
 #define LOC_BSR2_START  0xD000
@@ -57,4 +59,5 @@
 #define VEC_IRQ         0xFFFE
 #define VEC_BRK         VEC_IRQ
 
+#define LOC_ADDRESSABLE_END     0x10000     // warning: doesn't fit in a word
 #endif // APPLEII_H_

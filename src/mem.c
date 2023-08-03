@@ -1,6 +1,7 @@
 #include "bobbin-internal.h"
 
 /* For the ROM file, and error handling */
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -16,13 +17,31 @@
 //  are read at alternate banks of RAM for locations $D000 - $DFFF
 static byte membuf[128 * 1024];
 
-bool lc_prewrite;
-bool lc_write = true;
+// Language Card soft switches aren't impacted by reset, but ARE
+// impacted by reboot.
+typedef struct RebootSw RebootSw;
+struct RebootSw {
+    bool lc_prewrite;
+    bool lc_write;
                // ^ note that the value of this is the opposite of the real
                // hardware flip-flop... but using write == true to mean
                // you _can't_ write would be confusing...
-bool lc_bank_one = false;
-bool lc_read_bsr = false;
+    bool lc_bank_one;
+    bool lc_read_bsr;
+};
+static const RebootSw rbswdfl = {
+    .lc_write = true, // remainder are false (reset)
+};
+static RebootSw rbsw = rbswdfl;
+
+typedef struct RestartSw RestartSw;
+struct RestartSw {
+    bool intcxrom;
+    bool intc8rom;
+    bool slotc3rom;
+};
+static const RestartSw rstswdfl = { 0 };
+static RestartSw rstsw = rstswdfl;
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
@@ -79,7 +98,6 @@ realdir:
 
 static void load_rom(void)
 {
-    /* Load a 12k rom file into place (not provided; get your own!) */
     const char *rompath;
     const char *last_tried_path;
     int err = 0;
@@ -115,23 +133,23 @@ static void load_rom(void)
         err = errno;
         DIE(1, "Couldn't stat ROM file \"%s\": %s\n", last_tried_path, strerror(err));
     }
-    if (st.st_size != 12 * 1024) {
+    size_t expected = expected_rom_size();
+    if (st.st_size != expected) {
         // XXX expected size will need to be configurable
         DIE(0, "ROM file \"%s\" has unexpected file size %zu\n",
             last_tried_path, (size_t)st.st_size);
-        DIE(1, "  (expected %zu).\n",
-            (size_t)(12 * 1024));
+        DIE(1, "  (expected %zu).\n", expected);
     }
 
     errno = 0;
-    rombuf = mmap(NULL, 12 * 1024, PROT_READ, MAP_PRIVATE, fd, 0);
+    rombuf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (rombuf == NULL) {
         DIE(1, "Couldn't map in ROM file: %s\n", strerror(errno));
     }
     close(fd); // safe to close now.
 
     if (!cfg.rom_load_file)
-        validate_rom(rombuf, 12 * 1024);
+        validate_rom(rombuf, st.st_size);
 }
 
 bool check_asoft_link(unsigned char *buf, size_t start, size_t sz,
@@ -411,12 +429,9 @@ static void fillmem(void)
     }
 }
 
-void mem_init_langcard(void)
+static inline void mem_init_langcard(void)
 {
-    lc_prewrite = false;
-    lc_write = true;
-    lc_bank_one = false;
-    lc_read_bsr = false;
+    rbsw = rbswdfl;
 }
 
 void mem_init(void)
@@ -440,6 +455,11 @@ void mem_init(void)
     mem_init_langcard();
 }
 
+void mem_reset(void)
+{
+    rstsw = rstswdfl;
+}
+
 void mem_reboot(void)
 {
     fillmem();
@@ -452,23 +472,25 @@ void mem_reboot(void)
     }
 
     mem_init_langcard();
+
+    mem_reset();
 }
 
-static int maybe_language_card(word loc, bool write)
+static int maybe_language_card(word loc, bool wr)
 {
     if ((loc & 0xFFF0) != SS_LANG_CARD) return -1;
-    if (write)
-        lc_prewrite = false;
+    if (wr)
+        rbsw.lc_prewrite = false;
 
     if ( ! (loc & 0x0001)) {
-        lc_prewrite = lc_write = false;
+        rbsw.lc_prewrite = rbsw.lc_write = false;
     } else {
-        if (lc_prewrite) lc_write = true;
-        if (!write) lc_prewrite = true;
+        if (rbsw.lc_prewrite) rbsw.lc_write = true;
+        if (!wr) rbsw.lc_prewrite = true;
     }
 
-    lc_bank_one = (loc & 0x0008) != 0;
-    lc_read_bsr = ((loc & 0x0002) >> 1) == (loc & 0x0001);
+    rbsw.lc_bank_one = (loc & 0x0008) != 0;
+    rbsw.lc_read_bsr = ((loc & 0x0002) >> 1) == (loc & 0x0001);
 
     return 0; // s/b floating bus
 }
@@ -476,9 +498,10 @@ static int maybe_language_card(word loc, bool write)
 static byte lc_peek(word loc)
 {
     byte val;
-    if (rombuf && (!cfg.lang_card || !lc_read_bsr)) {
-        val = rombuf[loc - LOC_ROM_START];
-    } else if (cfg.lang_card && lc_bank_one && loc < LOC_BSR_END) {
+    if (rombuf && (!cfg.lang_card || !rbsw.lc_read_bsr)) {
+        size_t romsz = expected_rom_size();
+        val = rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
+    } else if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
         val = membuf[loc - (LOC_BSR_START - LOC_BSR1_START)];
     } else {
         // Either there's no language card enabled and no ROM,
@@ -492,10 +515,10 @@ static byte lc_peek(word loc)
 static bool lc_poke(word loc, byte val)
 {
     if (loc < LOC_BSR_START) return false; // write not ours to handle
-    if ((rombuf && !cfg.lang_card) || (cfg.lang_card && !lc_write))
+    if ((rombuf && !cfg.lang_card) || (cfg.lang_card && !rbsw.lc_write))
         return true; // throw away write
 
-    if (cfg.lang_card && lc_bank_one && loc < LOC_BSR_END) {
+    if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
         membuf[loc - (LOC_BSR_START - LOC_BSR1_START)] = val;
     } else {
         // Either language card write is enabled for bank two,
@@ -507,10 +530,47 @@ static bool lc_poke(word loc, byte val)
     return true;
 }
 
+static void slot_access_switches(word loc, bool wr)
+{
+    if (loc >= 0xC300 && loc < 0xC400 && !rstsw.slotc3rom) {
+        rstsw.intc8rom = true;
+    } else if (loc == 0xCFFF) {
+        rstsw.intc8rom = false;
+    } else if (!wr) {
+        // skip the rest, they need writes
+    } else if (loc == 0xC006) {
+        rstsw.intcxrom = false;
+    } else if (loc == 0xC007) {
+        rstsw.intcxrom = true;
+    } else if (loc == 0xC00A) {
+        rstsw.slotc3rom = false;
+    } else if (loc == 0xC00B) {
+        rstsw.slotc3rom = true;
+    }
+}
+
+static byte *slot_area_access_sneaky(word loc, bool wr)
+{
+    if (wr || loc < LOC_SLOTS_START || loc > LOC_SLOTS_END
+        || !machine_is_iie()) return NULL;
+
+    if ((!rstsw.slotc3rom && loc >= 0xC300 && loc < 0xC400)
+        || (rstsw.intc8rom && loc >= 0xC800)
+        || rstsw.intcxrom) {
+
+        size_t romsz = expected_rom_size();
+        assert(loc >= (LOC_ADDRESSABLE_END - romsz));
+        return &rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
+    } else {
+        return NULL;
+    }
+}
+
 byte peek(word loc)
 {
     int t = rh_peek(loc);
     if (t < 0) maybe_language_card(loc, false);
+    slot_access_switches(loc, false);
     if (t >= 0) {
         return (byte) t;
     }
@@ -525,6 +585,10 @@ byte peek_sneaky(word loc)
         return (byte) t;
     }
 
+    byte *mem;
+    if ((mem = slot_area_access_sneaky(loc, false)) != NULL) {
+        return *mem;
+    }
     if (loc >= LOC_ROM_START) {
         return lc_peek(loc);
     }
@@ -545,13 +609,14 @@ void poke(word loc, byte val)
         return;
     if (lc_poke(loc, val))
         return;
+    slot_access_switches(loc, true);
     poke_sneaky(loc, val);
 }
 
 void poke_sneaky(word loc, byte val)
 {
     // rh_poke_sneaky()?
-    // XXX
+    // XXX should handle slot-area writes
     membuf[loc] = val;
 }
 

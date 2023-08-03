@@ -36,6 +36,8 @@ void cpu_reset(void)
     byte pcH = peek(VEC_RESET+1);
     go_to(WORD(pcL, pcH));
     cycle(); /* end of cycle 7 (8th); read vector high byte */
+
+    mem_reset();
 }
 
 // Sign extend
@@ -989,6 +991,7 @@ void cpu_step(void)
                         op == 0? "BRK" : "ILLEGAL OP");
                     DIE(0, "  (CPU state follows.)\n");
 
+                    fprintf(stderr, "Instr #: %ju\n", instr_count);
                     util_print_state(stderr, current_pc(), &theCpu.regs);
                     exit(3);
                 }
