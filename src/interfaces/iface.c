@@ -94,20 +94,40 @@ void iface_frame(bool flash)
         iii->frame(flash);
 }
 
-void iface_enter_dbg(FILE **inf, FILE **outf)
+void iface_unhook(void)
 {
-    if (iii->enter_dbg)
-        iii->enter_dbg(inf, outf);
+    if (iii->unhook)
+        iii->unhook();
 }
 
-void iface_exit_dbg(void)
+void iface_rehook(void)
 {
-    if (iii->exit_dbg)
-        iii->exit_dbg();
+    if (iii->rehook)
+        iii->rehook();
 }
 
 void iface_display_touched(void)
 {
     if (iii->display_touched)
         iii->display_touched();
+}
+
+void squawk(int level, bool cont, const char *fmt, ...)
+{
+    bool suppress = false;
+    va_list args;
+    va_start(args, fmt);
+    if (level == DIE_LEVEL) {
+        if (iii) iface_unhook();
+    } else if (iii != NULL && iii->squawk != NULL) {
+        suppress = iii->squawk(level, cont, fmt, args);
+    }
+
+    if (!suppress) {
+        if (!cont) {
+            fprintf(stderr, "%s: ", program_name);
+        }
+        vfprintf(stderr, fmt, args);
+    }
+    va_end(args);
 }

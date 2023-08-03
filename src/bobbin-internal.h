@@ -4,6 +4,7 @@
 #define _XOPEN_SOURCE   700
 
 #include <signal.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -43,14 +44,13 @@ extern word current_pc(void);
 #define SQUAWK_CONT(level, ...) \
     do { \
         if (SQUAWK_OK(level)) { \
-            fprintf(stderr, __VA_ARGS__); \
+            squawk(level, 1, __VA_ARGS__); \
         } \
     } while (0)
 #define SQUAWK(level, ...) \
     do { \
         if (SQUAWK_OK(level)) { \
-            fprintf(stderr, "%s: ", program_name); \
-            fprintf(stderr, __VA_ARGS__); \
+            squawk(level, 0, __VA_ARGS__); \
         } \
     } while (0)
 
@@ -275,8 +275,10 @@ struct IfaceDesc {
     int  (*peek)(word loc);
     bool (*poke)(word loc, byte val);
     void (*frame)(bool flash);
-    void (*enter_dbg)(FILE **inf, FILE **outf);
-    void (*exit_dbg)(void);
+    void (*unhook)(void);
+    void (*rehook)(void);
+    bool (*squawk)(int level, bool cont, const char *fmt, va_list args);
+        // returns true to suppress default squawk handling
     void (*display_touched)(void); // Display memory may have updated
                                    // behind the scenes: redraw!
 };
@@ -293,9 +295,10 @@ extern bool iface_poke(word loc, byte val);
 
 extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 extern void iface_frame(bool flash);
-extern void iface_enter_dbg(FILE **inf, FILE**outf);
-extern void iface_exit_dbg(void);
+extern void iface_unhook(void);
+extern void iface_rehook(void);
 extern void iface_display_touched(void);
+extern void squawk(int level, bool cont, const char *format, ...);
 
 /********** HOOK **********/
 

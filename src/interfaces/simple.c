@@ -11,7 +11,6 @@
 static int saved_char = -1;
 static bool interactive;
 static bool output_seen;
-static int inputfd = -1;
 FILE *inf = NULL;
 static struct termios ios;
 static struct termios orig_ios;
@@ -46,22 +45,27 @@ static inline bool is_canon(void)
     return (ios.c_lflag & ICANON) != 0;
 }
 
-static void transition_tty(void)
+static void reopen_stdin_tty(int flags)
 {
-    lbuf_start = lbuf_end = linebuf;
     // close input, we want to make sure tty is fd 0
     errno = 0;
     close(0);
     int err = errno;
     errno = 0;
-    int fd = open("/dev/tty", O_RDONLY);
+    int fd = open("/dev/tty", flags);
     if (fd < 0) {
-        DIE(1,"Tried to --remain-tty, but couldn't open /dev/tty: %s\n",
+        DIE(1,"Couldn't open /dev/tty: %s\n",
             strerror(errno));
     } else if (fd != 0) {
         DIE(1, "Couldn't reopen /dev/tty to fd 0: %s\n",
             strerror(err? err : errno));
     }
+}
+
+static void transition_tty(void)
+{
+    lbuf_start = lbuf_end = linebuf;
+    reopen_stdin_tty(O_RDONLY);
 
     INFO("--remain-tty, switching to tty interface...\n");
     cfg.interface = "tty";
@@ -72,7 +76,7 @@ static void transition_tty(void)
 static void restore_term(void)
 {
     ios = orig_ios;
-    int e = tcsetattr(inputfd, TCSANOW, &ios);
+    int e = tcsetattr(0, TCSANOW, &ios);
     if (e < 0) {
         const char *err = strerror(errno);
         WARN("tcsetattr: %s\n", err);
@@ -81,7 +85,7 @@ static void restore_term(void)
 
 static void set_ios(struct termios *my_ios)
 {
-    int e = tcsetattr(inputfd, TCSANOW, my_ios);
+    int e = tcsetattr(0, TCSANOW, my_ios);
     if (e < 0) {
         const char *err = strerror(errno);
         WARN("tcsetattr: %s\n", err);
@@ -120,16 +124,16 @@ static void set_interactive(void)
     interactive = true;
     errno = 0;
     const char *err;
-    if (1 || !isatty(inputfd)) {
-        inputfd = open("/dev/tty", O_RDONLY | O_NONBLOCK);
-        if (inputfd < 0) {
-            err = strerror(errno);
-            DIE(1,"couldn't open /dev/tty: %s\n", err);
-        }
+    if (!isatty(0)) {
+        reopen_stdin_tty(O_RDONLY | O_NONBLOCK);
+    } else {
+        int flags = fcntl(0, F_GETFL);
+        // Set non-blocking.
+        (void) fcntl(0, F_SETFL, flags | O_NONBLOCK);
     }
 
     errno = 0;
-    int e = tcgetattr(inputfd, &ios);
+    int e = tcgetattr(0, &ios);
     if (e < 0) {
         err = strerror(errno);
         DIE(1,"tcgetattr: %s\n", err);
@@ -219,7 +223,7 @@ recheck:
         // Don't try to read any characters
     } else {
         errno = 0;
-        ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
+        ssize_t nbytes = read(0, &linebuf, sizeof linebuf);
         if (nbytes < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
             const char *err = strerror(errno);
             DIE(2,"read input failed: %s\n", err);
@@ -316,7 +320,6 @@ static void iface_simple_init(void)
 static void iface_simple_start(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
-    inputfd = 0;
     if (isatty(0)) {
         set_interactive();
     }
@@ -466,7 +469,7 @@ static int iface_simple_peek(word loc)
     return -1;
 }
 
-static void iface_simple_enter_dbg(FILE **in, FILE **out)
+static void iface_simple_unhook(void)
 {
     if (!interactive) {
         set_interactive();
@@ -474,29 +477,16 @@ static void iface_simple_enter_dbg(FILE **in, FILE **out)
     set_canon();
 
     // Set input blocking.
-    int flags = fcntl(inputfd, F_GETFL);
-    (void) fcntl(inputfd, F_SETFL, flags & ~O_NONBLOCK);
-    if (inf != NULL) {
-        // Nothing to do, already have the FILE*.
-    } else if (inputfd == 0) {
-        inf = stdin;
-    } else {
-        errno = 0;
-        inf = fdopen(inputfd, "r");
-        if (inf == NULL)
-            DIE(2,"fdopen (/dev/tty): %s\n", strerror(errno));
-    }
-
-    *in = inf;
-    *out = stdout;
+    int flags = fcntl(0, F_GETFL);
+    (void) fcntl(0, F_SETFL, flags & ~O_NONBLOCK);
 }
 
-static void iface_simple_exit_dbg(void)
+static void iface_simple_rehook(void)
 {
     set_noncanon();
-    int flags = fcntl(inputfd, F_GETFL);
+    int flags = fcntl(0, F_GETFL);
     // Set non-blocking.
-    (void) fcntl(inputfd, F_SETFL, flags | O_NONBLOCK);
+    (void) fcntl(0, F_SETFL, flags | O_NONBLOCK);
 }
 
 IfaceDesc simpleInterface = {
@@ -505,6 +495,6 @@ IfaceDesc simpleInterface = {
     .prestep = iface_simple_prestep,
     .step = iface_simple_step,
     .peek = iface_simple_peek,
-    .enter_dbg = iface_simple_enter_dbg,
-    .exit_dbg = iface_simple_exit_dbg,
+    .unhook = iface_simple_unhook,
+    .rehook = iface_simple_rehook,
 };

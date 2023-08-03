@@ -1,5 +1,6 @@
 #include "bobbin-internal.h"
 
+#include <stdarg.h>
 #include <stdlib.h>
 
 #include <curses.h>
@@ -221,6 +222,8 @@ static void if_tty_frame(bool flash)
     int c = wgetch(win);
     if (sigint_received >= 2
         || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
+        DIE(0,"Received:");
+        DIE(1,"SIGINT.");
         exit(0);
     }
     if (sigint_received > 0) {
@@ -264,11 +267,27 @@ static void if_tty_display_touched(void)
     }
 }
 
+static void if_tty_unhook(void)
+{
+    (void) endwin();
+}
+
+static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
+{
+    if (!msgwin) return false;
+    vw_printw(msgwin, fmt, args);
+    wrefresh(msgwin);
+    overlay_timer = overlay_wait;
+    return true; // suppress normal (stderr) squawking
+}
+
 IfaceDesc ttyInterface = {
     .start = if_tty_start,
     .step  = if_tty_step,
     .poke  = if_tty_poke,
     .peek  = if_tty_peek,
     .frame = if_tty_frame,
+    .unhook= if_tty_unhook,
+    .squawk= if_tty_squawk,
     .display_touched = if_tty_display_touched,
 };

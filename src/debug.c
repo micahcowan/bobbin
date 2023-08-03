@@ -7,9 +7,6 @@
 
 char linebuf[256];
 
-FILE *dbg_inf;
-FILE *dbg_outf;
-
 bool debugging_flag = false;
 bool print_message = true;
 
@@ -35,28 +32,28 @@ void debugger(void)
         print_message = false;
 
         // Tell interfaces to chill, we're handling things
-        iface_enter_dbg(&dbg_inf, &dbg_outf);
+        iface_unhook();
 
-        fprintf(dbg_outf, "\n\n*** Welcome to Bobbin Debugger ***\n");
-        fprintf(dbg_outf, "  SPC = next intr, c = leave debugger"
+        fprintf(stdout, "\n\n*** Welcome to Bobbin Debugger ***\n");
+        fprintf(stdout, "  SPC = next intr, c = leave debugger"
                 " (continue execution), m = Apple II monitor\n"
                 "  q = quit bobbin, r or w = warm reset, rr = cold reset\n"
                 "-----\n");
     }
     bool unhandled = true;
     while(unhandled) {
-        util_print_state(dbg_outf, current_pc(), &theCpu.regs);
-        fputc('>', dbg_outf);
-        fflush(dbg_outf);
+        util_print_state(stdout, current_pc(), &theCpu.regs);
+        fputc('>', stdout);
+        fflush(stdout);
         errno = 0;
-        char *s = fgets(linebuf, sizeof linebuf, dbg_inf);
+        char *s = fgets(linebuf, sizeof linebuf, stdin);
         int err = errno;
         if (s == NULL) {
-            fputc('\n', dbg_outf);
-            if (feof(dbg_inf)) {
+            fputc('\n', stdout);
+            if (feof(stdin)) {
                 DIE(1,"\nEOF.\n");
             } else if (err == EINTR) {
-                fputs("(Interrupt received. \"q\" to exit.)\n", dbg_outf);
+                fputs("(Interrupt received. \"q\" to exit.)\n", stdout);
                 sigint_received = 0;
                 continue; // loop back around
             } else {
@@ -74,12 +71,12 @@ void debugger(void)
             // Do nothing; execute the instruction and return here
             //  on the next one.
         } else if (HAVE("c")) {
-            fputs("Continuing...\n", dbg_outf);
+            fputs("Continuing...\n", stdout);
             debugging_flag = false;
         } else if (HAVE("m")) {
             // Swap ourselves out for the built-in Apple II system
             // monitor!
-            fputs("Switching to monitor...\n", dbg_outf);
+            fputs("Switching to monitor...\n", stdout);
             // Behave as if it were a BRK.
             // Push stuff to stack...
             stack_push_sneaky(HI(PC));
@@ -113,15 +110,15 @@ void debugger(void)
             sigint_received = 1;
             debugging_flag = false;
         } else if (HAVE("q")) {
-            fputs("Exiting.\n", dbg_outf);
+            fputs("Exiting.\n", stdout);
             exit(0);
         } else {
             unhandled = true; // Loop back around / try again
-            fputs("Unrecognized command!\n", dbg_outf);
+            fputs("Unrecognized command!\n", stdout);
         }
 #undef HAVE
     }
 
     if (!debugging_flag)
-        iface_exit_dbg(); // Interface can take over again.
+        iface_rehook(); // Interface can take over again.
 }

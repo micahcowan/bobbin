@@ -31,6 +31,8 @@ void rh_prestep(void)
     if (cfg.delay_set && PC == cfg.delay_until && !did_delayed_jmp) {
         did_delayed_jmp = true;
         if (cfg.start_loc_set) {
+            INFO("Jumping PC to $%04X due to --delay-until option.\n",
+                 cfg.start_loc_set);
             PC = cfg.start_loc;
         }
         load_ram_finish();

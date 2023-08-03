@@ -315,6 +315,8 @@ void load_ram_finish(void)
     unsigned char *buf = ramloadbuf;
     size_t sz = ramloadsz;
 
+    if (!buf) return;
+
     if (cfg.basic_fixup) {
         adjust_asoft_start(&buf, &sz);
     }
