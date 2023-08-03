@@ -36,9 +36,20 @@ static RebootSw rbsw = rbswdfl;
 
 typedef struct RestartSw RestartSw;
 struct RestartSw {
-    bool intcxrom;
-    bool intc8rom;
-    bool slotc3rom;
+    bool ramrd : 1; // s/b auxrd
+    bool ramwrt: 1; // s/b auxwrt
+    bool intcxrom : 1;
+    bool altzp : 1;
+    bool intc8rom : 1;
+    bool slotc3rom : 1;
+    bool eightystore : 1;
+    bool vertblank : 1;
+    bool text : 1;
+    bool mixed : 1;
+    bool page2 : 1;
+    bool hires : 1;
+    bool altcharset : 1;
+    bool eightycol : 1;
 };
 static const RestartSw rstswdfl = { 0 };
 static RestartSw rstsw = rstswdfl;
@@ -536,16 +547,63 @@ static void slot_access_switches(word loc, bool wr)
         rstsw.intc8rom = true;
     } else if (loc == 0xCFFF) {
         rstsw.intc8rom = false;
-    } else if (!wr) {
+    } else if ((loc & 0xFFF0) == 0xC050) {
+        switch (loc & 0x000F) {
+            case 0:
+            case 1:
+                rstsw.text = loc & 1;
+                break;
+            case 2:
+            case 3:
+                rstsw.mixed = loc & 1;
+                break;
+            case 4:
+            case 5:
+                rstsw.page2 = loc & 1; // XXX means nothing right now
+                break;
+            case 6:
+            case 7:
+                rstsw.hires = loc & 1;
+                break;
+            // annunciators not yet handled
+        }
+    } else if (!wr || ((loc & 0xFFF0) != 0xC000) || !machine_is_iie()) {
         // skip the rest, they need writes
-    } else if (loc == 0xC006) {
-        rstsw.intcxrom = false;
-    } else if (loc == 0xC007) {
-        rstsw.intcxrom = true;
-    } else if (loc == 0xC00A) {
-        rstsw.slotc3rom = false;
-    } else if (loc == 0xC00B) {
-        rstsw.slotc3rom = true;
+    } else {
+        switch(loc & 0x000F) {
+            case 0:
+            case 1:
+                rstsw.eightystore = loc & 1;
+                break;
+            case 2:
+            case 3:
+                rstsw.ramrd = loc & 1;
+                break;
+            case 4:
+            case 5:
+                rstsw.ramwrt = loc & 1;
+                break;
+            case 6:
+            case 7:
+                rstsw.intcxrom = loc & 1;
+                break;
+            case 8:
+            case 9:
+                rstsw.altzp = loc & 1;
+                break;
+            case 0xA:
+            case 0xB:
+                rstsw.slotc3rom = loc & 1;
+                break;
+            case 0xC:
+            case 0xD:
+                rstsw.eightycol = loc & 1;
+                break;
+            case 0xE:
+            case 0xF:
+                rstsw.altcharset = loc & 1;
+                break;
+        }
     }
 }
 
@@ -564,6 +622,67 @@ static byte *slot_area_access_sneaky(word loc, bool wr)
     } else {
         return NULL;
     }
+}
+
+static int switch_reads(word loc)
+{
+    if ((loc & 0xFFF0) != 0xC010) return -1;
+    int val = -1;
+    bool b;
+
+    switch (loc & 0x000F) {
+        case 0:
+            // Any key down. Interface must handle.
+            return -1;
+        case 1:
+            b = !rbsw.lc_bank_one;
+            break;
+        case 2:
+            b = rbsw.lc_read_bsr;
+            break;
+        case 3:
+            b = rstsw.ramrd; // s/b auxrd
+            break;
+        case 4:
+            b = rstsw.ramwrt;// s/b auxwrt
+            break;
+        case 5:
+            b = rstsw.intcxrom;
+            break;
+        case 6:
+            b = rstsw.altzp;
+            break;
+        case 7:
+            b = rstsw.slotc3rom;
+            break;
+        case 8:
+            b = rstsw.eightystore;
+            break;
+        case 9:
+            b = rstsw.vertblank;
+            break;
+        case 0xA:
+            b = rstsw.text;
+            break;
+        case 0xB:
+            b = rstsw.mixed;
+            break;
+        case 0xC:
+            b = rstsw.page2;
+            break;
+        case 0xD:
+            b = rstsw.hires;
+            break;
+        case 0xE:
+            b = rstsw.altcharset;
+            break;
+        case 0xF:
+            b = rstsw.eightycol;
+            break;
+    }
+
+    // XXX rest of bits ought to be floating-bus
+    return (!!b) << 7;
 }
 
 byte peek(word loc)
@@ -586,8 +705,12 @@ byte peek_sneaky(word loc)
     }
 
     byte *mem;
+    int val;
     if ((mem = slot_area_access_sneaky(loc, false)) != NULL) {
         return *mem;
+    }
+    if ((val = switch_reads(loc)) != -1) {
+        return val;
     }
     if (loc >= LOC_ROM_START) {
         return lc_peek(loc);
