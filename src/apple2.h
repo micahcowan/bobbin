@@ -13,6 +13,7 @@
      VEC - one of the address vectors in the last six bytes of firmware
 */
 
+#define ZP_START        0x00
 #define ZP_TXTTAB       0x67
 #define ZP_VARTAB       0x69 // LOMEM
 #define ZP_ARYTAB       0x6B
@@ -20,9 +21,18 @@
 #define ZP_FRETOP       0x6F
 #define ZP_MEMSIZE      0x73 // HIMEM
 #define ZP_PRGEND       0xAF
+#define ZP_END          0x0100
 
+#define LOC_STACK       0x0100
+#define LOC_STACK_END   0x0200
 #define LOC_SOFTEV      0x03F2
 #define LOC_PWREDUP     0x03F4
+#define LOC_TEXT1       0x0400
+#define LOC_TEXT2       0x0400
+#define LOC_TEXTEND     0x0800
+#define LOC_HIRES1      0x2000
+#define LOC_HIRES2      0x4000
+#define LOC_HIRESEND    0x6000
 
 #define SS_START        0xC000
 #define SS_KBD          0xC000
@@ -59,5 +69,7 @@
 #define VEC_IRQ         0xFFFE
 #define VEC_BRK         VEC_IRQ
 
-#define LOC_ADDRESSABLE_END     0x10000     // warning: doesn't fit in a word
+// Warning, the following definitions won't fit in a word!
+#define LOC_ADDRESSABLE_END     0x10000
+#define LOC_AUX_START   0x10000
 #endif // APPLEII_H_

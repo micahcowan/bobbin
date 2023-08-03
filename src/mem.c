@@ -506,6 +506,24 @@ static int maybe_language_card(word loc, bool wr)
     return 0; // s/b floating bus
 }
 
+size_t transform_aux(word loc, bool wr)
+{
+    bool aux = false;
+
+    aux = rstsw.altzp && (loc < LOC_STACK_END || loc > SS_START);
+    if (rstsw.eightystore
+        && ((loc >= LOC_TEXT1 && loc < LOC_TEXT2)
+            || (rstsw.hires
+                && (loc >= LOC_HIRES1 && loc < LOC_HIRES2)))) {
+        aux = aux || rstsw.page2;
+    } else {
+        aux = aux || (loc >= LOC_STACK_END && loc < SS_START
+                 && ((!wr && rstsw.ramrd) || (wr && rstsw.ramwrt)));
+    }
+
+    return loc | (aux? LOC_AUX_START : 0);
+}
+
 static byte lc_peek(word loc)
 {
     byte val;
@@ -513,12 +531,14 @@ static byte lc_peek(word loc)
         size_t romsz = expected_rom_size();
         val = rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
     } else if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
-        val = membuf[loc - (LOC_BSR_START - LOC_BSR1_START)];
+        val = membuf[
+            transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), false)
+        ];
     } else {
         // Either there's no language card enabled and no ROM,
         // Or the language card is set to bank two, or we're
         //   outside the banked-ram region (0xD000-0xE000)
-        val = membuf[loc];
+        val = membuf[transform_aux(loc, false)];
     }
     return val;
 }
@@ -530,13 +550,15 @@ static bool lc_poke(word loc, byte val)
         return true; // throw away write
 
     if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
-        membuf[loc - (LOC_BSR_START - LOC_BSR1_START)] = val;
+        membuf[
+            transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), true)
+        ] = val;
     } else {
         // Either language card write is enabled for bank two,
         // or language card write is enabled and we're not in $Dxxx,
         // or else there's no language card, and also no ROM
         // (all-ram memory configuration, e.g. for testing).
-        membuf[loc] = val;
+        membuf[transform_aux(loc, true)] = val;
     }
     return true;
 }
@@ -720,7 +742,8 @@ byte peek_sneaky(word loc)
         return 0; // s/b floating bus? not sure, in sneaky
     }
     else {
-        return membuf[loc];
+        size_t rloc = transform_aux(loc, false);
+        return membuf[rloc];
     }
 }
 
@@ -740,7 +763,8 @@ void poke_sneaky(word loc, byte val)
 {
     // rh_poke_sneaky()?
     // XXX should handle slot-area writes
-    membuf[loc] = val;
+    size_t rloc = transform_aux(loc, true);
+    membuf[rloc] = val;
 }
 
 bool mem_match(word loc, unsigned int nargs, ...)
