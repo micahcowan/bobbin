@@ -14,6 +14,7 @@ static bool refresh_overlay = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
 static unsigned long overlay_timer = 0;
 static int msg_attr;
+static int cmd_attr;
 static byte typed_char = '\0';
 
 static void tty_atexit(void)
@@ -60,10 +61,10 @@ static void do_overlay(void)
 {
     int y, x;
     getyx(msgwin, y, x);
+    draw_border();
     if (x == 0 && y == 0) return;
     int maxy, maxx;
     getmaxyx(stdscr, maxy, maxx);
-    draw_border();
     int err = copywin(msgwin, stdscr, 0, 0, maxy - 1 - y + (x? 0: 1), 0, maxy-1, maxx-1, false);
 }
 
@@ -151,7 +152,9 @@ static void if_tty_start(void)
         DIE(1, "curses: Couldn't allocate messages window.\n");
     }
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
-    msg_attr = has_colors()? COLOR_PAIR(1) : A_REVERSE;
+    init_pair(2, COLOR_BLACK, COLOR_CYAN);
+    msg_attr = has_colors()? COLOR_PAIR(1) : A_BOLD;
+    cmd_attr = has_colors()? COLOR_PAIR(2) : A_REVERSE;
     wattron(msgwin, msg_attr);
     scrollok(msgwin, true);
 
@@ -212,6 +215,43 @@ static bool if_tty_poke(word loc, byte val)
     return false;
 }
 
+static void if_tty_unhook(void)
+{
+    (void) endwin();
+}
+
+static void redraw(void)
+{
+    clear();
+    refresh();
+    refresh_video(saved_flash);
+    do_overlay();
+    refresh();
+}
+
+static void breakout(void)
+{
+    char buf[1024];
+
+    attron(cmd_attr);
+    mvaddch(LINES-1, 0, ':');
+    refresh();
+    //noraw();
+    timeout(-1);
+    echo();
+
+    int err = getnstr(buf, sizeof buf);
+    if (STREQ(buf,"q")) {
+        exit(0);
+    }
+
+    noecho();
+    nodelay(stdscr, true);
+    attroff(msg_attr);
+
+    redraw();
+}
+
 static void if_tty_frame(bool flash)
 {
     do_overlay_timer();
@@ -230,9 +270,7 @@ static void if_tty_frame(bool flash)
     int c = getch();
     if (sigint_received >= 2
         || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
-        DIE(0,"Received:");
-        DIE(1,"SIGINT.");
-        exit(0);
+        breakout();
     }
     if (sigint_received > 0) {
         typed_char = 0x83; // Ctrl-C
@@ -247,11 +285,7 @@ static void if_tty_frame(bool flash)
         raise(SIGTSTP);
     } else if (c == 0x0C) {
         // Ctrl-L = refresh screen
-        clear();
-        refresh();
-        refresh_video(flash);
-        do_overlay();
-        refresh();
+        redraw();
     } else if (c >= 0 && (c & 0x7F) == c) {
         typed_char = util_fromascii(c & 0x7F);
     }
@@ -272,11 +306,6 @@ static void if_tty_display_touched(void)
         refresh();
         touchwin(stdscr);
     }
-}
-
-static void if_tty_unhook(void)
-{
-    (void) endwin();
 }
 
 static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
