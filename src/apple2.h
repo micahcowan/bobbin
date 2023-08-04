@@ -62,6 +62,10 @@
 #define FP_ERROR2       0xD419 /* error handling when no ON ERR */
 #define FP_NOT_NUMBERED 0xD456
 #define FP_LINE_EXISTS  0xD471
+#define FP_CK_PAST_LINE 0xD63A /* If carry is clear at this loc,
+                                  we found where to insert a new BASIC
+                                  line, but it's not past the end of
+                                  the program. */
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C

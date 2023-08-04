@@ -515,6 +515,12 @@ static void tokenize_step(void)
             DIE(1,"Text line #%llu: BASIC line #%u already exists.\n",
                 line_number, word_at(ZP_LINNUM));
             break;
+        case FP_CK_PAST_LINE:
+            if (!PTEST(PCARRY)) {
+                DIE(1,"Text line #%llu: BASIC line #%u is lower"
+                    " than previous number\n", line_number, word_at(ZP_LINNUM));
+            }
+            break;
     }
 }
 
