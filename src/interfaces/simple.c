@@ -274,7 +274,8 @@ recheck:
                     c = last_char_read;
                 }
             } else if (cfg.tokenize) {
-                tokenize();
+                eof_found = true;
+                c = 0x8D;
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
             } else if (cfg.remain_tty) {
@@ -304,7 +305,11 @@ recheck:
 
 void consume_char(void)
 {
-    if (eof_found) {
+    if (!eof_found) {
+        // skip
+    } else if (cfg.tokenize) {
+        tokenize();
+    } else {
         // Exit gracefully.
         putchar('\n');
         exit(0);
