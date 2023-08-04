@@ -193,6 +193,7 @@ recheck:
                 // intervening user input. This should trigger the debugger.
                 dbg_on();
                 sigint_received = 0;
+                last_char_consumed = 'A';
                 goto recheck; // go again, in case buffered chars
             } else {
                 // Everything's fine

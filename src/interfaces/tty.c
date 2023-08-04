@@ -273,6 +273,9 @@ static void breakout(void)
 {
     char buf[1024];
 
+    sigint_received = 0;
+    typed_char = 0;
+
     redraw(true, 2);
 
     attron(cmd_attr);
@@ -317,11 +320,10 @@ static void if_tty_frame(bool flash)
     if (sigint_received >= 2
         || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
         breakout();
-    }
-    if (sigint_received > 0) {
+        sigint_received = 0;
+    } else if (sigint_received > 0) {
         typed_char = 0x83; // Ctrl-C
-    }
-    if (c == ERR) {
+    } else if (c == ERR) {
         // No char read; nothing to do.
     } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
         typed_char = 0x88; // Apple's backspace (Ctrl-H)
