@@ -278,6 +278,7 @@ static void breakout(void)
     attron(cmd_attr);
     mvprintw(LINES-2, 0, "CMD ENTRY. q = quit. h = help.");
     mvaddch(LINES-1, 0, ':');
+    hline(' ', COLS-1);
     refresh();
     //noraw();
     timeout(-1);
