@@ -15,9 +15,11 @@ static struct termios ios;
 static struct termios orig_ios;
 static byte last_char_read;
 static byte last_char_consumed;
-static bool eof_found = 0;
+static bool eof_found;
+static bool token_err_found;
 static int tokenfd;
-FILE *tokenf;
+static FILE *tokenf;
+static unsigned long line_number = 0;
 
 static enum {
     IM_APPLE = 0,
@@ -201,6 +203,17 @@ static void tokenize(void)
     exit(0);
 }
 
+static void tokenize_err(void)
+{
+    DIE(0, "AppleSoft gave an error while tokenizing text line #%llu,\n",
+        line_number);
+    DIE(0, "  basic line #%u (may be wrong):\n", (unsigned int)word_at(ZP_LINNUM));
+    token_err_found = true;
+    eof_found = true;
+    last_char_read = '\x8D'; // Fake char to trigger consume_char()
+    // Remainder of DIE will be printed by the emulated machine.
+}
+
 int read_char(void)
 {
     int c = -1;
@@ -308,12 +321,17 @@ void consume_char(void)
     if (!eof_found) {
         // skip
     } else if (cfg.tokenize) {
-        tokenize();
+        if (token_err_found) {
+            DIE_CONT(1,"");
+        } else {
+            tokenize();
+        }
     } else {
         // Exit gracefully.
         putchar('\n');
         exit(0);
     }
+
     if (sigint_received) {
         sigint_received = 0;
     } else if (lbuf_start < lbuf_end) {
@@ -330,6 +348,11 @@ void consume_char(void)
     }
     else {
         // nothing - no keypress was ready
+    }
+    if ((last_char_read & 0x7F) == '\r') {
+        ++line_number;
+        // Hm, this might falsely increase the line number if keyboard
+        // strobe is cleared more than once after a CR?
     }
     last_char_consumed = last_char_read;
 }
@@ -349,6 +372,8 @@ static void iface_simple_init(void)
 
 static void iface_simple_start(void)
 {
+    line_number = 0;
+
     setvbuf(stdout, NULL, _IONBF, 0);
 
     if (cfg.tokenize) {
@@ -504,6 +529,10 @@ static void iface_simple_step(void)
         case INT_SETPROMPT:
             prompt_wozbasic();
             break;
+        case FP_ERROR2:
+            if (cfg.tokenize)
+                tokenize_err();
+            break;
     }
 }
 
@@ -530,14 +559,16 @@ static bool iface_simple_poke(word loc, byte val)
 
 static void iface_simple_unhook(void)
 {
-    if (!interactive) {
+    if (!interactive && (cfg.remain_after_pipe || cfg.remain_tty)) {
         set_interactive();
     }
-    set_canon();
+    if (interactive) {
+        set_canon();
 
-    // Set input blocking.
-    int flags = fcntl(0, F_GETFL);
-    (void) fcntl(0, F_SETFL, flags & ~O_NONBLOCK);
+        // Set input blocking.
+        int flags = fcntl(0, F_GETFL);
+        (void) fcntl(0, F_SETFL, flags & ~O_NONBLOCK);
+    }
 }
 
 static void iface_simple_rehook(void)

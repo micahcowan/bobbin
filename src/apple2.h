@@ -14,6 +14,7 @@
 */
 
 #define ZP_START        0x00
+#define ZP_LINNUM       0x50
 #define ZP_TXTTAB       0x67
 #define ZP_VARTAB       0x69 // LOMEM
 #define ZP_ARYTAB       0x6B
@@ -56,6 +57,7 @@
 
 #define FP_BASIC        0xE000 /* jmp to cold start */
 #define FP_BASIC2       0xE003 /* jmp to warm start */
+#define FP_ERROR2       0xD419 /* error handling when no ON ERR */
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C
