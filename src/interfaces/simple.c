@@ -533,6 +533,10 @@ static void iface_simple_step(void)
             if (cfg.tokenize)
                 tokenize_err();
             break;
+        case FP_NOT_NUMBERED:
+            if (cfg.tokenize)
+                DIE(1,"Unnumbered line at text line #%llu!\n", line_number);
+            break;
     }
 }
 
