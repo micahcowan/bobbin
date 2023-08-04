@@ -161,7 +161,14 @@ static void if_tty_start(void)
     atexit(tty_atexit);
 
     keypad(stdscr, true);
-    nodelay(stdscr, 1);
+    nodelay(stdscr, true);
+
+    ESCDELAY=17; // Wait 1/60th of a second to see if an escape char
+                 // is the start of a terminal control sequence/function key
+    // ^ This solution is not portable. But there doesn't seem to be a
+    // portable way to reduce/eliminate the wait time for an escape
+    // sequence. If we have to choose between zero delay, and half a
+    // second, we'd rather have zero and lose function-key support.
 
     draw_border();
 
