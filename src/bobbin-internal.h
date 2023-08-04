@@ -187,6 +187,25 @@ extern bool machine_is_iie(void);
 
 /********** MEMORY **********/
 
+typedef struct RestartSw RestartSw;
+struct RestartSw {
+    bool ramrd : 1; // s/b auxrd
+    bool ramwrt: 1; // s/b auxwrt
+    bool intcxrom : 1;
+    bool altzp : 1;
+    bool intc8rom : 1;
+    bool slotc3rom : 1;
+    bool eightystore : 1;
+    bool vertblank : 1;
+    bool text : 1;
+    bool mixed : 1;
+    bool page2 : 1;
+    bool hires : 1;
+    bool altcharset : 1;
+    bool eightycol : 1;
+};
+extern RestartSw rstsw;
+
 extern void mem_init(void);
 extern void mem_reset(void);
 extern void mem_reboot(void);

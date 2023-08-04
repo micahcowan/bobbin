@@ -34,25 +34,8 @@ static const RebootSw rbswdfl = {
 };
 static RebootSw rbsw = rbswdfl;
 
-typedef struct RestartSw RestartSw;
-struct RestartSw {
-    bool ramrd : 1; // s/b auxrd
-    bool ramwrt: 1; // s/b auxwrt
-    bool intcxrom : 1;
-    bool altzp : 1;
-    bool intc8rom : 1;
-    bool slotc3rom : 1;
-    bool eightystore : 1;
-    bool vertblank : 1;
-    bool text : 1;
-    bool mixed : 1;
-    bool page2 : 1;
-    bool hires : 1;
-    bool altcharset : 1;
-    bool eightycol : 1;
-};
 static const RestartSw rstswdfl = { 0 };
-static RestartSw rstsw = rstswdfl;
+RestartSw rstsw = rstswdfl;
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;

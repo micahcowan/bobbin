@@ -4,21 +4,45 @@
 
 bool util_isflashing(int c)
 {
-    return c >= 0x40 && c < 0x80;
+    return !rstsw.altcharset && c >= 0x40 && c < 0x80;
 }
 
 bool util_isreversed(int c, bool flash)
 {
-    return (c < 0x40 || (flash && c < 0x80));
+    if (!rstsw.altcharset) {
+        return (c < 0x40 || (flash && c < 0x80));
+    } else {
+        return (c < 0x80 && (c < 0x40 || c >= 0x60));
+    }
 }
 
 int util_todisplay(int c)
 {
     if (c < 0) return c;
-    // XXX Should check for lowercase capability (Apple IIe) here
-    c &= 0x3F;
-    c ^= 0x20;
-    c += 0x20;
+
+    if (!machine_is_iie()) {
+        c &= 0x3F;
+        c ^= 0x20;
+        c += 0x20;
+    }
+    else if (c >= 0xA0) {
+        c -= 0x80;
+    } else if (c >= 0x60) {
+        if (c >= 0x80 || !rstsw.altcharset) {
+            c -= 0x40;
+        } else {
+            // already lowercase
+        }
+    } else if (c >= 0x20) {
+        if (rstsw.altcharset) {
+            // mousetext. All @@ for now?
+        } else {
+            // good as it is
+        }
+    } else {
+        c |= 0x40;
+    }
+    if (machine_is_iie() && c == 0x7F) c = '#'; // display DEL as an asterisk
     return c;
 }
 
@@ -26,8 +50,7 @@ int util_toascii(int c)
 {
     if (c < 0) return c;
     c &= 0x7F;
-    // XXX Should check for lowercase capability (Apple IIe) here
-    if (c >= 0x60)
+    if (!machine_is_iie() && c >= 0x60)
         c -= 0x20;
     return c & 0x7F;
 }
@@ -36,7 +59,7 @@ int util_fromascii(int c)
 {
     if (c == '\n') return 0x8D; // RETURN char
     if (c == 0x7f) return 0x88; // BS char
-    if (c >= 0x60 && c != 0x7f)
+    if (!machine_is_iie() && c >= 0x60 && c != 0x7f)
         c &= 0x5F; // make uppercase (~ some punctuation changes)
     return c | 0x80;
 }
