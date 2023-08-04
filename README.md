@@ -156,6 +156,10 @@ If used in combination with `--delay-until-pc` (see below), `--watch` ensures th
 
 #### Machine configuration options
 
+##### --no-bell
+
+Suppress your terminal bell from playing when the Apple issues a beep.
+
 ##### --turbo, --no-turbo
 
 Run as fast as possible - don't throttle speed to 1.023 MHz.

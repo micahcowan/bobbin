@@ -83,7 +83,7 @@ struct Config {
     int squawk_level;
     const char *    interface;
 
-    // machine config optioons
+    // machine/emulation config optioons
     const char *    machine;
     size_t          amt_ram;
     bool            load_rom;
@@ -99,6 +99,7 @@ struct Config {
     bool            start_loc_set;
     word            delay_until;
     bool            delay_set;
+    bool            bell;
 
     // "simple" interface config:
     bool            remain_after_pipe;
