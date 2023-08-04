@@ -462,11 +462,19 @@ static int iface_simple_peek(word loc)
 
     if (a == SS_KBD) {
         return read_char();
-    } else if (a == SS_KBDSTROBE) {
+    } else if (!machine_is_iie() && a == SS_KBDSTROBE) {
         consume_char();
     }
 
     return -1;
+}
+
+static bool iface_simple_poke(word loc, byte val)
+{
+    word a = loc & 0xFFF0;
+    if (a == SS_KBDSTROBE)
+        consume_char();
+    return false;
 }
 
 static void iface_simple_unhook(void)
@@ -495,6 +503,7 @@ IfaceDesc simpleInterface = {
     .prestep = iface_simple_prestep,
     .step = iface_simple_step,
     .peek = iface_simple_peek,
+    .poke = iface_simple_poke,
     .unhook = iface_simple_unhook,
     .rehook = iface_simple_rehook,
 };

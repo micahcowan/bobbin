@@ -207,7 +207,9 @@ static int if_tty_peek(word loc)
         return typed_char;
     } else if (a == SS_KBDSTROBE) {
         sigint_received = 0;
-        typed_char &= 0x7F; // Clear high-bit (key avail)
+        byte saved_c = typed_char;
+        if (!machine_is_iie()) // Must be a write, for ]]e and up
+            typed_char &= 0x7F; // Clear high-bit (key avail)
     } else {
         if_tty_peek_or_poke(loc);
     }
@@ -227,6 +229,8 @@ static bool if_tty_poke(word loc, byte val)
         if (util_isreversed(val, saved_flash)) c |= A_REVERSE;
         mvaddch(y, x, c);
         refresh_overlay = true;
+    } else if ((loc & 0xFFF0) == 0xC010) {
+        typed_char &= 0x7F;
     } else {
         if_tty_peek_or_poke(loc);
     }
