@@ -502,8 +502,26 @@ static void iface_simple_prestep(void)
     }
 }
 
+static void tokenize_step(void)
+{
+    switch (current_pc()) {
+        case FP_ERROR2:
+            tokenize_err();
+            break;
+        case FP_NOT_NUMBERED:
+            DIE(1,"Unnumbered line at text line #%llu.\n", line_number);
+            break;
+        case FP_LINE_EXISTS:
+            DIE(1,"Text line #%llu: BASIC line #%u already exists.\n",
+                line_number, word_at(ZP_LINNUM));
+            break;
+    }
+}
+
 static void iface_simple_step(void)
 {
+    if (cfg.tokenize)
+        tokenize_step();
     switch (current_pc()) {
         // XXX these should check that firmware is active
         case MON_COUT1:
@@ -528,14 +546,6 @@ static void iface_simple_step(void)
             break;
         case INT_SETPROMPT:
             prompt_wozbasic();
-            break;
-        case FP_ERROR2:
-            if (cfg.tokenize)
-                tokenize_err();
-            break;
-        case FP_NOT_NUMBERED:
-            if (cfg.tokenize)
-                DIE(1,"Unnumbered line at text line #%llu!\n", line_number);
             break;
     }
 }

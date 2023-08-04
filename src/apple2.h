@@ -57,8 +57,11 @@
 
 #define FP_BASIC        0xE000 /* jmp to cold start */
 #define FP_BASIC2       0xE003 /* jmp to warm start */
+
+// The following locations may be specific to the ][+ firmware only
 #define FP_ERROR2       0xD419 /* error handling when no ON ERR */
 #define FP_NOT_NUMBERED 0xD456
+#define FP_LINE_EXISTS  0xD471
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C
