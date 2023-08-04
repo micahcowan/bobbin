@@ -11,12 +11,13 @@
 static int saved_char = -1;
 static bool interactive;
 static bool output_seen;
-FILE *inf = NULL;
 static struct termios ios;
 static struct termios orig_ios;
 static byte last_char_read;
 static byte last_char_consumed;
 static bool eof_found = 0;
+static int tokenfd;
+FILE *tokenf;
 
 static enum {
     IM_APPLE = 0,
@@ -35,10 +36,10 @@ unsigned char linebuf[256];
 unsigned char *lbuf_start = linebuf;
 unsigned char *lbuf_end = linebuf;
 
-#define OS_SUPPRESS_NONE    0
-#define OS_SUPPRESS_CR      1
-#define OS_SUPPRESS_ALL     2
-int output_suppressed = OS_SUPPRESS_NONE;
+#define SUPPRESS_NONE    0
+#define SUPPRESS_CR      1
+#define SUPPRESS_LINE    2
+int output_suppressed = SUPPRESS_NONE;
 
 static inline bool is_canon(void)
 {
@@ -189,7 +190,7 @@ static void tokenize(void)
     }
     const size_t sz = end - start;
     errno = 0;
-    size_t wb = fwrite(start, sizeof (byte), end - start, stdout);
+    size_t wb = fwrite(start, sizeof (byte), end - start, tokenf);
     int err = errno;
     if (wb != sz) {
         DIE(0,"An error occurred wile writing tokenized BASIC out:\n");
@@ -311,9 +312,9 @@ void consume_char(void)
     if (sigint_received) {
         sigint_received = 0;
     } else if (lbuf_start < lbuf_end) {
-        if (output_suppressed == OS_SUPPRESS_ALL
+        if (output_suppressed == SUPPRESS_LINE
             && (*lbuf_start == '\n' || *lbuf_start == '\r')) {
-            output_suppressed = OS_SUPPRESS_CR;
+            output_suppressed = SUPPRESS_CR;
         }
         byte a = is_arrow_key();
         if (a != 0) {
@@ -344,7 +345,28 @@ static void iface_simple_init(void)
 static void iface_simple_start(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
-    if (isatty(0)) {
+
+    if (cfg.tokenize) {
+        // Move stdout (tokenization dest) out of the way,
+        // And direct real stdout at stderr. This way we can never
+        // accidentally send interface messages to the tokenized file.
+        errno = 0;
+        tokenfd = dup(STDOUT_FILENO);
+        if (tokenfd < 0) {
+            DIE(1,"Couldn't dup tokenfd: %s\n", strerror(errno));
+        }
+        errno = 0;
+        tokenf = fdopen(tokenfd, "w");
+        if (tokenf == NULL) {
+            DIE(1,"Couldn't fdopen tokenf: %s\n", strerror(errno));
+        }
+
+        errno = 0;
+        int err = dup2(STDERR_FILENO, STDOUT_FILENO);
+        if (err < 0) {
+            DIE(1,"Couldn't redirect stdout > stderr: %s\n", strerror(errno));
+        }
+    } else if (isatty(0)) {
         set_interactive();
     }
 }
@@ -353,15 +375,15 @@ void vidout(void)
 {
     // Output a character when COUT1 is called
     int suppress = output_suppressed;
-    if (suppress == OS_SUPPRESS_CR) {
+    if (suppress == SUPPRESS_CR) {
         // Regardless of what we do with this character
         // (emit, don't emit), we must stop suppressing.
-        output_suppressed = OS_SUPPRESS_NONE;
+        output_suppressed = SUPPRESS_NONE;
     }
     int c = util_toascii(ACC);
     if (c < 0) return;
 
-    if (suppress == OS_SUPPRESS_ALL)
+    if (suppress == SUPPRESS_LINE)
         return;
 
     if (util_isprint(c)
@@ -376,7 +398,7 @@ void vidout(void)
            a dependable location, but the cold-start one may not be.
            Perhaps just suppress all newlines until the first time a
            non-newline is encountered? */
-        if (suppress == OS_SUPPRESS_CR) {
+        if (suppress == SUPPRESS_CR) {
             // Don't emit
         }
         else if (interactive || output_seen) {
@@ -398,7 +420,7 @@ static void suppress_output(void)
     //
     // We could instead probably just suppress until the stack pointer
     // has increased beyond a saved value...
-    output_suppressed = OS_SUPPRESS_ALL;
+    output_suppressed = SUPPRESS_LINE;
 }
 
 static void prompt(void)
