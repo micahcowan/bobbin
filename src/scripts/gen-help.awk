@@ -52,7 +52,6 @@ IN_SYNOPSIS && !/^$/ {
 
 /^<!--START-OPTIONS-->/ {
     STARTED = 1;
-    o("");
 }
 
 NEED_DESC && !/^$/ {
@@ -61,6 +60,14 @@ NEED_DESC && !/^$/ {
     gsub(/\\\]/,"]");
     gsub(/\\\[/,"[");
     OUTPUT = "     " $0;
+}
+
+STARTED && /^#### / {
+    sub(/^#### /,"")
+    gsub("\"","")
+    $0 = toupper($0)
+    o("")
+    o($0)
 }
 
 STARTED && /^##### / {
