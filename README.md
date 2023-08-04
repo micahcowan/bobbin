@@ -168,8 +168,6 @@ Reads in a AppleSoft BASIC listing, outputs AppleSoft tokenized binary.
 
 Expects AppleSoft BASIC on the standard input (or whatever you specified with `-i`), and will output the tokenized binary version. **Bobbin** tokenizes the output by running the input through an emulated Apple machine, and then when input has ended, saving the program at `$801` to the output file (specified with `-o`).
 
-This option implies `-m plus`, and **bobbin** wil refuse to run if you specify some other value for `-m`. When the Apple \]\[e is supported, **bobbin** will make that the default instead (at which point, lowercase input will be accepted instead of translated to uppercase as it is currently).
-
 If a line that doesn't begin with a number is entered, or AppleSoft gives an error on line input, **bobbin** will exit wtih an error.
 
 **Bobbin** will refuse to run with this option if it detects that output is directed to a tty.

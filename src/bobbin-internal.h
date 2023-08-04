@@ -81,10 +81,13 @@ extern const char *program_name; // main.c
 typedef struct Config Config;
 struct Config {
     int squawk_level;
+    const char *    inputfile;
+    const char *    outputfile;
     const char *    interface;
 
     // machine/emulation config optioons
     const char *    machine;
+    bool            machine_set;
     size_t          amt_ram;
     bool            load_rom;
     const char *    ram_load_file;
@@ -120,6 +123,7 @@ struct Config {
 
     // special options
     bool            watch;
+    bool            tokenize;
 };
 extern Config cfg;
 
@@ -210,6 +214,7 @@ extern RestartSw rstsw;
 extern void mem_init(void);
 extern void mem_reset(void);
 extern void mem_reboot(void);
+extern const byte *getram(void);
 extern byte peek(word loc);
 extern void poke(word loc, byte val);
 // These versions don't trigger debugger break-on-memory,
@@ -283,6 +288,11 @@ static inline byte pc_get_adv(void)
     byte op = peek(PC);
     PC_ADV;
     return op;
+}
+
+static inline word word_at(word loc)
+{
+    return WORD(peek_sneaky(loc), peek_sneaky(loc+1));
 }
 
 // s/b in CPU, but need to be decl'd after stack_pop etc

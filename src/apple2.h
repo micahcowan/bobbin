@@ -30,6 +30,7 @@
 #define LOC_TEXT1       0x0400
 #define LOC_TEXT2       0x0400
 #define LOC_TEXTEND     0x0800
+#define LOC_ASOFT_PROG  0x0801
 #define LOC_HIRES1      0x2000
 #define LOC_HIRES2      0x4000
 #define LOC_HIRESEND    0x6000

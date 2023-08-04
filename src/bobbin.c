@@ -1,9 +1,13 @@
 #include "bobbin-internal.h"
 
+#include <errno.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 extern void machine_init(void);
 extern void signals_init(void);
@@ -15,12 +19,15 @@ word current_pc(void) {
     return current_pc_val;
 }
 
+static void handle_io_opts(void);
+
 void bobbin_run(void)
 {
     setlocale(LC_ALL, "");
 
     signals_init();
     machine_init();
+    handle_io_opts();
     interfaces_init();
     mem_init(); // Loads ROM files. Nothing past this point
                 // should be validating options or arguments.
@@ -81,5 +88,32 @@ void bobbin_run(void)
             (void) nanosleep(&postframe, NULL);
         }
         cycle_count %= CYCLES_PER_FRAME;
+    }
+}
+
+static void handle_io_opts(void)
+{
+    if (cfg.inputfile && !STREQ(cfg.inputfile, "-")) {
+        close(STDIN_FILENO);
+        errno = 0;
+        int fd = open(cfg.inputfile, O_RDONLY);
+        if (fd < 0) {
+            DIE(1, "-i: Couldn't open \"%s\": %s\n", cfg.inputfile,
+                strerror(errno));
+        } else if (fd != STDIN_FILENO) {
+            DIE(1, "-i: open failed to use lowest descriptor.\n");
+        }
+    }
+
+    if (cfg.outputfile && !STREQ(cfg.outputfile, "-")) {
+        close(STDOUT_FILENO);
+        errno = 0;
+        int fd = creat(cfg.outputfile, 0666);
+        if (fd < 0) {
+            DIE(1, "-o: Couldn't open \"%s\": %s\n", cfg.outputfile,
+                strerror(errno));
+        } else if (fd != STDOUT_FILENO) {
+            DIE(1, "-o: open failed to use lowest descriptor.\n");
+        }
     }
 }

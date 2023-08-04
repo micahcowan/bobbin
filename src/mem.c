@@ -49,6 +49,12 @@ static const char * const rom_dirs[] = {
 };
 static const char * const *romdirp = rom_dirs;
 static const char * const * const romdend = rom_dirs + (sizeof rom_dirs)/(sizeof rom_dirs[0]);
+
+const byte *getram(void)
+{
+    return membuf;
+}
+
 static const char *get_try_rom_path(const char *fname) {
     static char buf[256];
     const char *env;
@@ -351,6 +357,8 @@ void load_ram_finish(void)
         byte hi = HI(cfg.ram_load_loc + ramloadsz);
         poke_sneaky(ZP_VARTAB, lo);
         poke_sneaky(ZP_VARTAB+1, hi);
+        poke_sneaky(ZP_PRGEND, lo);
+        poke_sneaky(ZP_PRGEND+1, hi);
         poke_sneaky(ZP_ARYTAB, lo);
         poke_sneaky(ZP_ARYTAB+1, hi);
         poke_sneaky(ZP_STREND, lo);

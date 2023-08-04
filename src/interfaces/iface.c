@@ -37,7 +37,16 @@ void load_interface(void)
 
 void interfaces_init(void)
 {
-    if (cfg.interface == NULL) {
+    if (cfg.tokenize) {
+        // Force interface to "simple".
+        cfg.interface = "simple";
+        if (isatty(STDOUT_FILENO)) {
+            DIE(2,"Can't --tokenize output to a tty!\n");
+        }
+        if (cfg.remain_after_pipe || cfg.remain_tty) {
+            DIE(2,"--tokenize conflicts with --remain.\n");
+        }
+    } if (cfg.interface == NULL) {
         // No default interface selected?
         // Pick "simple" if stdin isn't a tty;
         // otherwise, pick "tty" (not yet implemented).

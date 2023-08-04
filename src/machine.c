@@ -149,6 +149,11 @@ bool validate_rom(unsigned char *buf, size_t sz)
         }
     }
 
+    if (cfg.tokenize) {
+        WARN("--tokenize may not work properly with unsupported ROMs.\n");
+        WARN("Continue at your peril!\n");
+    }
+
     return false;
 }
 
@@ -158,7 +163,19 @@ static bool is_iie = false;
 void machine_init(void)
 {
     const char *orig;
-    if ((orig = find_alias(cfg.machine)) == NULL) {
+    if (cfg.tokenize) {
+        // Unconditionally force machine type to ][+
+        orig = PLUS_TAG;
+        if (cfg.machine_set) {
+            const char *tag = find_alias(cfg.machine);
+            if (tag != orig) {
+                WARN("WARNING: You specified \"-m %s\", but --tokenize"
+                     " forced to %s.\n", cfg.machine, orig);
+            }
+        }
+        orig = find_alias(PLUS_TAG); // We have to run this
+                                     // to set up `acceptable_sums`
+    } else if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);
     }
     // Can compare == (instead of STREQ), because we have

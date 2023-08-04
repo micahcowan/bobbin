@@ -179,6 +179,27 @@ byte is_arrow_key(void)
     return c;
 }
 
+static void tokenize(void)
+{
+    const byte *start = getram();
+    const byte *end = start + word_at(ZP_VARTAB);
+    start += LOC_ASOFT_PROG;
+    if (end < start) {
+        DIE(1,"Negative program size, somehow?!?\n");
+    }
+    const size_t sz = end - start;
+    errno = 0;
+    size_t wb = fwrite(start, sizeof (byte), end - start, stdout);
+    int err = errno;
+    if (wb != sz) {
+        DIE(0,"An error occurred wile writing tokenized BASIC out:\n");
+        DIE(1,"fwrite: %s\n", strerror(err));
+    }
+    WARN("Tokenized data written to %s.\n",
+         cfg.outputfile? cfg.outputfile : "standard output");
+    exit(0);
+}
+
 int read_char(void)
 {
     int c = -1;
@@ -251,6 +272,8 @@ recheck:
                     // char read, but with byte unset to indicate invalid
                     c = last_char_read;
                 }
+            } else if (cfg.tokenize) {
+                tokenize();
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
             } else if (cfg.remain_tty) {

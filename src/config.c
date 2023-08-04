@@ -83,6 +83,8 @@ const OptInfo options[] = {
     { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
     { VV_OPT_NAMES, T_FUNCTION, &vv },
+    { INPUT_OPT_NAMES, T_STRING_ARG, &cfg.inputfile },
+    { OUTPUT_OPT_NAMES, T_STRING_ARG, &cfg.outputfile },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine },
     { LANG_CARD_OPT_NAMES, T_BOOL, &cfg.lang_card, &cfg.lang_card_set },
     { BELL_OPT_NAMES, T_BOOL, &cfg.bell },
@@ -110,6 +112,7 @@ const OptInfo options[] = {
     { START_AT_OPT_NAMES, T_WORD_ARG, &cfg.start_loc, &cfg.start_loc_set },
     { DELAY_UNTIL_PC_OPT_NAMES, T_WORD_ARG, &cfg.delay_until, &cfg.delay_set },
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
+    { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
 };
 
 static const OptInfo *find_option(const char *opt)
