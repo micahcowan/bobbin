@@ -14,6 +14,7 @@
 */
 
 #define ZP_START        0x00
+#define ZP_DATAFLG      0x13
 #define ZP_LINNUM       0x50
 #define ZP_TXTTAB       0x67
 #define ZP_VARTAB       0x69 // LOMEM
@@ -66,6 +67,11 @@
                                   we found where to insert a new BASIC
                                   line, but it's not past the end of
                                   the program. */
+#define FP_STORE_NONTOK     0xD5CF
+#define FP_LOAD_TOK_CHR1    0xD5AB
+#define FP_LOAD_TOK_CHR2    0xD5C1
+#define MON_CAPTST1     0xFD80  /* set carry clear here to avoid
+                                   apple ][+ converting upper -> lowercase */
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C

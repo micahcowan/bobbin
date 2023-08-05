@@ -59,7 +59,7 @@ int util_fromascii(int c)
 {
     if (c == '\n') return 0x8D; // RETURN char
     if (c == 0x7f) return 0x88; // BS char
-    if (!machine_is_iie() && c >= 0x60 && c != 0x7f)
+    if (!machine_is_iie() && !cfg.tokenize && c >= 0x60 && c != 0x7f)
         c &= 0x5F; // make uppercase (~ some punctuation changes)
     return c | 0x80;
 }
