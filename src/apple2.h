@@ -15,6 +15,8 @@
 
 #define ZP_START        0x00
 #define ZP_DATAFLG      0x13
+#define ZP_CH           0x24
+#define ZP_CV           0x25
 #define ZP_LINNUM       0x50
 #define ZP_TXTTAB       0x67
 #define ZP_VARTAB       0x69 // LOMEM
@@ -23,10 +25,14 @@
 #define ZP_FRETOP       0x6F
 #define ZP_MEMSIZE      0x73 // HIMEM
 #define ZP_PRGEND       0xAF
+#define ZP_CHRGET       0xB1
+#define ZP_CHRGOT       0xB7
+#define ZP_TXTPTR       0xB8
 #define ZP_END          0x0100
 
 #define LOC_STACK       0x0100
 #define LOC_STACK_END   0x0200
+#define LOC_INBUF       0x0200
 #define LOC_SOFTEV      0x03F2
 #define LOC_PWREDUP     0x03F4
 #define LOC_TEXT1       0x0400
@@ -58,6 +64,8 @@
 
 #define FP_BASIC        0xE000 /* jmp to cold start */
 #define FP_BASIC2       0xE003 /* jmp to warm start */
+#define FP_LIST         0xD6A5
+#define FP_NEWSTT       0xD7D2
 
 // The following locations may be specific to the ][+ firmware only
 #define FP_ERROR2       0xD419 /* error handling when no ON ERR */
@@ -72,6 +80,7 @@
 #define FP_LOAD_TOK_CHR2    0xD5C1
 #define MON_CAPTST1     0xFD80  /* set carry clear here to avoid
                                    apple ][+ converting upper -> lowercase */
+// End ][+-specific locs
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C

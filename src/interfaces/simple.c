@@ -17,6 +17,8 @@ static byte last_char_read;
 static byte last_char_consumed;
 static bool eof_found;
 static bool token_err_found;
+static bool suppress_input;
+static bool setup_list_return;
 static int tokenfd;
 static FILE *tokenf;
 static unsigned long line_number = 0;
@@ -41,6 +43,7 @@ unsigned char *lbuf_end = linebuf;
 #define SUPPRESS_NONE    0
 #define SUPPRESS_CR      1
 #define SUPPRESS_LINE    2
+#define SUPPRESS_ALWAYS  3
 int output_suppressed = SUPPRESS_NONE;
 
 static inline bool is_canon(void)
@@ -220,7 +223,9 @@ int read_char(void)
 
 recheck:
     c = -1;
-    if (sigint_received) {
+    if (suppress_input) {
+        // no input
+    } else if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
         if (interactive) {
             if (last_char_consumed == 0x03 || sigint_received > 1) {
@@ -396,6 +401,9 @@ static void iface_simple_start(void)
         if (err < 0) {
             DIE(1,"Couldn't redirect stdout > stderr: %s\n", strerror(errno));
         }
+    } else if (cfg.detokenize) {
+        output_suppressed = SUPPRESS_ALWAYS;
+        suppress_input = true;
     } else if (isatty(0)) {
         set_interactive();
     }
@@ -413,7 +421,7 @@ void vidout(void)
     int c = util_toascii(ACC);
     if (c < 0) return;
 
-    if (suppress == SUPPRESS_LINE)
+    if (suppress == SUPPRESS_LINE || suppress == SUPPRESS_ALWAYS)
         return;
 
     if (util_isprint(c)
@@ -435,6 +443,14 @@ void vidout(void)
             putchar('\n');
         }
     }
+
+    if (cfg.detokenize && suppress == SUPPRESS_NONE) {
+        // We're detokenizing via the LIST command.
+        // Suppress mid-line line breaks by resetting CH
+        // to 0 every time a char is printed. Then it can never
+        // pass column 33, and therefore never trigger the linebreak.
+        poke_sneaky(ZP_CH, 0);
+    }
 }
 
 static void suppress_output(void)
@@ -450,7 +466,8 @@ static void suppress_output(void)
     //
     // We could instead probably just suppress until the stack pointer
     // has increased beyond a saved value...
-    output_suppressed = SUPPRESS_LINE;
+    if (output_suppressed != SUPPRESS_ALWAYS)
+        output_suppressed = SUPPRESS_LINE;
 }
 
 static void prompt(void)
@@ -499,6 +516,14 @@ static void iface_simple_prestep(void)
         byte lo = stack_pop_sneaky();
         byte hi = stack_pop_sneaky();
         go_to(WORD(lo, hi)+1);
+    } else if (cfg.detokenize && current_pc() == MON_NXTCHR) {
+        // When we get here, the --load-basic-bin mechanism
+        // has just loaded the program into memory.
+        // Disable suppresson and run the LIST routine
+        output_suppressed = SUPPRESS_CR; // suppress the initial blank line
+        output_seen = true;
+        go_to(ZP_CHRGOT);
+        setup_list_return = true;
     }
 }
 
@@ -548,6 +573,11 @@ static void iface_simple_step(void)
 {
     if (cfg.tokenize)
         tokenize_step();
+    if (setup_list_return) {
+        setup_list_return = false;
+        stack_push_sneaky(HI(FP_LIST+1));
+        stack_push_sneaky(LO(FP_LIST+1));
+    }
     switch (current_pc()) {
         // XXX these should check that firmware is active
         case MON_COUT1:
@@ -572,6 +602,11 @@ static void iface_simple_step(void)
             break;
         case INT_SETPROMPT:
             prompt_wozbasic();
+            break;
+        case FP_NEWSTT:
+            if (cfg.detokenize && output_suppressed == SUPPRESS_NONE) {
+                exit(0); // done listing!
+            }
             break;
     }
 }

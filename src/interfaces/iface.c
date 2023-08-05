@@ -46,6 +46,9 @@ void interfaces_init(void)
         if (cfg.remain_after_pipe || cfg.remain_tty) {
             DIE(2,"--tokenize conflicts with --remain.\n");
         }
+    } else if (cfg.detokenize) {
+        // Force interface to "simple".
+        cfg.interface = "simple";
     } if (cfg.interface == NULL) {
         // No default interface selected?
         // Pick "simple" if stdin isn't a tty;

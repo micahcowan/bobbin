@@ -113,6 +113,7 @@ const OptInfo options[] = {
     { DELAY_UNTIL_PC_OPT_NAMES, T_WORD_ARG, &cfg.delay_until, &cfg.delay_set },
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
     { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
+    { DETOKENIZE_OPT_NAMES, T_BOOL, &cfg.detokenize },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -262,6 +263,11 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         if (eq) *eq = '='; // put it back, in case it was an alias
                            //  and just  housekeeping
     }
+
+    // After all's done, do some fixup
+    if (cfg.detokenize) {
+        do_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
+    }
 } // do_config()
 
 void do_version(void)
@@ -381,6 +387,6 @@ void do_load_basic(const char *arg)
     // that special things should happen after load.
     cfg.ram_load_file = arg;
     cfg.ram_load_loc = 0x801;
-    cfg.delay_until = 0xFD75;
+    cfg.delay_until = MON_NXTCHR;
     cfg.delay_set = true;
 }

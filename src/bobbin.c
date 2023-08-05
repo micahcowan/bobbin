@@ -93,7 +93,7 @@ void bobbin_run(void)
 
 static void handle_io_opts(void)
 {
-    if (cfg.inputfile && !STREQ(cfg.inputfile, "-")) {
+    if (cfg.inputfile && !STREQ(cfg.inputfile, "-") && !cfg.detokenize) {
         close(STDIN_FILENO);
         errno = 0;
         int fd = open(cfg.inputfile, O_RDONLY);

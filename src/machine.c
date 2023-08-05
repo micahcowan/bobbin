@@ -149,8 +149,9 @@ bool validate_rom(unsigned char *buf, size_t sz)
         }
     }
 
-    if (cfg.tokenize) {
-        WARN("--tokenize may not work properly with unsupported ROMs.\n");
+    if (cfg.tokenize || cfg.detokenize) {
+        WARN("--%stokenize may not work properly with unsupported ROMs.\n",
+             cfg.detokenize? "de" : "");
         WARN("Continue at your peril!\n");
     }
 
@@ -173,7 +174,19 @@ void machine_init(void)
                      " forced to %s.\n", cfg.machine, orig);
             }
         }
-        orig = find_alias(PLUS_TAG); // We have to run this
+        orig = find_alias(orig);     // We have to run this
+                                     // to set up `acceptable_sums`
+    } else if (cfg.detokenize) {
+        // Unconditionally force machine type to ][+
+        orig = TWOEY_TAG;
+        if (cfg.machine_set) {
+            const char *tag = find_alias(cfg.machine);
+            if (tag != orig) {
+                WARN("WARNING: You specified \"-m %s\", but --detokenize"
+                     " forced to %s.\n", cfg.machine, orig);
+            }
+        }
+        orig = find_alias(orig);     // We have to run this
                                      // to set up `acceptable_sums`
     } else if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);

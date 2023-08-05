@@ -172,6 +172,12 @@ If a line that doesn't begin with a number is entered, or AppleSoft gives an err
 
 **Bobbin** will refuse to run with this option if it detects that output is directed to a tty.
 
+##### --detokenize
+
+Reads in a tokenized BASIC binary, and outputs the program listing.
+
+Like `--tokenize`, uses an emulated Apple to detokenize the file, and then runs (a modified version of) the `LIST` command to get text back out of it.
+
 #### Machine configuration options
 
 ##### --no-bell

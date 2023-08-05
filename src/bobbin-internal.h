@@ -124,6 +124,7 @@ struct Config {
     // special options
     bool            watch;
     bool            tokenize;
+    bool            detokenize;
 };
 extern Config cfg;
 
