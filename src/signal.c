@@ -16,3 +16,8 @@ void signals_init(void)
 {
     signal(SIGINT, handle_int);
 }
+
+void unhandle_sigint(void)
+{
+    signal(SIGINT, SIG_DFL);
+}

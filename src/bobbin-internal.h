@@ -398,5 +398,6 @@ extern uintmax_t instr_count;
 extern uintmax_t frame_count;
 static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
+extern void unhandle_sigint(void);
 
 #endif /* BOBBIN_INTERNAL_H */

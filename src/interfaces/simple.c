@@ -407,6 +407,10 @@ static void iface_simple_start(void)
     } else if (isatty(0)) {
         set_interactive();
     }
+
+    if (!interactive && !cfg.remain_after_pipe && !cfg.remain_tty) {
+        unhandle_sigint();
+    }
 }
 
 void vidout(void)
