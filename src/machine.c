@@ -92,7 +92,7 @@ static const char *find_alias(const char *machine)
              *visit != NULL;
              ++visit) {
 
-            if (STREQ(machine, *visit)) {
+            if (STREQCASE(machine, *visit)) {
                 acceptable_sums = machineVisitor->sums;
                 return firstAlias;
             }
