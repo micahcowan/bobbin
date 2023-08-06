@@ -13,11 +13,13 @@ static byte text_page = 0x4;
 static WINDOW *msgwin;
 static bool saved_flash;
 static bool refresh_overlay = false;
+static bool altcharset = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
 static const unsigned long overlay_long_wait = 600; // 10 seconds
 static unsigned long overlay_timer = 0;
 static int msg_attr;
 static int cmd_attr;
+static int cols = 40;
 static byte typed_char = '\0';
 
 static void draw_border(void);
@@ -68,13 +70,13 @@ static void draw_border(void)
 {
     int y, x;
     getmaxyx(stdscr, y, x);
-    if (x > 40) {
-        move(0,40);
+    if (x > cols) {
+        move(0,cols);
         vline('|', y >= 25? 25: y);
     }
     if (y > 24) {
         move(24,0);
-        hline('-', x >= 41? 41: x);
+        hline('-', x >= (cols+1)? (cols+1): x);
     }
 }
 
@@ -107,8 +109,32 @@ static void repaint_flash(bool flash)
     attrset(A_NORMAL);
 }
 
+static void refresh_video80(void)
+{
+    attrset(A_NORMAL);
+    const byte *membuf = getram();
+    for (int y=0; y != 24; ++y) {
+        word base = get_line_base(0x4, y);
+        move(y, 0);
+        for (byte x=0; x != 80; ++x) {
+            bool even = (x % 2 == 0);
+            byte mx = x & (~(byte)1);
+            byte c = membuf[(base | (even? LOC_AUX_START : 0)) + mx];
+            byte cd = util_todisplay(c);
+            bool cfl = util_isreversed(c, false);
+            addch(cd | (cfl? A_REVERSE: 0));
+        }
+    }
+
+    do_overlay(0);
+}
+
 static void refresh_video(bool flash)
 {
+    if (cols == 80) {
+        refresh_video80();
+        return;
+    }
     saved_flash = flash;
     attrset(A_NORMAL);
     for (int y=0; y != 24; ++y) {
@@ -196,20 +222,32 @@ static void if_tty_start(void)
     refresh();
 }
 
-static void if_tty_peek_or_poke(word loc)
+static void if_tty_switch(void)
 {
-    word prev = text_page;
-    switch (loc) {
-        case 0xC054:
-            text_page = 0x04;
-            if (prev != text_page)
-                refresh_video(saved_flash);
-            break;
-        case 0xC055:
-            text_page = 0x08;
-            if (prev != text_page)
-                refresh_video(saved_flash);
-            break;
+    word prev_page = text_page;
+    if (rstsw.page2 && !rstsw.eightycol) {
+        text_page = 0x8;
+    } else {
+        text_page = 0x4;
+    }
+
+    int prevcols = cols;
+    if (rstsw.eightycol) {
+        cols = 80;
+        text_page = 0x4;
+    } else {
+        cols = 40;
+        text_page = rstsw.page2 ? 0x8 : 0x4;
+    }
+
+    bool oldcharset = altcharset;
+    if (rstsw.altcharset != altcharset) {
+        altcharset = rstsw.altcharset;
+    }
+
+    if (prev_page != text_page || prevcols != cols
+        || oldcharset != altcharset) {
+        redraw(false, 0);
     }
 }
 
@@ -224,8 +262,6 @@ static int if_tty_peek(word loc)
         byte saved_c = typed_char;
         if (!machine_is_iie()) // Must be a write, for ]]e and up
             typed_char &= 0x7F; // Clear high-bit (key avail)
-    } else {
-        if_tty_peek_or_poke(loc);
     }
 
     return -1;
@@ -239,14 +275,27 @@ static bool if_tty_poke(word loc, byte val)
         x %= 40;
         byte y = get_line_for_addr(loc);
 
-        int c = util_todisplay(val);
-        if (util_isreversed(val, saved_flash)) c |= A_REVERSE;
-        mvaddch(y, x, c);
+        if (cols == 80) {
+            const byte *membuf = getram();
+            // Don't try to duplicate mem.c's logic about whether
+            // this char is going to aux or main, just update both.
+            val = membuf[loc | LOC_AUX_START]; // aux
+            int c = util_todisplay(val);
+            if (util_isreversed(val, false)) c |= A_REVERSE;
+            mvaddch(y, x * 2, c);
+            val = membuf[loc]; // main
+            c = util_todisplay(val);
+            if (util_isreversed(val, false)) c |= A_REVERSE;
+            addch(c);
+        } else {
+            int c = util_todisplay(val);
+            bool flash = rstsw.eightycol || rstsw.altcharset? false : saved_flash;
+            if (util_isreversed(val, saved_flash)) c |= A_REVERSE;
+            mvaddch(y, x, c);
+        }
         refresh_overlay = true;
     } else if ((loc & 0xFFF0) == 0xC010) {
         typed_char &= 0x7F;
-    } else {
-        if_tty_peek_or_poke(loc);
     }
 
     return false;
@@ -379,6 +428,7 @@ IfaceDesc ttyInterface = {
     .peek  = if_tty_peek,
     .frame = if_tty_frame,
     .unhook= if_tty_unhook,
+    .switch_chg = if_tty_switch,
     .squawk= if_tty_squawk,
     .display_touched = if_tty_display_touched,
 };

@@ -7,12 +7,12 @@
 
 bool util_isflashing(int c)
 {
-    return !rstsw.altcharset && c >= 0x40 && c < 0x80;
+    return !(rstsw.altcharset || rstsw.eightycol) && c >= 0x40 && c < 0x80;
 }
 
 bool util_isreversed(int c, bool flash)
 {
-    if (!rstsw.altcharset) {
+    if (!(rstsw.altcharset || rstsw.eightycol)) {
         return (c < 0x40 || (flash && c < 0x80));
     } else {
         return (c < 0x80 && (c < 0x40 || c >= 0x60));
@@ -31,13 +31,13 @@ int util_todisplay(int c)
     else if (c >= 0xA0) {
         c -= 0x80;
     } else if (c >= 0x60) {
-        if (c >= 0x80 || !rstsw.altcharset) {
+        if (c >= 0x80 || !(rstsw.altcharset || rstsw.eightycol)) {
             c -= 0x40;
         } else {
             // already lowercase
         }
     } else if (c >= 0x20) {
-        if (rstsw.altcharset) {
+        if (rstsw.altcharset || rstsw.eightycol) {
             // mousetext. All @@ for now?
         } else {
             // good as it is

@@ -86,3 +86,8 @@ void rh_reboot(void)
     cpu_reset();
     did_delayed_jmp = false;
 }
+
+void rh_switch(void)
+{
+    iface_switch();
+}

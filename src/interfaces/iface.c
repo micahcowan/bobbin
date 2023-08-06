@@ -124,6 +124,12 @@ void iface_display_touched(void)
         iii->display_touched();
 }
 
+void iface_switch(void)
+{
+    if (iii->switch_chg)
+        iii->switch_chg();
+}
+
 void squawk(int level, bool cont, const char *fmt, ...)
 {
     bool suppress = false;

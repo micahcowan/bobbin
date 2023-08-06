@@ -556,6 +556,7 @@ static bool lc_poke(word loc, byte val)
 
 static void slot_access_switches(word loc, bool wr)
 {
+    //RestartSw oldsw = rstsw;
     if (loc >= 0xC300 && loc < 0xC400 && !rstsw.slotc3rom) {
         rstsw.intc8rom = true;
     } else if (loc == 0xCFFF) {
@@ -572,7 +573,7 @@ static void slot_access_switches(word loc, bool wr)
                 break;
             case 4:
             case 5:
-                rstsw.page2 = loc & 1; // XXX means nothing right now
+                rstsw.page2 = loc & 1;
                 break;
             case 6:
             case 7:
@@ -618,6 +619,7 @@ static void slot_access_switches(word loc, bool wr)
                 break;
         }
     }
+    rh_switch();
 }
 
 static byte *slot_area_access_sneaky(word loc, bool wr)

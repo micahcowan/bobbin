@@ -319,6 +319,7 @@ struct IfaceDesc {
     void (*frame)(bool flash);
     void (*unhook)(void);
     void (*rehook)(void);
+    void (*switch_chg)(void);
     bool (*squawk)(int level, bool cont, const char *fmt, va_list args);
         // returns true to suppress default squawk handling
     void (*display_touched)(void); // Display memory may have updated
@@ -339,6 +340,7 @@ extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
 extern void iface_frame(bool flash);
 extern void iface_unhook(void);
 extern void iface_rehook(void);
+extern void iface_switch(void);
 extern void iface_display_touched(void);
 extern void squawk(int level, bool cont, const char *format, ...);
 
@@ -353,6 +355,7 @@ extern bool rh_poke(word loc, byte val);
 extern int  rh_peek(word loc);
 extern void rh_reboot(void);
 extern void rh_display_touched(void);
+extern void rh_switch(void);
 
 /********** TRACE **********/
 
