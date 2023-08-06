@@ -227,6 +227,7 @@ extern byte peek_sneaky(word loc);
 extern void poke_sneaky(word loc, byte val);
 extern bool mem_match(word loc, unsigned int nargs, ...);
 extern void load_ram_finish(void);
+extern size_t mem_transform_aux(word loc, bool wr);
 
 static inline byte stack_get(void)
 {

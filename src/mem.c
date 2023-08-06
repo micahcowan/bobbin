@@ -497,7 +497,7 @@ static int maybe_language_card(word loc, bool wr)
     return 0; // s/b floating bus
 }
 
-size_t transform_aux(word loc, bool wr)
+size_t mem_transform_aux(word loc, bool wr)
 {
     bool aux = false;
 
@@ -523,13 +523,13 @@ static byte lc_peek(word loc)
         val = rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
     } else if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
         val = membuf[
-            transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), false)
+            mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), false)
         ];
     } else {
         // Either there's no language card enabled and no ROM,
         // Or the language card is set to bank two, or we're
         //   outside the banked-ram region (0xD000-0xE000)
-        val = membuf[transform_aux(loc, false)];
+        val = membuf[mem_transform_aux(loc, false)];
     }
     return val;
 }
@@ -542,17 +542,42 @@ static bool lc_poke(word loc, byte val)
 
     if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
         membuf[
-            transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), true)
+            mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), true)
         ] = val;
     } else {
         // Either language card write is enabled for bank two,
         // or language card write is enabled and we're not in $Dxxx,
         // or else there's no language card, and also no ROM
         // (all-ram memory configuration, e.g. for testing).
-        membuf[transform_aux(loc, true)] = val;
+        membuf[mem_transform_aux(loc, true)] = val;
     }
     return true;
 }
+
+#if 0
+void prsw(void)
+{
+    util_print_state(stderr, current_pc(), &theCpu.regs);
+    fprintf(stderr, "Switches: $%02X%02X\n", ((char *)&rstsw)[0],
+            ((char *)&rstsw)[1]);
+#define PRSW(x) fprintf(stderr, "  " #x "%s\n", (rstsw.x)? "on" : "off")
+    PRSW(ramrd);
+    PRSW(ramwrt);
+    PRSW(intcxrom);
+    PRSW(altzp);
+    PRSW(intc8rom);
+    PRSW(slotc3rom);
+    PRSW(eightystore);
+    PRSW(vertblank);
+    PRSW(text);
+    PRSW(mixed);
+    PRSW(page2);
+    PRSW(hires);
+    PRSW(altcharset);
+    PRSW(eightycol);
+#undef PRSW
+}
+#endif
 
 static void slot_access_switches(word loc, bool wr)
 {
@@ -618,6 +643,7 @@ static void slot_access_switches(word loc, bool wr)
                 rstsw.altcharset = loc & 1;
                 break;
         }
+        // prsw();
     }
     rh_switch();
 }
@@ -735,7 +761,7 @@ byte peek_sneaky(word loc)
         return 0; // s/b floating bus? not sure, in sneaky
     }
     else {
-        size_t rloc = transform_aux(loc, false);
+        size_t rloc = mem_transform_aux(loc, false);
         return membuf[rloc];
     }
 }
@@ -756,7 +782,7 @@ void poke_sneaky(word loc, byte val)
 {
     // rh_poke_sneaky()?
     // XXX should handle slot-area writes
-    size_t rloc = transform_aux(loc, true);
+    size_t rloc = mem_transform_aux(loc, true);
     membuf[rloc] = val;
 }
 

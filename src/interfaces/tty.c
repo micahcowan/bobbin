@@ -118,7 +118,7 @@ static void refresh_video80(void)
         move(y, 0);
         for (byte x=0; x != 80; ++x) {
             bool even = (x % 2 == 0);
-            byte mx = x & (~(byte)1);
+            byte mx = x >> 1;
             byte c = membuf[(base | (even? LOC_AUX_START : 0)) + mx];
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, false);
@@ -275,24 +275,27 @@ static bool if_tty_poke(word loc, byte val)
         x %= 40;
         byte y = get_line_for_addr(loc);
 
+        size_t rloc = mem_transform_aux(loc, true);
+#if 0
+        int d = util_toascii(val);
+        fprintf(stderr, "-----\nWrite '%c' in page, aux is %s.\n", d,
+                (rloc & LOC_AUX_START) == 0? "false" : "true");
+        extern void prsw(void);
+        prsw();
+#endif
         if (cols == 80) {
-            const byte *membuf = getram();
-            // Don't try to duplicate mem.c's logic about whether
-            // this char is going to aux or main, just update both.
-            val = membuf[loc | LOC_AUX_START]; // aux
-            int c = util_todisplay(val);
-            if (util_isreversed(val, false)) c |= A_REVERSE;
-            mvaddch(y, x * 2, c);
-            val = membuf[loc]; // main
-            c = util_todisplay(val);
-            if (util_isreversed(val, false)) c |= A_REVERSE;
-            addch(c);
-        } else {
-            int c = util_todisplay(val);
-            bool flash = rstsw.eightycol || rstsw.altcharset? false : saved_flash;
-            if (util_isreversed(val, saved_flash)) c |= A_REVERSE;
-            mvaddch(y, x, c);
+            x *= 2;
+            if ((rloc & LOC_AUX_START) == 0) {
+                x += 1; // main
+            }
+        } else if ((rloc & LOC_AUX_START) != 0) {
+            return false; // Don't process; it's going somewhere
+                          // we aren't displaying.
         }
+        int c = util_todisplay(val);
+        bool flash = (cols == 80) || rstsw.altcharset? false : saved_flash;
+        if (util_isreversed(val, flash)) c |= A_REVERSE;
+        mvaddch(y, x, c);
         refresh_overlay = true;
     } else if ((loc & 0xFFF0) == 0xC010) {
         typed_char &= 0x7F;
@@ -360,6 +363,7 @@ static void breakout(void)
 static void if_tty_frame(bool flash)
 {
     do_overlay_timer();
+    if (cols == 80 || rstsw.altcharset) flash = false;
     if (flash != saved_flash) {
         repaint_flash(flash);
         refresh_overlay = true;
