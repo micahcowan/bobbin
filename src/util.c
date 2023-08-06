@@ -1,6 +1,9 @@
 #include "bobbin-internal.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <unistd.h>
 
 bool util_isflashing(int c)
 {
@@ -107,4 +110,21 @@ void util_print_state(FILE *f, word pc, Registers *reg)
 
     // Print current location and instruction
     (void) print_disasm(f, pc, reg);
+}
+
+void util_reopen_stdin_tty(int flags)
+{
+    // close input, we want to make sure tty is fd 0
+    errno = 0;
+    close(0);
+    int err = errno;
+    errno = 0;
+    int fd = open("/dev/tty", flags);
+    if (fd < 0) {
+        DIE(1,"Couldn't open /dev/tty: %s\n",
+            strerror(errno));
+    } else if (fd != 0) {
+        DIE(1, "Couldn't reopen /dev/tty to fd 0: %s\n",
+            strerror(err? err : errno));
+    }
 }

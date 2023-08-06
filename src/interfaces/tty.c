@@ -1,7 +1,9 @@
 #include "bobbin-internal.h"
 
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <curses.h>
 
@@ -147,6 +149,9 @@ static void if_tty_start(void)
 {
     if (!cfg.turbo_was_set) {
         cfg.turbo = false; // default
+    }
+    if (!isatty(STDIN_FILENO)) {
+        util_reopen_stdin_tty(O_RDONLY);
     }
     // Init curses
     //use_tioctl(true);

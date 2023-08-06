@@ -384,6 +384,7 @@ extern int util_todisplay(int c);
 extern int util_toascii(int c);
 extern int util_fromascii(int c);
 extern int util_isprint(int c);
+extern void util_reopen_stdin_tty(int flags);
 
 /********** WATCH **********/
 

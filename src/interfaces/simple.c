@@ -51,27 +51,10 @@ static inline bool is_canon(void)
     return (ios.c_lflag & ICANON) != 0;
 }
 
-static void reopen_stdin_tty(int flags)
-{
-    // close input, we want to make sure tty is fd 0
-    errno = 0;
-    close(0);
-    int err = errno;
-    errno = 0;
-    int fd = open("/dev/tty", flags);
-    if (fd < 0) {
-        DIE(1,"Couldn't open /dev/tty: %s\n",
-            strerror(errno));
-    } else if (fd != 0) {
-        DIE(1, "Couldn't reopen /dev/tty to fd 0: %s\n",
-            strerror(err? err : errno));
-    }
-}
-
 static void transition_tty(void)
 {
     lbuf_start = lbuf_end = linebuf;
-    reopen_stdin_tty(O_RDONLY);
+    util_reopen_stdin_tty(O_RDONLY);
 
     INFO("--remain-tty, switching to tty interface...\n");
     cfg.interface = "tty";
@@ -131,7 +114,7 @@ static void set_interactive(void)
     errno = 0;
     const char *err;
     if (!isatty(0)) {
-        reopen_stdin_tty(O_RDONLY | O_NONBLOCK);
+        util_reopen_stdin_tty(O_RDONLY | O_NONBLOCK);
     } else {
         int flags = fcntl(0, F_GETFL);
         // Set non-blocking.
