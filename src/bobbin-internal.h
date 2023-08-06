@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <strings.h>
+
 #include "ac-config.h"
 #include "apple2.h"
 
@@ -18,6 +20,7 @@ typedef uint16_t    word;
 typedef uint8_t     byte;
 
 #define STREQ(a, b) (!strcmp(a, b))
+#define STREQCASE(a, b) (!strcasecmp(a, b))
 
 #define BYTE(b)         ((b) & 0xFF)
 #define WORD(lo, hi)    (0xFFFF & ((BYTE(hi) << 8) | BYTE(lo)))

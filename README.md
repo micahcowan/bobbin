@@ -245,7 +245,7 @@ Delays the effects of `--load` (RAM) and `--start-at`, until PC is *arg*.
 
 The primary intent of this option is to allow the Apple \]\[ to run through its usual boot-up code, and then load new contents into memory and jump to a new, post-boot-sequence "start". This makes it easy to boot the emulator into your favorite code, without involving a disk-load.
 
-**Bobbin**'s developer likes to use the value `FD75`, which jumps to your code as soon as BASIC (whether AppleSoft or Integer) tries to prompt the user for input.
+The special mnemonic *arg* value `INPUT` (case-insensitive) is translated to location `FD75` (the monitor `NXTCHR`, part of `GETLN`), which is frequently a very convenient value to use. It is reached when, after booting up, the Apple then tries to prompt the user for input, and it applies whether it booted into AppleSoft BASIC, Integer BASIC, or the system monitor.
 
 ##### --ram *arg*
 

@@ -76,6 +76,8 @@ void do_trace_to(const char *s);
 struct fnarg trace_to_fn = {do_trace_to};
 void do_load_basic(const char *s);
 struct fnarg load_basic = {do_load_basic};
+void do_delay_until(const char *s);
+struct fnarg delay_until = {do_delay_until};
 
 const OptInfo options[] = {
     { VERSION_OPT_NAMES, T_FUNCTION, &version },
@@ -110,7 +112,7 @@ const OptInfo options[] = {
     { TRAP_PRINT_OPT_NAMES, T_WORD_ARG, &cfg.trap_print,
         &cfg.trap_print_on },
     { START_AT_OPT_NAMES, T_WORD_ARG, &cfg.start_loc, &cfg.start_loc_set },
-    { DELAY_UNTIL_PC_OPT_NAMES, T_WORD_ARG, &cfg.delay_until, &cfg.delay_set },
+    { DELAY_UNTIL_PC_OPT_NAMES, T_FN_ARG, &delay_until, &cfg.delay_set },
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
     { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
     { DETOKENIZE_OPT_NAMES, T_BOOL, &cfg.detokenize },
@@ -133,6 +135,30 @@ static const OptInfo *find_option(const char *opt)
     }
 
     return NULL;
+}
+
+void handle_numeric_arg(OptType type, const char *opt, void *argvar, const char *arg)
+{
+    char *end;
+    if (arg[0] == '$') {
+        ++arg;
+    }
+    errno = 0;
+    unsigned long ul = strtoul(arg, &end, 16);
+    if (*end != '\0') {
+        DIE(2,"Garbage at end of arg to --%s.\n", opt);
+    } else if (errno == ERANGE || errno == EINVAL) {
+        DIE(2,"Could not parse numeric arg to --%s.\n", opt);
+    }
+    if (type == T_WORD_ARG) {
+        if (ul > 65535) {
+            DIE(2,"Argument to --%s is too large (max 0xFFFF).\n",
+                opt);
+        }
+        (*(word *)argvar) = ul;
+    } else {
+        (*(unsigned long *)argvar) = ul;
+    }
 }
 
 void do_config(int c, char **v)
@@ -229,26 +255,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
             case T_ULONG_ARG:
             case T_WORD_ARG:
             {
-                char *end;
-                if (arg[0] == '$') {
-                    ++arg;
-                }
-                errno = 0;
-                unsigned long ul = strtoul(arg, &end, 16);
-                if (*end != '\0') {
-                    DIE(2,"Garbage at end of arg to --%s.\n", opt);
-                } else if (errno == ERANGE || errno == EINVAL) {
-                    DIE(2,"Could not parse numeric arg to --%s.\n", opt);
-                }
-                if (info->type == T_WORD_ARG) {
-                    if (ul > 65535) {
-                        DIE(2,"Argument to --%s is too large (max 0xFFFF).\n",
-                            opt);
-                    }
-                    (*(word *)info->arg) = ul;
-                } else {
-                    (*(unsigned long *)info->arg) = ul;
-                }
+                handle_numeric_arg(info->type, opt, info->arg, arg);
             }
                 break;
             case T_STRING_ARG:
@@ -389,4 +396,13 @@ void do_load_basic(const char *arg)
     cfg.ram_load_loc = 0x801;
     cfg.delay_until = MON_NXTCHR;
     cfg.delay_set = true;
+}
+
+void do_delay_until(const char *arg)
+{
+    if (STREQCASE("input", arg)) {
+        cfg.delay_until = MON_NXTCHR;
+    } else {
+        handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &cfg.delay_until, arg);
+    }
 }
