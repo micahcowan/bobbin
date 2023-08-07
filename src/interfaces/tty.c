@@ -13,6 +13,7 @@ static byte text_page = 0x4;
 static WINDOW *msgwin;
 static bool saved_flash;
 static bool refresh_overlay = false;
+static bool refresh_all = false;
 static bool altcharset = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
 static const unsigned long overlay_long_wait = 600; // 10 seconds
@@ -245,10 +246,8 @@ static void if_tty_switch(void)
         altcharset = rstsw.altcharset;
     }
 
-    if (prev_page != text_page || prevcols != cols
-        || oldcharset != altcharset) {
-        redraw(false, 0);
-    }
+    refresh_all = refresh_all || (prev_page != text_page || prevcols != cols
+        || oldcharset != altcharset);
 }
 
 static int if_tty_peek(word loc)
@@ -368,7 +367,10 @@ static void if_tty_frame(bool flash)
         repaint_flash(flash);
         refresh_overlay = true;
     }
-    if (refresh_overlay) {
+    if (refresh_all) {
+        refresh_all = false;
+        redraw(true, 0);
+    } else if (refresh_overlay) {
         refresh_overlay = false;
         do_overlay(0);
         refresh();
