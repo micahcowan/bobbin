@@ -1,7 +1,11 @@
 #ifndef BOBBIN_INTERNAL_H
 #define BOBBIN_INTERNAL_H
 
+#include "ac-config.h"
+#ifdef _XOPEN_SOURCE
+#undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE   700
+#endif
 
 #include <signal.h>
 #include <stdarg.h>
@@ -13,7 +17,6 @@
 
 #include <strings.h>
 
-#include "ac-config.h"
 #include "apple2.h"
 
 typedef uint16_t    word;

@@ -32,10 +32,10 @@ struct RebootSw {
 static const RebootSw rbswdfl = {
     .lc_write = true, // remainder are false (reset)
 };
-static RebootSw rbsw = rbswdfl;
+static RebootSw rbsw;
 
 static const RestartSw rstswdfl = { 0 };
-RestartSw rstsw = rstswdfl;
+RestartSw rstsw;
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;

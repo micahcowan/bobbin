@@ -8,6 +8,10 @@ AC_PATH_PROG([LD65], [ld65], [:])
 AC_SUBST(CA65)
 AC_SUBST(LD65)
 
+dnl Needed to get SIGWINCH on MacOS. Why on earth it would hide
+dnl non-interfering features just because _POSIX_C_SOURCE is defined...
+AC_USE_SYSTEM_EXTENSIONS
+
 AC_ARG_WITH([curses],
     [AS_HELP_STRING([--with-curses],
         [Build with the curses/ncurses library. Required for the "tty" interface. @<:@default=check@:>@])],
