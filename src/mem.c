@@ -501,6 +501,10 @@ size_t mem_transform_aux(word loc, bool wr)
 {
     bool aux = false;
 
+    if (wr && cfg.amt_ram == LOC_AUX_START) {
+        // Auxilliary memory has been disabled.
+        return loc;
+    }
     aux = rstsw.altzp && (loc < LOC_STACK_END || loc > SS_START);
     if (rstsw.eightystore
         && ((loc >= LOC_TEXT1 && loc < LOC_TEXT2)
