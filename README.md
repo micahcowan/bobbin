@@ -41,10 +41,10 @@ And here's another video (clickable) that showcases additional features in a mor
 - The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
 - No disk emulation yet. That will obviously be very handy, and is a planned feature.
 
-## Building Bobbin / Getting Started
+## Building Bobbin
 
 ```
-$ autoreconf --install
+$ autoreconf --install # Only do this if ./configure doesn't exist (non-release sources)
 $ ./configure
 $ make
 ```
@@ -63,17 +63,125 @@ To run the included (as-yet incomplete) tests, you must also have available:
  - the ca65 assembler and ld65 linker, from [the cc65 project](https://cc65.github.io/).
  - Python 3, and the Python **pexpect** module.
 
-### Trying it out!
+## Bobbin Usage Examples
+
+### Simple boot-up
 
 Once it has built successfully, try:
 
 ```
-$ ./bobbin -m plus
+$ ./bobbin -m iie
 ```
 
-(To exit, type Control-C twice in a row, which will bring up a command interface, then type `q` followed by the Enter key.
+(To exit, type Control-C twice in a row, which will bring up a command interface, then type `q` followed by the Enter key.)
 
-## Using Bobbin
+### Run Bobbin in line-oriented ("simple") mode
+
+```
+$ ./bobbin -m plus --simple
+
+[Bobbin "simple" interactive mode.
+ Ctrl-D at input to exit.
+ Ctrl-C *TWICE* to enter debugger.]
+
+
+]10 FOR I=1 TO 5 RULEZ!
+
+]20 PRINT SPC(I);"BOBBIN RULEZ!"
+
+]30 NEXT I
+
+]RUN
+ BOBBIN RULEZ!
+  BOBBIN RULEZ!
+   BOBBIN RULEZ!
+    BOBBIN RULEZ!
+     BOBBIN RULEZ!
+
+]^D
+$
+```
+
+### Run a BASIC program and save its output
+
+```
+$ cat > input
+10 FOR I=1 TO 3
+20 ? SPC(I);"HIYA!"
+30 NEXT I
+RUN
+^D
+$ ./bobbin -m plus < input > output # OR: -i input -o output
+$ cat output
+ HIYA!
+  HIYA!
+   HIYA!
+
+$
+```
+
+### Read commands / BASIC programs from a file, and then remain running
+
+```
+$ ./bobbin -m plus -i input --remain
+
+[Bobbin "simple" interactive mode.
+ Ctrl-D at input to exit.
+ Ctrl-C *TWICE* to enter debugger.]
+ HIYA!
+  HIYA!
+   HIYA!
+
+]LIST
+
+10  FOR I = 1 TO 3
+20  PRINT  SPC( I);"HIYA!"
+30  NEXT I
+
+]^D
+$
+```
+
+Also try `--remain-tty` instead, for the same thing but with full text-screen emulation.
+
+### Tokenize/detokenize BASIC programs
+
+```
+$ cat input
+10 FOR I=1 TO 3
+20 ? SPC(I);"HIYA!"
+30 NEXT I
+$ ./bobbin --tokenize < input > output
+./bobbin: Tokenized data written to standard output.
+$ hexdump -C output
+00000000  0c 08 0a 00 81 49 d0 31  c1 33 00 1d 08 14 00 ba  |.....I.1.3......|
+00000010  c3 49 29 3b 22 48 49 59  41 21 22 00 24 08 1e 00  |.I);"HIYA!".$...|
+00000020  82 49 00 00 00                                    |.I...|
+00000025
+$ file output
+output: Applesoft BASIC program data, first line number 10
+$ ./bobbin --detokenize < output
+10  FOR I = 1 TO 3
+20  PRINT  SPC( I);"HIYA!"
+30  NEXT I
+$
+```
+
+### Loading a program into memory
+
+#### Load tokenized AppleSoft to be available in the emulator
+
+```
+$ ./bobbin --tokenize < input > tokenized
+$ ./bobbin --load-basic-bin tokenized -m plus
+```
+(try typing `LIST` or `RUN`)
+
+#### Load a binary file
+
+### Automatically reloading changed programs (Linux Only)
+
+## Command Line and Options
 
 <!-- The Synopsis is used to generate bobbin --help text; -->
 <!-- be careful about editing it! -->
