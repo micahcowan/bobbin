@@ -1,9 +1,12 @@
 #include "bobbin-internal.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
+
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 #include <curses.h>
 
@@ -20,6 +23,7 @@ static const unsigned long overlay_long_wait = 600; // 10 seconds
 static unsigned long overlay_timer = 0;
 static int msg_attr;
 static int cmd_attr;
+static int badterm_attr;
 static int cols = 40;
 static byte typed_char = '\0';
 
@@ -132,6 +136,13 @@ static void refresh_video80(void)
 
 static void refresh_video(bool flash)
 {
+    if (COLS < cols || LINES < 24) {
+        clear();
+        attron(badterm_attr);
+        printw("Terminal too small. Please resize.\n");
+        attrset(A_NORMAL);
+        return;
+    }
     if (cols == 80) {
         refresh_video80();
         return;
@@ -213,8 +224,10 @@ static void if_tty_start(void)
     }
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_BLACK, COLOR_CYAN);
+    init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
     msg_attr = has_colors()? COLOR_PAIR(1) : A_BOLD;
     cmd_attr = has_colors()? COLOR_PAIR(2) : A_REVERSE;
+    badterm_attr = A_BOLD | (has_colors()? COLOR_PAIR(3) : 0);
     wattron(msgwin, msg_attr);
     scrollok(msgwin, true);
 
@@ -270,7 +283,8 @@ static bool if_tty_poke(word loc, byte val)
 {
     byte x = loc & 0x7F;
     word pg = WORD(0, text_page);
-    if (loc >= pg  && loc < (pg + text_size) && x < 120) {
+    if ((loc >= pg  && loc < (pg + text_size) && x < 120)
+       && !(COLS < cols || LINES < 24)) {
         x %= 40;
         byte y = get_line_for_addr(loc);
 
@@ -359,6 +373,17 @@ static void breakout(void)
     overlay_timer = overlay_long_wait;
 }
 
+static void handle_winch(void)
+{
+    struct winsize ws;
+    errno = 0;
+    int status = ioctl(STDIN_FILENO, TIOCGWINSZ, &ws);
+    if (status < 0) {
+        WARN("winch: ioctl_tty: %s\n", strerror(errno));
+    }
+    resizeterm(ws.ws_row, ws.ws_col);
+}
+
 static void if_tty_frame(bool flash)
 {
     do_overlay_timer();
@@ -367,6 +392,12 @@ static void if_tty_frame(bool flash)
         repaint_flash(flash);
         refresh_overlay = true;
     }
+    if (sigwinch_received) {
+        sigwinch_received = false;
+        handle_winch();
+        refresh_all = true;
+    }
+
     if (refresh_all) {
         refresh_all = false;
         redraw(true, 0);
