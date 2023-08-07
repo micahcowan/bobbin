@@ -15,7 +15,7 @@ bool util_isreversed(int c, bool flash)
     if (!(rstsw.altcharset || rstsw.eightycol)) {
         return (c < 0x40 || (flash && c < 0x80));
     } else {
-        return (c < 0x80 && (c < 0x40 || c >= 0x60));
+        return (c < 0x80 && (!machine_has_mousetext() || c < 0x40 || c >= 0x60));
     }
 }
 
@@ -27,23 +27,25 @@ int util_todisplay(int c)
         c &= 0x3F;
         c ^= 0x20;
         c += 0x20;
-    }
-    else if (c >= 0xA0) {
+    } else if (c >= 0xA0) {
         c -= 0x80;
+    } else if (c >= 0x80) {
+        c -= 0x40;
     } else if (c >= 0x60) {
-        if (c >= 0x80 || !(rstsw.altcharset || rstsw.eightycol)) {
-            c -= 0x40;
-        } else {
-            // already lowercase
-        }
-    } else if (c >= 0x20) {
         if (rstsw.altcharset || rstsw.eightycol) {
-            // mousetext. All @@ for now?
+            // already lowercase
         } else {
-            // good as it is
+            c -= 0x40;
+        }
+    } else if (c >= 0x40) {
+        if (machine_has_mousetext() && (rstsw.altcharset || rstsw.eightycol)) {
+            // mousetext. All @@ for now?
+            c = '@';
+        } else {
+            // Uppercase. Good as it is
         }
     } else {
-        c |= 0x40;
+        c = (c ^ 0x20) + 0x20;
     }
     if (machine_is_iie() && c == 0x7F) c = '#'; // display DEL as an asterisk
     return c;

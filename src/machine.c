@@ -223,3 +223,8 @@ bool machine_is_iie(void)
 {
     return is_iie;
 }
+
+bool machine_has_mousetext(void)
+{
+    return false;
+}
