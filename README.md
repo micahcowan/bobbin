@@ -13,19 +13,18 @@ And here's another video (clickable) that showcases additional features in a mor
 
 [![bobbin part 2](https://img.youtube.com/vi/yIJ4bPOrrko/0.jpg)](https://www.youtube.com/watch?v=yIJ4bPOrrko)
 
-***Note***: the video above showcases the latest features, with which this README file has not *quite* caught up. The developer expects to remedy this very soon. Please be patient!
-
 ## Overview
 
 ### Current features
 
-- Emualates an Apple \]\[+ (well really just a 6502, some RAM and the Apple ][ firmware)
+- Emualates an Apple \]\[, \]\[+, or (unenhanced) \]\[e (with 80-column support)
 - Two available interfaces, both for running within a Unix-style terminal program
  - Simplistic text-entry interface, roughly equivalent to using an Apple ][ via serial connection
  - Complete screen-contents emulation via the curses library (anyone up for Apple \]\[-over-telnet?)
 - Can accept redirected input (Integer BASIC program, AppleSoft program, or hex entry via monitor)
 - Can automatically watch a binary file for changes, and reload itself instantly when it's updated
 - Can delay loading/running a binary file until the system has completed the basic boot-up
+- Can be used to tokenize or detokenize AppleSoft BASIC programs
 
 ### Planned features
 
@@ -38,7 +37,6 @@ And here's another video (clickable) that showcases additional features in a mor
 
 ### Known issues
 
-- No way to send Ctrl-RESET within the "tty" interface
 - No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
 - The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
 - No disk emulation yet. That will obviously be very handy, and is a planned feature.
@@ -72,6 +70,8 @@ Once it has built successfully, try:
 ```
 $ ./bobbin -m plus
 ```
+
+(To exit, type Control-C twice in a row, which will bring up a command interface, then type `q` followed by the Enter key.
 
 ## Using Bobbin
 
@@ -132,21 +132,23 @@ Valid values are:
    Selects an original, non-autostart Apple \]\[ with Integer BASIC loaded. The `simple` interface boots directly into Integer BASIC (unlike the real machine); all other interfaces boot directly to the system monitor (actual machine behavior).
  - `plus`. Aliases: `+`, `][+`, `II+`, `twoplus`, `autostart`, `applesoft`, `asoft`.<br />
    Selects an Apple \]\[+ (or, equivalently an original Apple \]\[ with the autostart, AppleSoft BASIC firmware). Boots into AppleSoft.
+ - `twoey`. Aliases: `][e`, `IIe`.<br />
+   An unenhanced Apple \]\[e.
 
 Note: some shells (notably zsh) will not allow you to type `][` as a bare string in a command invocation, you most wrap it with single-or-double-quotes (in which case it's probably easier to use one of the other aliases instead.)
 
 Planned future values:
- - `twoey`. Aliases: `][e`, `IIe`.<br />
-   An unenhanced Apple \]\[e.
  - `enhanced`. Alias: `//e`.<br />
    The enhanced Apple //e. This will be the default `--machine` value, in future.
 <!--/MACHINES-->
+
+Note that while the Apple \]\[e provides a somewhat more powerful environment, Apple \]\[+ may be a more convenient choice in some cases, as neither \]\[+ nor \]\[e accept BASIC commands in lowercase, but since Apple \]\[e actually *has* lowercase characters, automatic conversion to uppercase is not performed on input, whereas on Apple \]\[ and \]\[+ (which have no lowercase), all input is automatically converted to uppercase.
 
 ##### --if, --interface, --iface *arg*
 
 Select the user interface.
 
-If standard input is from a terminal, then the default value is `tty`, which provides a full, in-terminal display of the emulated Apple \]\['s screen contents; if standard input is coming from something else (file or pipe), the `simple` interface, which uses a line-oriented I/O interface, is used instead. This is currently a required argument, unless **bobbin**'s input is from a file or pipe rather than a terminal. The default value, `tty`, has not yet been implemented. Currently only `simple` is supported. You may also specify `--simple`, instead of `--if simple`. See the section on [the "simple" interface](#the-simple-interface), below, for quite a lot of detail.the `
+If standard input is from a terminal, then the default value is `tty`, which provides a full, in-terminal display of the emulated Apple \]\['s screen contents; if standard input is coming from something else (file or pipe), the `simple` interface, which uses a line-oriented I/O interface, is used instead.
 
 ##### --simple
 
@@ -176,13 +178,13 @@ If a line that doesn't begin with a number is entered, or AppleSoft gives an err
 
 Reads in a tokenized BASIC binary, and outputs the program listing.
 
-Like `--tokenize`, uses an emulated Apple to detokenize the file, and then runs (a modified version of) the `LIST` command to get text back out of it.
+Like `--tokenize`, uses an emulated Apple to detokenize the file, and then runs the `LIST` command to get text back out of it, except that the `LIST` output is modified so that long lines aren't broken up into multiple.
 
 #### Machine configuration options
 
 ##### --no-bell
 
-Suppress your terminal bell from playing when the Apple issues a beep.
+Suppress your terminal bell from playing when the Apple issues a beep. Only meaningful in the `tty` interface (`simple` does not sound a bell).
 
 ##### --turbo, --no-turbo
 
@@ -227,13 +229,13 @@ If the file's contents would exceed the end of even auxilliary memory (128k), **
 
 RAM location to load file from `--load`.
 
-The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`. If instruction evaluation begins while PC holds this value, the emulator will exit with a status of zero (success), and the message `.-= !!! REPORT SUCCESS !!! =-.`.
+The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`.
 
 ##### --load-basic-bin *arg*
 
 Load tokenized (binary) AppleSoft BASIC file at boot.
 
-This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until FD75`, except that it does some additional "fixup" to connect it to the BASIC interpreter.
+This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until FD75`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
 
 ##### --start-at, --start-loc
 
@@ -253,7 +255,7 @@ Select how much RAM is installed on the machine, in kilobytes.
 
 The default is the maximum possible amount normally possible (without third-party additions or modifications) on the specified machine&mdash;64k for the \]\[ or \]\[+, 128k on the others. The first 16k over 48k (totalling 64k) will be used as memory in an emulated "Language Card" (memory that could be used in case of the BASIC ROM firmware, to load an alternative "built-in" language to the one installed. If you specify 128k, then the top 64k of that will be used for so-called *auxiliary memory*, used for things like 80-column text support, "doubled" low-res and high-res graphics, and the ProDOS `/RAM` disk.
 
-Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. The values 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed. Note that while it is accepted, the `128` value currently has no effect, as auxiliary memory hasn't been implemented yet.
+Acceptable values are: 4, 8, 12, 16, 20, 24, 32, 36, 48, 64, or 128. The values 28, 40, and 44 will also be permitted, but a warning will be issued as these were not normally possible configurations for an Apple \]\[. Above 48, only 64 or 128 are allowed.
 
 #### "Simple" interface options
 
@@ -320,15 +322,17 @@ Unlike the other two `--trap-*` options, this does not cause **bobbin** to exit;
 <!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate
 
-The eventual plan is for **bobbin** to emulate an enhanced Apple //e as the default, but this is not yet supported. In order to prevent future confusion when the Apple //e does become a supported machine type, **bobbin** does not default to either of the machine types that *are* currently supported: you must explicitly select the machine type via the `-m` switch.
+The eventual plan is for **bobbin** to emulate an enhanced Apple //e as the default, but this is not yet supported. In order to prevent future confusion when the Apple //e does become a supported machine type, **bobbin** does not default to amy of the machine types that *are* currently supported: you must explicitly select the machine type via the `-m` switch.
 
-There are currently two supported machine types, an Apple \]\[, and an Apple \]\[+. Since an (early) Apple \]\[+ is exactly equivalent to the original Apple \]\[ with the "autostart" ROM with AppleSoft (floating-point) BASIC built-in, the term "original Apple ][" is used here to mean that the original, "non-autostart" ROM that starts directly in the monitor program, and which included Integer BASIC and the original mini-assembler (including "trace" and "step" features), via entering `F666G` (not `!`) from the monitor. (Note that the "monitor" we are referring to here is a program that is built into all Apple \]\[ machines; we are not referring to a hardware display device in this context.) As a special feature of the `--simple` interface, **bobbin** does not actually drop you into the monitor with `-m \]\[ --simple`; instead it jumps you into Integer BASIC, as that's the more likely thing you might want to pipe a program into (you can still get to the monitor via `CALL-151`, of course!).
+The machine types that are currently supported are: an Apple \]\[, an Apple \]\[+, or an unenhanced Apple \]\[e. Since an (early) Apple \]\[+ is exactly equivalent to the original Apple \]\[ with the "autostart" ROM with AppleSoft (floating-point) BASIC built-in, the term "original Apple ][" is used here to mean that the original, "non-autostart" ROM that starts directly in the monitor program, and which included Integer BASIC, the ROM known as "Programmer's Aid #1", and the original mini-assembler that included the later-removed "trace" and "step" features. (The mini-assembler is entered by typing `F666G` (not `!`) from the monitor, and exited via `RESET`&mdash;note that the "monitor" we are referring to here is a program that is built into the Apple \]\[ ROM; we are not referring to a hardware display device in this context.) As a special feature of the `--simple` interface, **bobbin** does not actually drop you into the monitor with `-m \]\[ --simple`; instead it jumps you into Integer BASIC, as that's the more likely thing you might want to pipe a program into (you can still get to the monitor via `CALL-151`, of course!).
 
-To start **bobbin** in AppleSoft BASIC, use `-m plus`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above).
+Note, too, that the Apple \]\[ and Apple \]\[+ did not have lowercase characters, and so **bobbin** automatically translates lowercase typing into uppercase, for these two machines. However, the Apple \]\[e and later *does* support lowercase typing, so the translation is not performed. Even though the unenhanced Apple \]\[e supports lowercase characters, it will not recognize lowercase BASIC commands (unlike the Enhanced Apple //e, which does). For this reason, if you are primarily running *bobbin* to type in BASIC programs, we recommend you emulate a \]\[+ rather than a \]\[e, unless your program needs to print or accept lowercase characters (or there is some other reason you need an Apple \]\[e).
+
+To start **bobbin** in AppleSoft BASIC, emulating an Apple \]\[+, use `-m plus`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above).
 
 To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above). Note that the `--simple` interface (the only interface currently available in **bobbin**) actually drops you directly into Integer BASIC, instead of the monitor. While this behavior is unrealistic to the original machine, it is thought to be more convenient for the purpose of redirected input (as you don't have to start your files with a Ctrl-B character).
 
-Note that at least one shell—**zsh**, which is the default shell on Mac OS—does not accept `][` or `][+` unquoted; you would need to place them in single-quotes, or simply use one of the other aliases for the same machine.
+And finally, to start **bobbin** as an Apple \]\[e, use `-m twoey` or `-m iie` (or another alias, as given above).
 
 ## User Interfaces (--iface)
 
@@ -336,13 +340,15 @@ Note that at least one shell—**zsh**, which is the default shell on Mac OS—d
 
 The `tty` interface is used by default when you start **bobbin** on the command-line&mdash;unless standard input is being redirected from a file or pipe (or is otherwise not connected to a terminal). It provides a display of the actual emulated machine's screen contents, inside your terminal, using the standard Unix **curses** (or **ncurses**) library.
 
-To exit the interface, type Ctrl-C twice in succession (a single Ctrl-C will be passed through to the emulated Apple; it typically has the effect of `BREAK`ing a running BASIC program. We recognize that it is very easy to accidentally type Ctrl-C a second time after having done so once; in the very nearfuture it's expected that the second Ctrl-C will enter the debugger (described below), or else a more lightweight interface. (The `tty` interface is still under very active development, even relative to the rest of the emulator.)
+While in the `tty` interface, you can type Ctrl-C twice in a row to enter command-entry mode for **bobbin**. If you need to quit **bobbin**, you can type `q` followed by Enter from the command-entry mode. Type `help` and Enter to see some other commands you can use. The `help` message will only stay on your screen for ten seconds&mdash;but if you re-enter command mode again while the `help` text is still on the screen, it will stay there until you leave command mode again (by typing another command, or simply Enter by itself).
+
+Similarly, any warning messages will only display for two seconds before disappearing&mdash;if you need more time to read a message on the screen, type Control-C twice to enter command mode and give yourself more time to read. At some future point we will probably keep a backlog of such messages, and provide a command for viewing it. In the current version of **bobbin**, however, once a message disappears it cannot be reviewed.
 
 The `tty` is a few steps closer to "realistic" than the strictly line-oriented `simple` interface, and is adequate for most strictly-textual software that runs on 8-bit Apple machines. However, there are important drawbacks and caveats:
 
  - In 40-column mode, the screen has a strange aspect-ratio on most terminals. This is because typical terminal emulators use fonts that look good at 80 columns by 25 lines, and so are half the width needed to make 40 columns look "full".
- - Only ASCII (and Unicode) characters are available. This means that the various "mousetext" characters available from the Apple \]\[e and onwards, are not available for display on a Unix terminal. Actually, Unicode *does* include the Apple mousetext characters as part of the standard, but as of now they are not widely implemented, so no attempt is currently being made for **bobbin** to use them at the terminal interface.
- - Even after Apple \]\[e emulation is supported, this interface (as well as the `simple` one) will remain unable to support the often-important "any key" functionality of the keyboard strobe software switch. The reason being that Unix-style terminals do not have commonly have a way to detect if a key is currently being pressed, so we don't have this information to pass along to the Apple \]\[e. Therefore, if a piece of software (usually a game), perhaps after detecting that it's running in an "Apple \]\[e", depends on this functionality, it will not behave correctly under the `tty` interface.
+ - Only ASCII (and Unicode) characters are available. This means that the various "mousetext" characters available from the enhanced Apple //e and onwards, are not available for display on a Unix terminal. Actually, Unicode *does* include the Apple mousetext characters as part of the standard, but as of now they are not widely implemented, so no attempt is currently being made for **bobbin** to use them at the terminal interface.
+ - This interface (as well as the `simple` one) will remain unable to support the often-important "any key" functionality of the keyboard strobe software switch. present in the Apple \]\[e. The reason being that Unix-style terminals do not commonly have a way to detect if a key is currently being pressed, so we don't have this information to pass along to the Apple \]\[e. Therefore, if a piece of software (usually a game), perhaps after detecting that it's running in an "Apple \]\[e", depends on this functionality, it will not behave correctly under the `tty` interface. Games intended to work on earlier Apple models are fine, since they don't expect to be able to detect whether a key is down (typically, older games feature movement that continues until a different key is pressed, rather than checking for a key to be released).
 
 ### The "simple" interface
 
@@ -512,7 +518,7 @@ In the `--simple` interface, if a Ctrl-D is input by the user, then it indicates
 
 ### Bobbin's built-in debugger
 
-The debugger is currently only available from the `simple` interface, though availability in some form is planned for the `tty` interface as well. It is entered from `simple` by typing Ctrl-C twice in succession (**note:** doing this in the `tty` interface simply exits the emulator, at the moment).
+The debugger is currently only available from the `simple` interface, though availability in some form is planned for the `tty` interface as well. It is entered from `simple` by typing Ctrl-C twice in succession (**note:** doing this in the `tty` interface gives you a command interface, but not the full debugger interface).
 
 When you enter the debugger, you'll see a message like the following:
 
