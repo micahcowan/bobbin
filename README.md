@@ -179,7 +179,41 @@ $ ./bobbin --load-basic-bin tokenized -m plus
 
 #### Load a binary file
 
-### Automatically reloading changed programs (Linux Only)
+```
+$ hexdump -C hello.bin
+00000000  a2 00 bd 0e 03 f0 06 20  ed fd e8 d0 f5 60 c2 cf  |....... .....`..|
+00000010  c2 c2 c9 ce a1 8d 00 00                           |........|
+00000018
+$ ./bobbin -m plus --simple --load hello.bin --load-at 300
+
+[Bobbin "simple" interactive mode.
+ Ctrl-D at input to exit.
+ Ctrl-C *TWICE* to enter debugger.]
+
+]CALL 768
+BOBBIN!
+
+]
+$
+```
+
+#### Load and automatically run a binary file
+
+```
+$ hexdump -C hello.bin
+00000000  a2 00 bd 10 03 f0 06 20  ed fd e8 d0 f5 4c 03 e0  |....... .....L..|
+00000010  c2 cf c2 c2 c9 ce a1 8d  00                       |.........|
+00000019
+mcowan$ ./bobbin -m plus --simple --load hello.bin --load-at 300 --start-at 300 --delay-until INPUT
+
+[Bobbin "simple" interactive mode.
+ Ctrl-D at input to exit.
+ Ctrl-C *TWICE* to enter debugger.]
+
+]BOBBIN!
+
+]^D
+```
 
 ## Command Line and Options
 
