@@ -424,9 +424,6 @@ static void if_tty_frame(bool flash)
         typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
     } else if (c == 0x1A) {// We're in raw mode; this is Ctrl-Z
         raise(SIGTSTP);
-    } else if (c == 0x0C) {
-        // Ctrl-L = refresh screen
-        redraw(true, 0);
     } else if (c >= 0 && (c & 0x7F) == c) {
         typed_char = util_fromascii(c & 0x7F);
     }
