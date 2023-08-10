@@ -5,6 +5,16 @@
 #include <stdio.h>
 #include <unistd.h>
 
+void *xalloc(size_t sz)
+{
+    errno = 0;
+    void *obj = malloc(sz);
+    if (obj == NULL) {
+        DIE(1, "malloc: %s\n", strerror(errno));
+    }
+    return obj;
+}
+
 bool util_isflashing(int c)
 {
     return !(rstsw.altcharset || rstsw.eightycol) && c >= 0x40 && c < 0x80;

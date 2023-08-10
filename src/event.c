@@ -3,6 +3,13 @@
 #include <assert.h>
 #include <stdlib.h>
 
+struct handler {
+    event_handler fn;
+    struct handler *next;
+};
+
+static struct handler *head = NULL;
+
 static const Event evinit = {
     .suppress = false,
     .val = -1,
@@ -10,31 +17,49 @@ static const Event evinit = {
 
 void events_init(void)
 {
+    extern void hooks_init(void);
+    hooks_init();
 }
 
-void event_reghandler(event_handler h)
+void event_reghandler(event_handler fn)
 {
+    struct handler *h = xalloc(sizeof *h);
+    h->fn = fn;
+    h->next = head;
+    head = h;
 }
 
 void event_unreghandler(event_handler h)
 {
+    // XXX Currently unimplemented
+}
+
+void dispatch(Event *e)
+{
+    struct handler *h;
+    for (h = head; h != NULL; h = h->next) {
+        h->fn(e);
+    }
+}
+
+static bool for_iface_only(EventType t)
+{
+    return (t == EV_UNHOOK || t == EV_REHOOK || t == EV_DISPLAY_TOUCH);
 }
 
 void event_fire(EventType type)
 {
-    Event *e = malloc(sizeof *e);
+    Event *e = xalloc(sizeof *e);
     *e = evinit;
     e->type = type;
 
-    // XXX special handling
-    static bool did_delayed_jmp = false;
+    // special handling
     switch (type) {
         case EV_REBOOT:
         {
             mem_reboot();
             event_fire(EV_RESET);
             event_fire(EV_DISPLAY_TOUCH);
-            did_delayed_jmp = false;
         }
             break;
         case EV_RESET:
@@ -43,33 +68,16 @@ void event_fire(EventType type)
             mem_reset();
         }
             break;
-        case EV_PRESTEP:
-        {
-            if (cfg.delay_set && PC == cfg.delay_until && !did_delayed_jmp) {
-                did_delayed_jmp = true;
-                if (cfg.start_loc_set) {
-                    INFO("Jumping PC to $%04X due to --delay-until option.\n",
-                         cfg.start_loc_set);
-                    PC = cfg.start_loc;
-                }
-                load_ram_finish();
-                event_fire(EV_DISPLAY_TOUCH);
-            }
-        }
-            break;
-        case EV_STEP:
-        {
-            trace_step();
-            extern void trap_step(void);
-            trap_step();
-
-        }
-            break;
         default:
             ;
     }
 
     iface_fire(e);
+
+    if (!(e->type == EV_FRAME || e->type == EV_CYCLE // dispatched specially
+          || for_iface_only(e->type))) {
+        dispatch(e);
+    }
 
     if (type == EV_STEP) {
         // Not allowed to change PC in STEP, PEEK, POKE events...
@@ -81,7 +89,7 @@ void event_fire(EventType type)
 
 extern int event_fire_peek(word loc)
 {
-    Event *e = malloc(sizeof *e);
+    Event *e = xalloc(sizeof *e);
     *e = evinit;
     e->type = EV_PEEK;
     e->loc = loc;
@@ -97,7 +105,7 @@ extern int event_fire_peek(word loc)
 
 extern bool event_fire_poke(word loc, byte val)
 {
-    Event *e = malloc(sizeof *e);
+    Event *e = xalloc(sizeof *e);
     *e = evinit;
     e->type = EV_POKE;
     e->loc = loc;

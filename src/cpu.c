@@ -36,8 +36,6 @@ void cpu_reset(void)
     byte pcH = peek(VEC_RESET+1);
     go_to(WORD(pcL, pcH));
     cycle(); /* end of cycle 7 (8th); read vector high byte */
-
-    mem_reset();
 }
 
 // Sign extend

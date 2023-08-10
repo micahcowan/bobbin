@@ -419,7 +419,7 @@ extern void squawk(int level, bool cont, const char *format, ...);
 extern const char *trfile_name;
 extern FILE *trfile;
 
-extern void trace_step(void);
+extern void trace_step(Event *e);
 extern void trace_on(char *format, ...);
 extern void trace_off(void);
 extern int  tracing(void);
@@ -437,6 +437,7 @@ extern bool debugging(void);
 
 /********** UTIL **********/
 
+extern void *xalloc(size_t sz);
 extern void util_print_state(FILE *f, word pc, Registers *reg);
 extern bool util_isflashing(int c);
 extern bool util_isreversed(int c, bool flash);

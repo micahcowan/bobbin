@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+bool handler_registered = false;
+
 uintmax_t cycle_count = 0;
 
 FILE *trfile = NULL;
@@ -30,6 +32,10 @@ void trace_on(char *format, ...)
     va_end(args);
     fprintf(trfile, " ~~~\n");
     traceon = 1;
+    if (!handler_registered) {
+        handler_registered = true;
+        event_reghandler(trace_step);
+    }
 }
 
 void trace_off(void)
@@ -38,8 +44,9 @@ void trace_off(void)
     traceon = 0;
 }
 
-void trace_step(void)
+void trace_step(Event *e)
 {
+    if (e->type != EV_STEP) return;
     if (cfg.trace_start == cfg.trace_end) {
         // Do nothing.
     } else if (instr_count == cfg.trace_start) {
