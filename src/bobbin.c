@@ -31,6 +31,7 @@ void bobbin_run(void)
     handle_io_opts();
     events_init();
     interfaces_init();
+    periph_init();
     mem_init(); // Loads ROM files. Nothing past this point
                 // should be validating options or arguments.
     setup_watches();

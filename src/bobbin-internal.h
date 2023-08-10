@@ -414,6 +414,28 @@ extern void interfaces_start(void);
 extern void iface_fire(Event *e); // For all other events
 extern void squawk(int level, bool cont, const char *format, ...);
 
+/********** PERIPHERALS **********/
+
+// Doesn't nearly represent everything a card can see,
+//  but enough to get started for now.
+
+typedef byte (*periph_handler)(word loc, int val, int ploc, int psw);
+// val: -1 if read, byte value if write.
+// ploc: loc & 0x00FF if loc is in $CnXX (n == slot); -1 otherwise.
+// psw:  loc & 0x000F if loc is in $C0nX (n == slot); -1 otherwise.
+
+typedef struct PeriphDesc PeriphDesc;
+struct PeriphDesc {
+    void (*init)(void);
+    periph_handler  handler;
+};
+
+extern void periph_init(void);
+extern byte periph_sw_peek(word loc);
+extern void periph_sw_poke(word loc, byte val);
+extern byte periph_rom_peek(word loc);
+extern void periph_rom_poke(word loc, byte val);
+
 /********** TRACE **********/
 
 extern const char *trfile_name;
