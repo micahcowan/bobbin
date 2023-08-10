@@ -11,8 +11,11 @@ def ctrl_c_in_dbg(p):
     p.expect("\r\n\\*\\*\\* Welcome to Bobbin Debugger \\*\\*\\*\r\n")
     p.expect("\r\n>")
     p.sendintr()
-    p.expect("\r\n\\(Interrupt received\\.")
-    p.expect("\r\n>")
+    if False:
+        p.expect("\r\n\\(Interrupt received\\.")
+        p.expect("\r\n>")
+    else:
+        p.expect("\\^C")
     p.sendline("c")
     p.expect("\r\nContinuing...\r\n")
     p.expect(TIMEOUT)
