@@ -456,6 +456,7 @@ bool command_do(const char *line, printer pr);
 extern void dbg_on(void);
 extern void debugger(void);
 extern bool debugging(void);
+extern void breakpoint_set(word loc);
 
 /********** UTIL **********/
 

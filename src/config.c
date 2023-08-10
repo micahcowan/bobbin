@@ -78,6 +78,8 @@ void do_load_basic(const char *s);
 struct fnarg load_basic = {do_load_basic};
 void do_delay_until(const char *s);
 struct fnarg delay_until = {do_delay_until};
+void do_breakpoint(const char *s);
+struct fnarg breakpoint = {do_breakpoint};
 
 const OptInfo options[] = {
     { VERSION_OPT_NAMES, T_FUNCTION, &version },
@@ -103,6 +105,7 @@ const OptInfo options[] = {
     { REMAIN_TTY_OPT_NAMES, T_BOOL, &cfg.remain_tty },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
+    { BREAKPOINT_OPT_NAMES, T_FN_ARG, &breakpoint },
     { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
     { TRACE_TO_OPT_NAMES, T_FN_ARG, &trace_to_fn },
     { TRAP_FAILURE_OPT_NAMES, T_WORD_ARG, &cfg.trap_failure,
@@ -405,4 +408,15 @@ void do_delay_until(const char *arg)
     } else {
         handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &cfg.delay_until, arg);
     }
+}
+
+void do_breakpoint(const char *arg)
+{
+    word bploc;
+    if (STREQCASE("input", arg)) {
+        bploc = MON_NXTCHR;
+    } else {
+        handle_numeric_arg(T_WORD_ARG, "breakpoint", &bploc, arg);
+    }
+    breakpoint_set(bploc);
 }

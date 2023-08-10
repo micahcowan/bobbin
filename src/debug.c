@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct Breakpoint Breakpoint;
+struct Breakpoint {
+    word loc;
+    bool enabled;
+    Breakpoint *next;
+};
+
+Breakpoint *bp_head = NULL;
+
 char linebuf[256];
 
 bool debugging_flag = false;
@@ -21,11 +30,52 @@ void dbg_on(void)
     print_message = true;
 }
 
+void breakpoint_set(word loc)
+{
+    Breakpoint *bp = xalloc(sizeof *bp);
+
+    bp->loc = loc;
+    bp->enabled = true;
+    bp->next = NULL;
+
+    // Find tail of chain
+    if (bp_head == NULL) {
+        bp_head = bp;
+    } else {
+        Breakpoint *tail;
+        for (tail = bp_head; tail->next != NULL; tail = tail->next) {}
+        tail->next = bp;
+    }
+}
+
+static bool bp_reached(void)
+{
+    Breakpoint *bp;
+    word pc = current_pc();
+    for (bp = bp_head; bp != NULL; bp = bp->next) {
+        if (pc == bp->loc) return true;
+    }
+    return false;
+}
+
 void debugger(void)
 {
-    if (!debugging_flag && sigint_received < 2) return;
-    else debugging_flag = true;
     if (STREQ(cfg.interface, "tty")) return; // for now
+
+    if (debugging_flag) {
+        // Nothing. Proceed.
+    } else {
+        if (sigint_received >= 2) {
+            fputs("Debug entered via ^C^C.\n", stdout);
+        } else if (bp_reached()) {
+            printf("Breakpoint at %04X.\n", current_pc());
+        } else {
+            return;
+        }
+        event_fire(EV_UNHOOK);
+        debugging_flag = true;
+    }
+
     sigint_received = 0;
 
     if (print_message) {
@@ -80,6 +130,11 @@ void debugger(void)
         } else if (HAVE("c")) {
             fputs("Continuing...\n", stdout);
             debugging_flag = false;
+        } else if (linebuf[0] == 'b' && linebuf[1] == ' ') {
+            // FIXME: very crude.
+            unsigned long bploc = strtoul(&linebuf[2], NULL, 16);
+            breakpoint_set(bploc);
+            handled = false;
         } else {
             handled = false; // Loop back around / try again
             fputs("Unrecognized command!\n", stdout);

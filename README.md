@@ -421,11 +421,15 @@ See [](#choosing-your-flavor-of-input-mode-with---simple-input) below, for copio
 
 This option has no effect while **bobbin** is not reading from a terminal.
 
-#### Diagnostics and Testing Options
+#### Diagnostics, Debugging, and Testing Options
 
 ##### --die-on-brk
 
 Exit emulation with an error, if a BRK or illegal opcode is encountered.
+
+##### --breakpoint, --bp *arg*
+
+Set a debugger breakpoint (`simple` interface only).
 
 ##### --trace-to *m*\[:*n*\]
 
