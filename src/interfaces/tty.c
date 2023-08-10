@@ -35,12 +35,12 @@ static void clear_overlay(void);
 static void do_overlay_timer(void);
 static void if_tty_start(void);
 static void if_tty_peek_or_poke(word loc);
-static int if_tty_peek(word loc);
-static bool if_tty_poke(word loc, byte val);
+static void if_tty_peek(Event *e);
+static void if_tty_poke(Event *e);
 static void if_tty_unhook(void);
 static void redraw(bool force, int overlay_offset);
 static void breakout(void);
-static void if_tty_frame(bool flash);
+static void if_tty_frame(void);
 static void if_tty_step(void);
 static void if_tty_display_touched(void);
 static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args);
@@ -263,24 +263,24 @@ static void if_tty_switch(void)
         || oldcharset != altcharset);
 }
 
-static int if_tty_peek(word loc)
+static void if_tty_peek(Event *e)
 {
-    word a = loc & 0xFFF0;
+    word a = e->loc & 0xFFF0;
 
     if (a == SS_KBD) {
-        return typed_char;
+        e->val = typed_char;
     } else if (a == SS_KBDSTROBE) {
         sigint_received = 0;
         byte saved_c = typed_char;
         if (!machine_is_iie()) // Must be a write, for ]]e and up
             typed_char &= 0x7F; // Clear high-bit (key avail)
     }
-
-    return -1;
 }
 
-static bool if_tty_poke(word loc, byte val)
+static void if_tty_poke(Event *e)
 {
+    word loc = e->loc;
+    byte val = e->val;
     byte x = loc & 0x7F;
     word pg = WORD(0, text_page);
     if ((loc >= pg  && loc < (pg + text_size) && x < 120)
@@ -288,22 +288,21 @@ static bool if_tty_poke(word loc, byte val)
         x %= 40;
         byte y = get_line_for_addr(loc);
 
-        size_t rloc = mem_transform_aux(loc, true);
 #if 0
         int d = util_toascii(val);
         fprintf(stderr, "-----\nWrite '%c' in page, aux is %s.\n", d,
-                (rloc & LOC_AUX_START) == 0? "false" : "true");
+                (e->aloc & LOC_AUX_START) == 0? "false" : "true");
         extern void prsw(void);
         prsw();
 #endif
         if (cols == 80) {
             x *= 2;
-            if ((rloc & LOC_AUX_START) == 0) {
+            if ((e->aloc & LOC_AUX_START) == 0) {
                 x += 1; // main
             }
-        } else if ((rloc & LOC_AUX_START) != 0) {
-            return false; // Don't process; it's going somewhere
-                          // we aren't displaying.
+        } else if ((e->aloc & LOC_AUX_START) != 0) {
+            return; // Don't process; it's going somewhere
+                    // we aren't displaying.
         }
         int c = util_todisplay(val);
         bool flash = (cols == 80) || rstsw.altcharset? false : saved_flash;
@@ -313,8 +312,6 @@ static bool if_tty_poke(word loc, byte val)
     } else if ((loc & 0xFFF0) == 0xC010) {
         typed_char &= 0x7F;
     }
-
-    return false;
 }
 
 static void if_tty_unhook(void)
@@ -384,8 +381,9 @@ static void handle_winch(void)
     resizeterm(ws.ws_row, ws.ws_col);
 }
 
-static void if_tty_frame(bool flash)
+static void if_tty_frame(void)
 {
+    bool flash = text_flash;
     do_overlay_timer();
     if (cols == 80 || rstsw.altcharset) flash = false;
     if (flash != saved_flash) {
@@ -455,14 +453,39 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
     return true; // suppress normal (stderr) squawking
 }
 
+static void if_tty_event(Event *e)
+{
+    switch (e->type) {
+        case EV_START:
+            if_tty_start();
+            break;
+        case EV_STEP:
+            if_tty_step();
+            break;
+        case EV_POKE:
+            if_tty_poke(e);
+            break;
+        case EV_PEEK:
+            if_tty_peek(e);
+            break;
+        case EV_SWITCH:
+            if_tty_switch();
+            break;
+        case EV_FRAME:
+            if_tty_frame();
+            break;
+        case EV_UNHOOK:
+            if_tty_unhook();
+            break;
+        case EV_DISPLAY_TOUCH:
+            if_tty_display_touched();
+            break;
+        default:
+            ; // Nothing
+    }
+}
+
 IfaceDesc ttyInterface = {
-    .start = if_tty_start,
-    .step  = if_tty_step,
-    .poke  = if_tty_poke,
-    .peek  = if_tty_peek,
-    .frame = if_tty_frame,
-    .unhook= if_tty_unhook,
-    .switch_chg = if_tty_switch,
+    .event = if_tty_event,
     .squawk= if_tty_squawk,
-    .display_touched = if_tty_display_touched,
 };

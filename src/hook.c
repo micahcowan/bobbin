@@ -1,10 +1,6 @@
 #include "bobbin-internal.h"
 
-#include <assert.h>
-
-static bool did_delayed_jmp = false;
-
-static void trap_step(void)
+void trap_step(void)
 {
     if (cfg.trap_failure_on && current_pc() == cfg.trap_failure) {
         fputs("*** ERROR TRAP REACHED ***\n", stderr);
@@ -24,70 +20,4 @@ static void trap_step(void)
         fputs(".-= !!! REPORT SUCCESS !!! =-.\n", stderr);
         exit(0);
     }
-}
-
-void rh_prestep(void)
-{
-    if (cfg.delay_set && PC == cfg.delay_until && !did_delayed_jmp) {
-        did_delayed_jmp = true;
-        if (cfg.start_loc_set) {
-            INFO("Jumping PC to $%04X due to --delay-until option.\n",
-                 cfg.start_loc_set);
-            PC = cfg.start_loc;
-        }
-        load_ram_finish();
-        rh_display_touched();
-    }
-    iface_prestep();
-}
-
-void rh_step(void)
-{
-    word pc = current_pc();
-    trace_step();
-    trap_step();
-    iface_step();
-    // For "user" hooks, we should emit a warning, and reset PC after
-    // any hook that set it. But for our internal stuff, stronger action
-    // is called for.
-    assert(pc == current_pc());
-}
-
-int rh_peek(word loc)
-{
-    word pc = current_pc();
-    return iface_peek(loc);
-    // For "user" hooks, we should emit a warning, and reset PC after
-    // any hook that set it. But for our internal stuff, stronger action
-    // is called for.
-    assert(pc == current_pc());
-}
-
-bool rh_poke(word loc, byte val)
-{
-    word pc = current_pc();
-    return iface_poke(loc, val);
-    // For "user" hooks, we should emit a warning, and reset PC after
-    // any hook that set it. But for our internal stuff, stronger action
-    // is called for.
-    assert(pc == current_pc());
-}
-
-void rh_display_touched(void)
-{
-    iface_display_touched();
-}
-
-void rh_reboot(void)
-{
-    mem_reboot();
-    //iface_reboot();
-    iface_display_touched();
-    cpu_reset();
-    did_delayed_jmp = false;
-}
-
-void rh_switch(void)
-{
-    iface_switch();
 }

@@ -32,7 +32,7 @@ void debugger(void)
         print_message = false;
 
         // Tell interfaces to chill, we're handling things
-        iface_unhook();
+        event_fire(EV_UNHOOK);
 
         fprintf(stdout, "\n\n*** Welcome to Bobbin Debugger ***\n");
         fprintf(stdout, "  SPC = next intr, c = leave debugger"
@@ -88,5 +88,5 @@ void debugger(void)
     }
 
     if (!debugging_flag)
-        iface_rehook(); // Interface can take over again.
+        event_fire(EV_REHOOK); // Interface can take over again.
 }

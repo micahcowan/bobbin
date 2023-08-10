@@ -13,6 +13,7 @@ extern void machine_init(void);
 extern void signals_init(void);
 
 uintmax_t frame_count = 0;
+bool text_flash;
 
 word current_pc_val;
 word current_pc(void) {
@@ -34,7 +35,7 @@ void bobbin_run(void)
     setup_watches();
     interfaces_start();
 
-    cpu_reset();
+    event_fire(EV_RESET);
 
     if (cfg.start_loc_set && !cfg.delay_set) {
         PC = cfg.start_loc;
@@ -58,7 +59,7 @@ void bobbin_run(void)
                         DIE(1,"Hooks changed PC %u times!\n", max_count);
                     }
                     current_pc_val = PC;
-                    rh_prestep();
+                    event_fire(EV_PRESTEP);
                 } while (current_pc_val != PC); // changed? loop back around!
 
                 debugger();
@@ -66,11 +67,12 @@ void bobbin_run(void)
                                             // and since it was  user-requested,
                                             // doesn't get count-limited.
 
-            rh_step();
+            event_fire(EV_STEP);
             cpu_step();
         } while (cycle_count < CYCLES_PER_FRAME);
         frame_count += cycle_count / CYCLES_PER_FRAME;
-        iface_frame(frame_count % 60 >= 30);
+        text_flash = frame_count % 60 >= 30;
+        event_fire(EV_FRAME);
         if (!cfg.turbo) {
             struct timespec postframe;
             clock_gettime(CLOCK_MONOTONIC, &postframe);

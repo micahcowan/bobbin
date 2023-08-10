@@ -48,7 +48,7 @@ bool check_watches(void)
     int rb = read(inotify_fd, &evt, sizeof evt);
     if (rb == sizeof evt) {
         INFO("Rewrite event for watched file. Rebooting...\n");
-        rh_reboot();
+        event_fire(EV_REBOOT);
         return true;
     }
 #endif

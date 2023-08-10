@@ -20,6 +20,12 @@ static struct if_t {
     {"simple", &simpleInterface},
 };
 
+void iface_fire(Event *e)
+{
+    if (iii->event)
+        iii->event(e);
+}
+
 static
 void load_interface(void)
 {
@@ -68,66 +74,15 @@ void interfaces_init(void)
     if (iii == NULL) {
         DIE(2,"unsupported interface \"%s\".\n", cfg.interface);
     }
-    if (iii->init)
-        iii->init();
+
+    Event e = { .type = EV_INIT };
+    iface_fire(&e);
 }
 
 void interfaces_start(void)
 {
-    if (iii->start)
-        iii->start();
-}
-
-void iface_prestep(void)
-{
-    if (iii->prestep)
-        iii->prestep();
-}
-
-void iface_step(void)
-{
-    if (iii->step)
-        iii->step();
-}
-
-int iface_peek(word loc)
-{
-    return iii->peek? iii->peek(loc) : -1;
-}
-
-bool iface_poke(word loc, byte val)
-{
-    return iii->poke? iii->poke(loc, val) : false;
-}
-
-void iface_frame(bool flash)
-{
-    if (iii->frame)
-        iii->frame(flash);
-}
-
-void iface_unhook(void)
-{
-    if (iii->unhook)
-        iii->unhook();
-}
-
-void iface_rehook(void)
-{
-    if (iii->rehook)
-        iii->rehook();
-}
-
-void iface_display_touched(void)
-{
-    if (iii->display_touched)
-        iii->display_touched();
-}
-
-void iface_switch(void)
-{
-    if (iii->switch_chg)
-        iii->switch_chg();
+    Event e = { .type = EV_START };
+    iface_fire(&e);
 }
 
 void squawk(int level, bool cont, const char *fmt, ...)
@@ -136,7 +91,9 @@ void squawk(int level, bool cont, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
     if (level == DIE_LEVEL) {
-        if (iii) iface_unhook();
+        if (iii) {
+            event_fire(EV_UNHOOK);
+        }
     } else if (iii != NULL && iii->squawk != NULL) {
         suppress = iii->squawk(level, cont, fmt, args);
     }

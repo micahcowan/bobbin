@@ -598,25 +598,22 @@ static void iface_simple_step(void)
     }
 }
 
-static int iface_simple_peek(word loc)
+static void iface_simple_peek(Event *e)
 {
-    word a = loc & 0xFFF0;
+    word a = e->loc & 0xFFF0;
 
     if (a == SS_KBD) {
-        return read_char();
+        e->val = read_char();
     } else if (!machine_is_iie() && a == SS_KBDSTROBE) {
         consume_char();
     }
-
-    return -1;
 }
 
-static bool iface_simple_poke(word loc, byte val)
+static void iface_simple_poke(Event *e)
 {
-    word a = loc & 0xFFF0;
+    word a = e->loc & 0xFFF0;
     if (a == SS_KBDSTROBE)
         consume_char();
-    return false;
 }
 
 static void iface_simple_unhook(void)
@@ -641,13 +638,38 @@ static void iface_simple_rehook(void)
     (void) fcntl(0, F_SETFL, flags | O_NONBLOCK);
 }
 
+static void iface_simple_event(Event *e)
+{
+    switch (e->type) {
+        case EV_INIT:
+            iface_simple_init();
+            break;
+        case EV_START:
+            iface_simple_start();
+            break;
+        case EV_PRESTEP:
+            iface_simple_prestep();
+            break;
+        case EV_STEP:
+            iface_simple_step();
+            break;
+        case EV_PEEK:
+            iface_simple_peek(e);
+            break;
+        case EV_POKE:
+            iface_simple_poke(e);
+            break;
+        case EV_UNHOOK:
+            iface_simple_unhook();
+            break;
+        case EV_REHOOK:
+            iface_simple_rehook();
+            break;
+        default:
+            ; // Nothing
+    }
+}
+
 IfaceDesc simpleInterface = {
-    .init = iface_simple_init,
-    .start= iface_simple_start,
-    .prestep = iface_simple_prestep,
-    .step = iface_simple_step,
-    .peek = iface_simple_peek,
-    .poke = iface_simple_poke,
-    .unhook = iface_simple_unhook,
-    .rehook = iface_simple_rehook,
+    .event = iface_simple_event,
 };

@@ -52,7 +52,7 @@ bool command_do(const char *line, printer pr)
         // continue.
         sigint_received = 1;
     } else if (HAVE("q") || HAVE("quit")) {
-        iface_unhook();
+        event_fire(EV_UNHOOK);
         printf("Exiting.\n"); // Don't use pr
         exit(0);
     } else if (HAVE("h") || HAVE("help")) {

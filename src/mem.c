@@ -649,7 +649,7 @@ static void slot_access_switches(word loc, bool wr)
         }
         // prsw();
     }
-    rh_switch();
+    event_fire(EV_SWITCH);
 }
 
 static byte *slot_area_access_sneaky(word loc, bool wr)
@@ -732,7 +732,7 @@ static int switch_reads(word loc)
 
 byte peek(word loc)
 {
-    int t = rh_peek(loc);
+    int t = event_fire_peek(loc);
     if (t < 0) maybe_language_card(loc, false);
     slot_access_switches(loc, false);
     if (t >= 0) {
@@ -744,7 +744,7 @@ byte peek(word loc)
 
 byte peek_sneaky(word loc)
 {
-    int t = -1; // rh_peek_sneaky(loc)?;
+    int t = -1; // PEEK_SNEAKY event handler?
     if (t >= 0) {
         return (byte) t;
     }
@@ -772,7 +772,7 @@ byte peek_sneaky(word loc)
 
 void poke(word loc, byte val)
 {
-    if (rh_poke(loc, val))
+    if (event_fire_poke(loc, val))
         return;
     if (maybe_language_card(loc, true) >= 0)
         return;
@@ -784,7 +784,7 @@ void poke(word loc, byte val)
 
 void poke_sneaky(word loc, byte val)
 {
-    // rh_poke_sneaky()?
+    // POKE_SNEAKY event handler?
     // XXX should handle slot-area writes
     size_t rloc = mem_transform_aux(loc, true);
     membuf[rloc] = val;

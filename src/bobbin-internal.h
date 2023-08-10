@@ -311,56 +311,108 @@ static inline void rts(void) {
     go_to(WORD(lo, hi)+1);
 }
 
+/********** EVENT **********/
+
+enum EventType {
+    EV_NONE,
+    EV_INIT,
+        /* Sent for options processing. Should do no "real" work,
+           so that options are all verified for correctness before
+           any are obeyed. */
+    EV_START,
+        /* Initialization that involves more work than option
+           verification. Opening files, etc... */
+    EV_REBOOT,
+        /* Handler for emulation being restarted, e.g. via --watch. */
+    EV_RESET,
+        /* Handler for boot, and for any time the reset key is pressed. */
+    EV_PRESTEP,
+        /* Sent before an instruction will be executed, before we're
+           even really certain that the PC is where it should be.
+           This is specifically to provide opportunities to react
+           to the current machine state and PC location, possibly by
+           averting the PC location to somewhere else. If the PC is
+           changed during PRESTEP, PRESTEP will be reissued
+           for the new PC location (so other listeners can react
+           to *that*. */
+    EV_STEP,
+        /* Sent when we're about to execute an instruction.
+           Listeners are expected NOT to adjust the PC during this phase,
+           as earlier handlers may have taken actions on the assumption
+           that we're really here now, and a user using a debugger
+           will have already seen this as the next instr. */
+    EV_PEEK,
+        /* Memory is being accessed via the "bus", in read-mode.
+           Use peek_sneaky() to avoid triggering this. */
+    EV_POKE,
+        /* Memory is being written to, via the "bus in write-mode.
+           Use poke_sneaky() to avoid triggering this. */
+    EV_SWITCH,
+        /* An MMU or display soft-switch was altered. */
+
+    /* The following event types are ONLY sent if requested
+       via the handler flags. */
+    EV_CYCLE,
+        /* Start of every cycle. */
+    EV_FRAME,
+        /* Called when ~ a 60th of a second (emulated time) has passed.
+           Interfaces are automatically registered for this. */
+
+    /* The following event types are ONLY sent to interfaces. */
+    EV_UNHOOK,
+        /* Disable the interface. Used e.g. to enter the debugger,
+           or on DIE() to ensure the terminal is free for
+           displaying exit messages. */
+    EV_REHOOK,
+        /* Re-enable the interface. Used e.g. when exiting the debugger. */
+    EV_DISPLAY_TOUCH,
+        /* Used to indicate that screen memory may have been changed,
+           in a way that did not trigger POKE events. Interface
+           should re-scan memory to be certain the screen's contents
+           are correct. */
+};
+typedef enum EventType EventType;
+
+typedef struct Event Event;
+struct Event {
+    enum EventType type;
+    bool suppress;
+        /* Set to TRUE if a POKE to memory should be suppressed
+           (because a handler already dealt with it in another way). */
+    word loc;
+        /* Location of a PEEK or POKE event; unused otherwise. */
+    size_t aloc;
+        /* In a PEEK or POKE event, will equal loc | 0x10000
+           iff loc refers to a read or write at auxilliary memory. */
+    int val;
+        /* May be set by PEEK handlers to override what value will be
+           read.
+           POKE will set to the value that is planned to be written
+           to LOC. */
+};
+
+typedef void (*event_handler)(Event *e);
+
+extern void events_init(void);
+extern void event_reghandler(event_handler h);
+extern void event_unreghandler(event_handler h);
+extern int event_fire_peek(word loc);
+extern bool event_fire_poke(word loc, byte val);
+extern void event_fire(EventType type); // For all other events
+
 /********** INTERFACES **********/
 
 typedef struct IfaceDesc IfaceDesc;
 struct IfaceDesc {
-    void (*init)(void); // Process options
-    void (*start)(void);// *Actually* start interface
-    void (*prestep)(void);
-    void (*step)(void);
-    int  (*peek)(word loc);
-    bool (*poke)(word loc, byte val);
-    void (*frame)(bool flash);
-    void (*unhook)(void);
-    void (*rehook)(void);
-    void (*switch_chg)(void);
+    event_handler event;
     bool (*squawk)(int level, bool cont, const char *fmt, va_list args);
         // returns true to suppress default squawk handling
-    void (*display_touched)(void); // Display memory may have updated
-                                   // behind the scenes: redraw!
 };
 
 extern void interfaces_init(void);
 extern void interfaces_start(void);
-
-extern void iface_prestep(void);
-extern void iface_step(void);
-extern bool iface_poke(word loc, byte val);
-                                  // if -1 is NOT returned, suppress
-                                  // actual memory write (because iface
-                                  // intercepted the write)
-
-extern int  iface_peek(word loc); // returns -1 if no change over "real" mem
-extern void iface_frame(bool flash);
-extern void iface_unhook(void);
-extern void iface_rehook(void);
-extern void iface_switch(void);
-extern void iface_display_touched(void);
+extern void iface_fire(Event *e); // For all other events
 extern void squawk(int level, bool cont, const char *format, ...);
-
-/********** HOOK **********/
-
-extern void rh_prestep(void); // The only hooks allowed to examine and
-                              // change the PC, but NOT allowed to do
-                              // anything else.
-extern void rh_step(void);
-//extern int  rh_peek_sneaky(word loc);
-extern bool rh_poke(word loc, byte val);
-extern int  rh_peek(word loc);
-extern void rh_reboot(void);
-extern void rh_display_touched(void);
-extern void rh_switch(void);
 
 /********** TRACE **********/
 
@@ -408,6 +460,7 @@ extern word print_disasm(FILE *f, word pos, Registers *regs);
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;
 extern uintmax_t frame_count;
+extern bool text_flash;
 static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
 extern volatile sig_atomic_t sigwinch_received;
