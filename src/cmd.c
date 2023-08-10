@@ -33,10 +33,10 @@ bool command_do(const char *line, printer pr)
         // into the system monitor.
     } else if (HAVE("r") || HAVE("w")) {
         pr("Sending reset.\n");
-        cpu_reset();
+        event_fire(EV_RESET);
     } else if (HAVE("rr")) {
         pr("Sending COLD reset.\n");
-        cpu_reset();
+        event_fire(EV_RESET);
         // Hard reset. Invalidate the user reset vector directly
         // (rather than doing open-apple emulation or something)
         // Just copy the high byte of the vector into the
