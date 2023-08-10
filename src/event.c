@@ -37,8 +37,23 @@ void event_unreghandler(event_handler h)
 void dispatch(Event *e)
 {
     struct handler *h;
-    for (h = head; h != NULL; h = h->next) {
-        h->fn(e);
+    if (e->type == EV_PRESTEP) {
+        word pc;
+        const unsigned int max_count = 100;
+        unsigned int count = 0;
+        do {
+            if (count++ >= max_count) {
+                DIE(1,"PC changed during prestep %u times!\n", max_count);
+            }
+            pc = PC;
+            for (h = head; pc == PC && h != NULL; h = h->next) {
+                h->fn(e);
+            }
+        } while (pc != PC);
+    } else {
+        for (h = head; h != NULL; h = h->next) {
+            h->fn(e);
+        }
     }
 }
 

@@ -51,18 +51,9 @@ void bobbin_run(void)
         cycle_count = 0;
         do {
             // Provide hooks the opportunity to alter the PC, here
-            const unsigned int max_count = 100;
-
             do {
-                unsigned int count = 0;
-                do {
-                    if (count++ >= max_count) {
-                        DIE(1,"Hooks changed PC %u times!\n", max_count);
-                    }
-                    current_pc_val = PC;
-                    event_fire(EV_PRESTEP);
-                } while (current_pc_val != PC); // changed? loop back around!
-
+                current_pc_val = PC;
+                event_fire(EV_PRESTEP);
                 debugger();
             } while (current_pc_val != PC); // dbgr is allowed to change pc, too
                                             // and since it was  user-requested,
