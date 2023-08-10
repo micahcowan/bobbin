@@ -53,7 +53,9 @@ void periph_rom_poke(word loc, byte val)
 
 void periph_init(void)
 {
-    slot[6] = &disk2card;
+    if (cfg.disk) {
+        slot[6] = &disk2card;
+    }
     
     const int slots_end = (sizeof slot)/(sizeof slot[0]);
     for (int i=0; i != slots_end; ++i) {

@@ -1,10 +1,10 @@
 #include "bobbin-internal.h"
 
-static byte rombuf[256];
+static byte *rombuf;
 
 static void init(void)
 {
-    // XXX load ROM
+    rombuf = load_rom("cards/disk2.rom", 256, false);
 }
 
 byte handler(word loc, int val, int ploc, int psw)

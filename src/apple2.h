@@ -50,6 +50,7 @@
 #define LOC_BSR1_START  0xC000 /* This refers to where it is in membuf,
                                   not address-space */
 #define LOC_SLOTS_START 0xC100
+#define LOC_SLOT_EXPANDED_AREA  0xC800
 
 #define LOC_SLOTS_END   0xD000
 #define LOC_ROM_START   0xD000

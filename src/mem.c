@@ -4,12 +4,12 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <sys/mman.h>
 #include <unistd.h>
 
 // Enough of a RAM buffer to provide 128k
@@ -96,60 +96,56 @@ realdir:
     return buf;
 }
 
-static void load_rom(void)
+byte *load_rom(const char *fname, size_t expected, bool exact)
 {
     const char *rompath;
     const char *last_tried_path;
     int err = 0;
-    int fd = -1;
+    byte *buf = NULL;
+    size_t sz;
 
-    if (cfg.rom_load_file) {
-        errno = 0;
-        VERBOSE("Loading user rom file \"%s\"\n", cfg.rom_load_file);
-        fd = open(cfg.rom_load_file, O_RDONLY);
-        if (fd < 0) {
-            DIE(1, "Couldn't open ROM file \"%s\": %s\n", cfg.rom_load_file,
+    if (exact) {
+        VERBOSE("Loading user rom file \"%s\"\n", fname);
+        last_tried_path = fname;;
+        err = mmapfile(fname, &buf, &sz);
+        if (buf == NULL) {
+            DIE(1, "Couldn't open ROM file \"%s\": %s\n", fname,
                 strerror(err));
         }
     } else {
-        while (fd < 0
-                && (rompath = get_try_rom_path(default_romfname)) != NULL) {
-            errno = 0;
+        INFO("Searching for ROM file %s...\n", fname);
+        romdirp = &rom_dirs[0]; // Reset search paths
+        while (buf == NULL
+                && (rompath = get_try_rom_path(fname)) != NULL) {
             last_tried_path = rompath;
-            fd = open(rompath, O_RDONLY);
-            err = errno;
+            err = mmapfile(rompath, &buf, &sz);
+            if (err != ENOENT) break;
         }
-        if (fd < 0) {
+        if (buf == NULL) {
             DIE(1, "Couldn't open ROM file \"%s\": %s\n", last_tried_path, strerror(err));
         } else {
             INFO("FOUND ROM file \"%s\".\n", rompath);
         }
     }
 
-    struct stat st;
-    errno = 0;
-    err = fstat(fd, &st);
-    if (err < 0) {
-        err = errno;
-        DIE(1, "Couldn't stat ROM file \"%s\": %s\n", last_tried_path, strerror(err));
-    }
-    size_t expected = expected_rom_size();
-    if (st.st_size != expected) {
+    if (sz != expected) {
         // XXX expected size will need to be configurable
         DIE(0, "ROM file \"%s\" has unexpected file size %zu\n",
-            last_tried_path, (size_t)st.st_size);
+            last_tried_path, sz);
         DIE(1, "  (expected %zu).\n", expected);
     }
 
-    errno = 0;
-    rombuf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (rombuf == NULL) {
-        DIE(1, "Couldn't map in ROM file: %s\n", strerror(errno));
-    }
-    close(fd); // safe to close now.
+    return buf;
+}
 
-    if (!cfg.rom_load_file)
-        validate_rom(rombuf, st.st_size);
+static void load_machine_rom(void)
+{
+    if (cfg.rom_load_file) {
+        rombuf = load_rom(cfg.rom_load_file, expected_rom_size(), true);
+    } else {
+        rombuf = load_rom(default_romfname, expected_rom_size(), false);
+        validate_rom(rombuf, expected_rom_size());
+    }
 }
 
 bool check_asoft_link(unsigned char *buf, size_t start, size_t sz,
@@ -372,33 +368,18 @@ void load_ram_finish(void)
 
 static void load_ram(void)
 {
-    errno = 0;
-    int fd = open(cfg.ram_load_file, O_RDONLY);
-    if (fd < 0) {
-        DIE(1, "Couldn't open --load file \"%s\": %s\n",
-            cfg.ram_load_file, strerror(errno));
-    }
+    int err;
 
-    struct stat st;
-    errno = 0;
-    int err = fstat(fd, &st);
-    if (err < 0) {
-        err = errno;
-        DIE(1, "Couldn't stat --load file \"%s\": %s\n", cfg.ram_load_file, strerror(err));
+    err = mmapfile(cfg.ram_load_file, &ramloadbuf, &ramloadsz);
+    if (ramloadbuf == NULL) {
+        DIE(1, "Couldn't mmap --load file \"%s\": %s\n",
+            cfg.ram_load_file, strerror(err));
     }
-    ramloadsz = st.st_size;
 
     if ((ramloadsz + cfg.ram_load_loc) > (sizeof membuf)) {
-        DIE(1, "--load file \"%s\" would exceed the end of memory!\n",
+        DIE(1, "--load file \"%s\" would exceed the end of emulated memory!\n",
             cfg.ram_load_file);
     }
-
-    errno = 0;
-    ramloadbuf = mmap(NULL, ramloadsz, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (ramloadbuf == NULL) {
-        DIE(1, "Couldn't map in --load file: %s\n", strerror(errno));
-    }
-    close(fd); // safe to close now.
 
     if (cfg.delay_set) {
         INFO("--load file \"%s\" succeeded; delaying as requested.\n",
@@ -445,7 +426,7 @@ void mem_init(void)
     fillmem();
 
     if (cfg.load_rom) {
-        load_rom();
+        load_machine_rom();
     } else if (cfg.ram_load_file == NULL) {
         DIE(2, "--no-rom given, but not --load!\n");
     }
@@ -583,8 +564,10 @@ void prsw(void)
 }
 #endif
 
-static void slot_access_switches(word loc, bool wr)
+int slot_access_switches(word loc, int val)
 {
+    int ret = -1;
+    bool wr = (val != -1);
     //RestartSw oldsw = rstsw;
     if (loc >= 0xC300 && loc < 0xC400 && !rstsw.slotc3rom) {
         rstsw.intc8rom = true;
@@ -609,6 +592,12 @@ static void slot_access_switches(word loc, bool wr)
                 rstsw.hires = loc & 1;
                 break;
             // annunciators not yet handled
+        }
+    } else if (loc >= 0xC090 && loc < 0xC100) {
+        if (wr) {
+            periph_sw_poke(loc, val);
+        } else {
+            ret = periph_sw_peek(loc);
         }
     } else if (!wr || ((loc & 0xFFF0) != 0xC000) || !machine_is_iie()) {
         // skip the rest, they need writes
@@ -650,6 +639,7 @@ static void slot_access_switches(word loc, bool wr)
         // prsw();
     }
     event_fire(EV_SWITCH);
+    return ret;
 }
 
 static byte *slot_area_access_sneaky(word loc, bool wr)
@@ -734,7 +724,7 @@ byte peek(word loc)
 {
     int t = event_fire_peek(loc);
     if (t < 0) maybe_language_card(loc, false);
-    slot_access_switches(loc, false);
+    if (t < 0) t = slot_access_switches(loc, -1);
     if (t >= 0) {
         return (byte) t;
     }
@@ -760,9 +750,11 @@ byte peek_sneaky(word loc)
     if (loc >= LOC_ROM_START) {
         return lc_peek(loc);
     }
-    else if ((loc >= cfg.amt_ram && loc < SS_START)
-             || (loc >= SS_START && loc < LOC_ROM_START)) {
+    else if (loc >= cfg.amt_ram && loc < SS_START) {
         return 0; // s/b floating bus? not sure, in sneaky
+    }
+    else if (loc >= LOC_SLOTS_START && loc < LOC_SLOT_EXPANDED_AREA) {
+        return periph_rom_peek(loc);
     }
     else {
         size_t rloc = mem_transform_aux(loc, false);
@@ -778,7 +770,10 @@ void poke(word loc, byte val)
         return;
     if (lc_poke(loc, val))
         return;
-    slot_access_switches(loc, true);
+    if (loc >= 0xC000 && loc < 0xC100) {
+        (void) slot_access_switches(loc, val);
+        return;
+    }
     poke_sneaky(loc, val);
 }
 

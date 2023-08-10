@@ -93,6 +93,7 @@ struct Config {
 
     // machine/emulation config optioons
     const char *    machine;
+    const char *    disk;
     bool            machine_set;
     size_t          amt_ram;
     bool            load_rom;
@@ -230,6 +231,7 @@ extern void poke(word loc, byte val);
 extern byte peek_sneaky(word loc);
 extern void poke_sneaky(word loc, byte val);
 extern bool mem_match(word loc, unsigned int nargs, ...);
+extern byte *load_rom(const char *fname, size_t expected, bool exact);
 extern void load_ram_finish(void);
 extern size_t mem_transform_aux(word loc, bool wr);
 
@@ -461,6 +463,7 @@ extern void breakpoint_set(word loc);
 /********** UTIL **********/
 
 extern void *xalloc(size_t sz);
+extern int mmapfile(const char *fname, byte **buf, size_t *sz);
 extern void util_print_state(FILE *f, word pc, Registers *reg);
 extern bool util_isflashing(int c);
 extern bool util_isreversed(int c, bool flash);

@@ -3,6 +3,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 void *xalloc(size_t sz)
@@ -13,6 +16,41 @@ void *xalloc(size_t sz)
         DIE(1, "malloc: %s\n", strerror(errno));
     }
     return obj;
+}
+
+int mmapfile(const char *fname, byte **buf, size_t *sz)
+{
+    int err;
+    int fd;
+
+    *buf = NULL;
+
+    errno = 0;
+    fd = open(fname, O_RDONLY);
+    if (fd < 0) {
+        return errno;
+    }
+
+    struct stat st;
+    errno = 0;
+    err = fstat(fd, &st);
+    if (err < 0) {
+        goto bail;
+    }
+
+    errno = 0;
+    *buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (*buf == NULL) {
+        err = errno;
+        goto bail;
+    }
+    close(fd); // safe to close now.
+
+    *sz = st.st_size;
+    return 0;
+bail:
+    close(fd);
+    return err;
 }
 
 bool util_isflashing(int c)

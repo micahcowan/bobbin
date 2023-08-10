@@ -296,6 +296,10 @@ If standard input is from a terminal, then the default value is `tty`, which pro
 
 Alias for `--interface=simple`.
 
+##### --disk *arg*
+
+Load the given disk file.
+
 #### Special options
 
 ##### --watch
