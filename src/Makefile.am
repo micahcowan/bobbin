@@ -2,6 +2,7 @@ AUTOMAKE_OPTIONS=subdir-objects
 WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
 # XXX: ROMSRCHDIR should be decided in ./configure script
 romdir=$(pkgdatadir)/roms
+cardromdir=$(romdir)/cards
 AM_CPPFLAGS=-I$(PWD) -DROMSRCHDIR='"$(romdir)"'
 #CCDEBUG=-g -Og
 CFLAGS=$(WARNINGS) -std=c99 -pedantic $(CCDEBUG)
@@ -18,6 +19,7 @@ EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     $(BUILT_SOURCES)
 A2ROMS=roms/apple2.rom roms/apple2plus.rom
 dist_rom_DATA=$(A2ROMS)
+dist_cardrom_DATA=roms/cards/disk2.rom
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = roms/*.rom cscope.out trace.log
 
