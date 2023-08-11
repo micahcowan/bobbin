@@ -381,7 +381,7 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 
 Load tokenized (binary) AppleSoft BASIC file at boot.
 
-This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until FD75`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
+This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until INPUT`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
 
 ##### --start-at, --start-loc
 
@@ -393,7 +393,7 @@ Delays the effects of `--load` (RAM) and `--start-at`, until PC is *arg*.
 
 The primary intent of this option is to allow the Apple \]\[ to run through its usual boot-up code, and then load new contents into memory and jump to a new, post-boot-sequence "start". This makes it easy to boot the emulator into your favorite code, without involving a disk-load.
 
-The special mnemonic *arg* value `INPUT` (case-insensitive) is translated to location `FD75` (the monitor `NXTCHR`, part of `GETLN`), which is frequently a very convenient value to use. It is reached when, after booting up, the Apple then tries to prompt the user for input, and it applies whether it booted into AppleSoft BASIC, Integer BASIC, or the system monitor.
+The special mnemonic *arg* value `INPUT` (case-insensitive) is translated to location `FD1B` (the monitor `KEYIN` routine for reading from the keyboard), which is frequently a very convenient value to use.
 
 ##### --ram *arg*
 

@@ -398,14 +398,14 @@ void do_load_basic(const char *arg)
     // that special things should happen after load.
     cfg.ram_load_file = arg;
     cfg.ram_load_loc = 0x801;
-    cfg.delay_until = MON_NXTCHR;
+    cfg.delay_until = MON_KEYIN;
     cfg.delay_set = true;
 }
 
 void do_delay_until(const char *arg)
 {
     if (STREQCASE("input", arg)) {
-        cfg.delay_until = MON_NXTCHR;
+        cfg.delay_until = MON_KEYIN;
     } else {
         handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &cfg.delay_until, arg);
     }
@@ -415,7 +415,7 @@ void do_breakpoint(const char *arg)
 {
     word bploc;
     if (STREQCASE("input", arg)) {
-        bploc = MON_NXTCHR;
+        bploc = MON_KEYIN;
     } else {
         handle_numeric_arg(T_WORD_ARG, "breakpoint", &bploc, arg);
     }

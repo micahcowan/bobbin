@@ -85,6 +85,7 @@
 
 #define MON_IRQ         0xFA40
 #define MON_BREAK       0xFA4C
+#define MON_KEYIN       0xFD1B
 #define MON_GETLNZ      0xFD67
 #define MON_GETLN       0xFD6A
 #define MON_NXTCHR      0xFD75
