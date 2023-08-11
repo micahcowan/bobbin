@@ -16,11 +16,15 @@
 static byte *rombuf;
 static byte *diskbuf;
 static size_t disksz;
-static const size_t expect_disksz = 143360;
+static const size_t dsk_disksz = 143360;
+static const size_t nib_disksz = 232960;
 static int pr_count;
 static bool steppers[4];
 static int  cog = 0;
 static int  halftrack = 69; // start at innermost track
+
+#define NIBBLE_TRACK_SIZE   6656
+#define NIBBLE_SECTOR_SIZE  416
 
 #define MAX_SECTORS     16
 #define SECTOR_SIZE     256
@@ -52,9 +56,9 @@ static void init(void)
         DIE(1,"Couldn't load/mmap disk %s: %s\n",
             cfg.disk, strerror(err));
     }
-    if (disksz != expect_disksz) {
+    if (disksz != nib_disksz) {
         DIE(0,"Wrong disk image size for %s:\n", cfg.disk);
-        DIE(1,"  Expected %zu, got %zu.\n", expect_disksz, disksz);
+        DIE(1,"  Expected %zu, got %zu.\n", nib_disksz, disksz);
     }
 }
 
@@ -76,7 +80,7 @@ static inline bool cogright(void)
 
 static void adjust_track(void)
 {
-    D2DBG("track: ");
+    D2DBG("halftrack: ");
     if (cogleft()) {
         cog = (cog + 3) % 4;
         if (halftrack > 0) --halftrack;
@@ -90,9 +94,7 @@ static void adjust_track(void)
     }
 
     // No matter the result (even no change), reset sector
-    secnum = 0;
-    bytenum = HDR_START;
-    bitnum = 0;
+    bytenum = 0;
 }
 
 static void stepper_motor(byte psw)
@@ -110,6 +112,7 @@ static inline byte encode4x4(byte orig)
     return (orig | 0xAA);
 }
 
+#if DSK
 // read_byte. Current implementation has extremely unrealistic timing,
 // and just immediately feeds the program what it wants to see, without
 // regard to sync bits or disk rotation speed or position, etc.
@@ -117,7 +120,7 @@ static byte read_byte(void)
 {
     byte val = 0;
 
-    if (bytenum >= SECTOR_SIZE) {
+    if (bytenum >= HDR_DATAEND) {
         bytenum = HDR_START;
         bitnum = 0;
         secnum = (secnum + 1) % MAX_SECTORS;
@@ -125,9 +128,16 @@ static byte read_byte(void)
 
     int orignum = bytenum;
     if (bytenum >= HDR_DATASIXES) {
-
     } else if (bytenum >= HDR_DATATWOS) {
+#if 0
+        size_t pos = (halftrack/2) * MAX_SECTORS * SECTOR_SIZE;
+        pos += secnum * SECTOR_SIZE;
+        pos += (bytenum - HDR_DATATWOS) * 3;
+        size_t pos1 =
+        byte un = (diskbuf[pos
+#endif
     } else {
+        // Sector header + data header
         switch (bytenum) {
             case HDR_START:
             case HDR_START+1:
@@ -167,6 +177,17 @@ static byte read_byte(void)
     }
 
     D2DBG("read_byte #%d: $%02X", orignum, val);
+    return val;
+}
+#endif // DSK
+
+// For .nib disks
+static byte read_byte(void)
+{
+    size_t pos = (halftrack/2) * NIBBLE_TRACK_SIZE;
+    pos += (bytenum % NIBBLE_TRACK_SIZE);
+    byte val = diskbuf[pos];
+    ++bytenum;
     return val;
 }
 
