@@ -218,21 +218,6 @@ static void write_byte(byte val)
     size_t pos = (halftrack/2) * NIBBLE_TRACK_SIZE;
     pos += (bytenum % NIBBLE_TRACK_SIZE);
 
-    // In the absence of proper timing, we use this hack to scoot
-    //  the write head forward a little bit, if we're still
-    //  in the sector epilogue...
-    if (!last_was_read || bytenum < 2 || bytenum > (NIBBLE_TRACK_SIZE - 3)) {
-        // do nothing
-    } else if (diskbuf[pos] == 0xDE && diskbuf[pos+1] == 0xAA
-               && diskbuf[pos+2] == 0xEB) {
-        pos += 3; bytenum += 3;
-    } else if (diskbuf[pos-1] == 0xDE && diskbuf[pos] == 0xAA
-               && diskbuf[pos+1] == 0xEB) {
-        pos += 2; bytenum += 2;
-    } else if (diskbuf[pos-2] == 0xDE && diskbuf[pos-1] == 0xAA
-               && diskbuf[pos] == 0xEB) {
-        pos += 1; bytenum += 1;
-    }
     D2DBG("write byte $%02X at pos $%04zX", (unsigned int)val, pos);
 
     last_was_read = false;
