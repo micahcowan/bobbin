@@ -210,6 +210,10 @@ static byte read_byte(void)
 // For .nib disks
 static void write_byte(byte val)
 {
+    if ((val & 0x80) == 0) {
+        D2DBG("dodged write $%02X", val);
+        return; // must have high bit
+    }
     dirty_tracks |= 1 << (halftrack/2);
     size_t pos = (halftrack/2) * NIBBLE_TRACK_SIZE;
     pos += (bytenum % NIBBLE_TRACK_SIZE);
@@ -221,14 +225,15 @@ static void write_byte(byte val)
         // do nothing
     } else if (diskbuf[pos] == 0xDE && diskbuf[pos+1] == 0xAA
                && diskbuf[pos+2] == 0xEB) {
-        pos += 3;
+        pos += 3; bytenum += 3;
     } else if (diskbuf[pos-1] == 0xDE && diskbuf[pos] == 0xAA
                && diskbuf[pos+1] == 0xEB) {
-        pos += 2;
+        pos += 2; bytenum += 2;
     } else if (diskbuf[pos-2] == 0xDE && diskbuf[pos-1] == 0xAA
                && diskbuf[pos] == 0xEB) {
-        pos += 1;
+        pos += 1; bytenum += 1;
     }
+    D2DBG("write byte $%02X at pos $%04zX", (unsigned int)val, pos);
 
     last_was_read = false;
     diskbuf[pos] = val;
@@ -279,6 +284,8 @@ static byte handler(word loc, int val, int ploc, int psw)
 
     frame_timer_reset(60, turn_off_motor);
     D2DBG("disk sw $%02X, PC = $%04X   ", psw, lastpc);
+    if (val != -1)
+        data_register = val; // ANY write sets data register
     if (psw < 8) {
         stepper_motor(psw);
     } else switch (psw) {
@@ -313,10 +320,11 @@ static byte handler(word loc, int val, int ploc, int psw)
                 // XXX any even-numbered switch can be used
                 //  to read a byte. But for now we do so only
                 //  through the sanctioned switch for that purpose.
-                ret = read_byte();
+                ret = data_register = read_byte();
             }
             break;
         case 0x0D:
+#if 0
             if (!motor_on || drive_two) {
                 // do nothing
             } else if (write_mode) {
@@ -324,6 +332,7 @@ static byte handler(word loc, int val, int ploc, int psw)
             } else {
                 // XXX should return whether disk is write-protected...
             }
+#endif
             break;
         case 0x0E:
             write_mode = false;
