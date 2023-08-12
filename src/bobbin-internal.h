@@ -450,6 +450,24 @@ extern void periph_sw_poke(word loc, byte val);
 extern byte periph_rom_peek(word loc);
 extern void periph_rom_poke(word loc, byte val);
 
+/********** FORMATS  **********/
+
+#define NUM_TRACKS      35
+#define SECTOR_SIZE     256
+
+typedef struct DiskFormatDesc DiskFormatDesc;
+struct DiskFormatDesc {
+    void *privdat;
+    bool writeprot;
+    unsigned int halftrack;
+    void (*spin)(DiskFormatDesc *, bool);
+    byte (*read_byte)(DiskFormatDesc *);
+    void (*write_byte)(DiskFormatDesc *, byte);
+    void (*eject)(DiskFormatDesc *);
+};
+
+extern DiskFormatDesc disk_insert(const char *path);
+
 /********** TRACE **********/
 
 extern const char *trfile_name;
