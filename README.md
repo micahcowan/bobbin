@@ -28,7 +28,7 @@ And here's another video (clickable) that showcases additional features in a mor
 
 ### Planned features
 
-- Disk drive emulation (probably including .woz)
+- .woz disk format
 - Full graphics (not to the terminal) and sound emulation, of course
 - Emulate an enhanced Apple //e by default
 - Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
@@ -39,7 +39,6 @@ And here's another video (clickable) that showcases additional features in a mor
 
 - No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
 - The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
-- No disk emulation yet. That will obviously be very handy, and is a planned feature.
 
 ## Building Bobbin
 
@@ -298,7 +297,9 @@ Alias for `--interface=simple`.
 
 ##### --disk *arg*
 
-Load the given disk file.
+Load the given disk file to drive 1.
+
+If this option is not used, then a disk controller card is not included in the emulated machine, causing it to boot immediately into BASIC. This differs from many emulators, which include a disk controller card even when no disks are inserted, causing the boot to hang forever until Ctrl-RESET breaks out from the boot.
 
 #### Special options
 
