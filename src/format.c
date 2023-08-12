@@ -3,7 +3,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+static const size_t nib_disksz = 232960;
+static const size_t dsk_disksz = 143360;
+
 extern DiskFormatDesc nib_insert(const char*, byte *, size_t);
+extern DiskFormatDesc do_insert(const char *, byte *, size_t);
 
 DiskFormatDesc disk_insert(const char *path)
 {
@@ -14,5 +18,11 @@ DiskFormatDesc disk_insert(const char *path)
         DIE(1,"Couldn't load/mmap disk %s: %s\n",
             path, strerror(err));
     }
-    return nib_insert(path, buf, sz);
+    if (sz == nib_disksz) {
+        return nib_insert(path, buf, sz);
+    } else if (sz == dsk_disksz) {
+        return do_insert(path, buf, sz);
+    } else {
+        DIE(2,"Unrecognized disk format for %s.\n", path);
+    }
 }
