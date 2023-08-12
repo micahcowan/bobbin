@@ -107,7 +107,7 @@ byte *load_rom(const char *fname, size_t expected, bool exact)
     if (exact) {
         VERBOSE("Loading user rom file \"%s\"\n", fname);
         last_tried_path = fname;;
-        err = mmapfile(fname, &buf, &sz);
+        err = mmapfile(fname, &buf, &sz, O_RDONLY);
         if (buf == NULL) {
             DIE(1, "Couldn't open ROM file \"%s\": %s\n", fname,
                 strerror(err));
@@ -118,7 +118,7 @@ byte *load_rom(const char *fname, size_t expected, bool exact)
         while (buf == NULL
                 && (rompath = get_try_rom_path(fname)) != NULL) {
             last_tried_path = rompath;
-            err = mmapfile(rompath, &buf, &sz);
+            err = mmapfile(rompath, &buf, &sz, O_RDONLY);
             if (err != ENOENT) break;
         }
         if (buf == NULL) {
@@ -370,7 +370,7 @@ static void load_ram(void)
 {
     int err;
 
-    err = mmapfile(cfg.ram_load_file, &ramloadbuf, &ramloadsz);
+    err = mmapfile(cfg.ram_load_file, &ramloadbuf, &ramloadsz, O_RDONLY);
     if (ramloadbuf == NULL) {
         DIE(1, "Couldn't mmap --load file \"%s\": %s\n",
             cfg.ram_load_file, strerror(err));

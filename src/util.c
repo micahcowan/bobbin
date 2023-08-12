@@ -18,7 +18,7 @@ void *xalloc(size_t sz)
     return obj;
 }
 
-int mmapfile(const char *fname, byte **buf, size_t *sz)
+int mmapfile(const char *fname, byte **buf, size_t *sz, int flags)
 {
     int err;
     int fd;
@@ -26,7 +26,7 @@ int mmapfile(const char *fname, byte **buf, size_t *sz)
     *buf = NULL;
 
     errno = 0;
-    fd = open(fname, O_RDONLY);
+    fd = open(fname, flags);
     if (fd < 0) {
         return errno;
     }
@@ -39,7 +39,13 @@ int mmapfile(const char *fname, byte **buf, size_t *sz)
     }
 
     errno = 0;
-    *buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    int protect = PROT_READ;
+    int mflags = MAP_PRIVATE;
+    if (flags & O_RDWR || flags & O_WRONLY) {
+        protect |= PROT_WRITE;
+        mflags = MAP_SHARED;
+    }
+    *buf = mmap(NULL, st.st_size, protect, mflags, fd, 0);
     if (*buf == NULL) {
         err = errno;
         goto bail;

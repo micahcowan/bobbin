@@ -372,6 +372,11 @@ enum EventType {
            in a way that did not trigger POKE events. Interface
            should re-scan memory to be certain the screen's contents
            are correct. */
+    EV_DISK_ACTIVE,
+        /* A change in disk activity. Intended for interfaces
+           to indicate via a "disk light" or some such. `val` holds
+           the activity type: 0 for drives off, 1 for drive 1 motor
+           running, and 2 for drive 2 motor running. */
 };
 typedef enum EventType EventType;
 
@@ -398,9 +403,16 @@ typedef void (*event_handler)(Event *e);
 extern void events_init(void);
 extern void event_reghandler(event_handler h);
 extern void event_unreghandler(event_handler h);
+extern void event_fire_disk_active(int val);
 extern int event_fire_peek(word loc);
 extern bool event_fire_poke(word loc, byte val);
 extern void event_fire(EventType type); // For all other events
+
+// frame_timer: resets the timer if exists, creates if not
+extern void frame_timer(unsigned int time, void (*fn)(void));
+// frame_timer_reset: resets the timer if it exists, ignores if not
+extern void frame_timer_reset(unsigned int time, void (*fn)(void));
+extern void frame_timer_cancel(void (*fn)(void));
 
 /********** INTERFACES **********/
 
@@ -463,7 +475,7 @@ extern void breakpoint_set(word loc);
 /********** UTIL **********/
 
 extern void *xalloc(size_t sz);
-extern int mmapfile(const char *fname, byte **buf, size_t *sz);
+extern int mmapfile(const char *fname, byte **buf, size_t *sz, int flags);
 extern void util_print_state(FILE *f, word pc, Registers *reg);
 extern bool util_isflashing(int c);
 extern bool util_isreversed(int c, bool flash);

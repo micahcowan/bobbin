@@ -10,8 +10,11 @@
 
 #include <curses.h>
 
+#define DRIVE_INDICATOR_Y   24
+#define DRIVE_INDICATOR_X   3
 static const word text_size = 0x400;
 static byte text_page = 0x4;
+static int disk_active = 0;
 
 static WINDOW *msgwin;
 static bool saved_flash;
@@ -23,6 +26,7 @@ static const unsigned long overlay_long_wait = 600; // 10 seconds
 static unsigned long overlay_timer = 0;
 static int msg_attr;
 static int cmd_attr;
+static int disk_attr;
 static int badterm_attr;
 static int cols = 40;
 static byte typed_char = '\0';
@@ -81,7 +85,16 @@ static void draw_border(void)
     }
     if (y > 24) {
         move(24,0);
-        hline('-', x >= (cols+1)? (cols+1): x);
+        hline('-', x >= (cols)? (cols): x);
+    }
+    if (x > cols && y > 24) {
+        move(24, cols);
+        addch('+');
+    }
+    // Draw disk activity
+    if (disk_active != 0 && x > DRIVE_INDICATOR_X && y > DRIVE_INDICATOR_Y) {
+        move(DRIVE_INDICATOR_Y, DRIVE_INDICATOR_X);
+        addch((disk_active + '0') | disk_attr);
     }
 }
 
@@ -225,9 +238,11 @@ static void if_tty_start(void)
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_BLACK, COLOR_CYAN);
     init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(4, COLOR_BLACK, COLOR_RED);
     msg_attr = has_colors()? COLOR_PAIR(1) : A_BOLD;
     cmd_attr = has_colors()? COLOR_PAIR(2) : A_REVERSE;
     badterm_attr = A_BOLD | (has_colors()? COLOR_PAIR(3) : 0);
+    disk_attr = (has_colors()? COLOR_PAIR(4) : A_REVERSE) | A_BOLD;
     wattron(msgwin, msg_attr);
     scrollok(msgwin, true);
 
@@ -444,6 +459,12 @@ static void if_tty_display_touched(void)
     }
 }
 
+static void if_tty_disk_active(int val)
+{
+    disk_active = val;
+    draw_border();
+}
+
 static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 {
     if (!msgwin) return false;
@@ -479,6 +500,20 @@ static void if_tty_event(Event *e)
             break;
         case EV_DISPLAY_TOUCH:
             if_tty_display_touched();
+            break;
+        case EV_DISK_ACTIVE:
+            if_tty_disk_active(e->val);
+
+            // If --turbo or --no-turbo weren't explicitly set,
+            //  set turbo on during disk stuff.
+            // XXX should be an option, probably
+            if (cfg.turbo_was_set) {
+                // nevermind
+            } else if (e->val == 0) {
+                cfg.turbo = false;
+            } else {
+                cfg.turbo = true;
+            }
             break;
         default:
             ; // Nothing

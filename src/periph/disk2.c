@@ -1,7 +1,14 @@
 #include "bobbin-internal.h"
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 //#define DISK_DEBUG
 #ifdef DISK_DEBUG
@@ -13,6 +20,10 @@
 # define D2DBG(...)
 #endif
 
+static bool motor_on;
+static bool drive_two;
+static bool write_mode;
+static byte data_register; // only used for write
 static byte *rombuf;
 static byte *diskbuf;
 static size_t disksz;
@@ -26,6 +37,7 @@ static int  halftrack = 69; // start at innermost track
 #define NIBBLE_TRACK_SIZE   6656
 #define NIBBLE_SECTOR_SIZE  416
 
+#define NUM_TRACKS      35
 #define MAX_SECTORS     16
 #define SECTOR_SIZE     256
 
@@ -48,10 +60,12 @@ static int secnum;
 static int bytenum;
 static int bitnum;
 
+static uint64_t dirty_tracks;
+
 static void init(void)
 {
     rombuf = load_rom("cards/disk2.rom", 256, false);
-    int err = mmapfile(cfg.disk, &diskbuf, &disksz);
+    int err = mmapfile(cfg.disk, &diskbuf, &disksz, O_RDWR);
     if (diskbuf == NULL) {
         DIE(1,"Couldn't load/mmap disk %s: %s\n",
             cfg.disk, strerror(err));
@@ -181,14 +195,60 @@ static byte read_byte(void)
 }
 #endif // DSK
 
+static bool last_was_read;
 // For .nib disks
 static byte read_byte(void)
 {
+    last_was_read = true;
     size_t pos = (halftrack/2) * NIBBLE_TRACK_SIZE;
     pos += (bytenum % NIBBLE_TRACK_SIZE);
     byte val = diskbuf[pos];
-    ++bytenum;
+    bytenum = (bytenum + 1) % NIBBLE_TRACK_SIZE;
     return val;
+}
+
+// For .nib disks
+static void write_byte(byte val)
+{
+    dirty_tracks |= 1 << (halftrack/2);
+    size_t pos = (halftrack/2) * NIBBLE_TRACK_SIZE;
+    pos += (bytenum % NIBBLE_TRACK_SIZE);
+
+    // In the absence of proper timing, we use this hack to scoot
+    //  the write head forward a little bit, if we're still
+    //  in the sector epilogue...
+    if (!last_was_read || bytenum < 2 || bytenum > (NIBBLE_TRACK_SIZE - 3)) {
+        // do nothing
+    } else if (diskbuf[pos] == 0xDE && diskbuf[pos+1] == 0xAA
+               && diskbuf[pos+2] == 0xEB) {
+        pos += 3;
+    } else if (diskbuf[pos-1] == 0xDE && diskbuf[pos] == 0xAA
+               && diskbuf[pos+1] == 0xEB) {
+        pos += 2;
+    } else if (diskbuf[pos-2] == 0xDE && diskbuf[pos-1] == 0xAA
+               && diskbuf[pos] == 0xEB) {
+        pos += 1;
+    }
+
+    last_was_read = false;
+    diskbuf[pos] = val;
+    bytenum = (bytenum + 1) % NIBBLE_TRACK_SIZE;
+}
+
+static void turn_off_motor(void)
+{
+    motor_on = false;
+    // For now, sync the entire disk
+    if (dirty_tracks != 0) {
+        errno = 0;
+        int err = msync(diskbuf, disksz, MS_SYNC);
+        if (err < 0) {
+            DIE(1,"Couldn't sync to disk file %s: %s\n",
+                cfg.disk, strerror(errno));
+        }
+        dirty_tracks = 0;
+    }
+    event_fire_disk_active(0);
 }
 
 static int lastsw = -1;
@@ -217,15 +277,59 @@ static byte handler(word loc, int val, int ploc, int psw)
         lastpc = current_pc();
     }
 
+    frame_timer_reset(60, turn_off_motor);
     D2DBG("disk sw $%02X, PC = $%04X   ", psw, lastpc);
     if (psw < 8) {
         stepper_motor(psw);
     } else switch (psw) {
+        case 0x08:
+            if (motor_on) {
+                frame_timer(60, turn_off_motor);
+            }
+            break;
+        case 0x09:
+            frame_timer_cancel(turn_off_motor);
+            motor_on = true;
+            event_fire_disk_active(drive_two? 2 : 1);
+            break;
+        case 0x0A:
+            drive_two = false;
+            if (motor_on)
+                event_fire_disk_active(1);
+            break;
+        case 0x0B:
+            drive_two = true;
+            if (motor_on)
+                event_fire_disk_active(2);
+            break;
         case 0x0C:
-            // XXX any even-numbered switch can be used
-            //  to read a byte. But for now we do so only
-            //  through the sanctioned switch for that purpose.
-            ret = read_byte();
+            if (!motor_on || drive_two) {
+                // do nothing
+            } else if (write_mode) {
+                // XXX ignores timing
+                write_byte(data_register);
+                data_register = 0; // "shifted out".
+            } else {
+                // XXX any even-numbered switch can be used
+                //  to read a byte. But for now we do so only
+                //  through the sanctioned switch for that purpose.
+                ret = read_byte();
+            }
+            break;
+        case 0x0D:
+            if (!motor_on || drive_two) {
+                // do nothing
+            } else if (write_mode) {
+                data_register = (val == -1? 0: val);
+            } else {
+                // XXX should return whether disk is write-protected...
+            }
+            break;
+        case 0x0E:
+            write_mode = false;
+            break;
+        case 0x0F:
+            write_mode = true;
             break;
         default:
             ;

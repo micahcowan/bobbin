@@ -3,6 +3,81 @@
 #include <assert.h>
 #include <stdlib.h>
 
+struct timedfn {
+    void (*fn)(void);
+    unsigned int frames_left;
+    struct timedfn *next;
+};
+struct timedfn *tmhead = NULL;
+bool timer_access = false;
+
+void frame_timer_cancel(void (*fn)(void))
+{
+    assert(!timer_access);
+    timer_access = true;
+    struct timedfn *p;
+    struct timedfn **prevnext = &tmhead;
+    for (p = tmhead; p != NULL; p = p->next) {
+        if (p->fn == fn) {
+            *prevnext = p->next;
+            free(p);
+            break;
+        }
+        prevnext = &p->next;
+    }
+    timer_access = false;
+    return;
+}
+
+static struct timedfn *frame_timer_reset_(unsigned int time, void (*fn)(void))
+{
+    struct timedfn *p;
+    for (p = tmhead; p != NULL; p = p->next) {
+        if (p->fn == fn) {
+            p->frames_left = time;
+            break;
+        }
+    }
+    return p;
+}
+
+void frame_timer_reset(unsigned int time, void (*fn)(void))
+{
+    (void) frame_timer_reset_(time, fn);
+}
+
+void frame_timer(unsigned int time, void (*fn)(void))
+{
+    // Try to reset timer if it exists
+    struct timedfn *p = frame_timer_reset_(time, fn);
+
+    // Otherwise, create
+    if (p == NULL) {
+        struct timedfn *newtm = xalloc(sizeof *newtm);
+        newtm->fn = fn;
+        newtm->frames_left = time;
+        newtm->next = tmhead;
+        tmhead = newtm;
+    }
+}
+
+void frame_timer_countdown(void)
+{
+    struct timedfn *p;
+    struct timedfn **prevnext = &tmhead;
+    for (p = tmhead; p != NULL; ) {
+        if (--(p->frames_left) == 0) {
+            p->fn();
+            *prevnext = p->next;
+            free(p);
+            p = *prevnext;
+        } else {
+            prevnext = &(p->next);
+            p = *prevnext;
+        }
+    }
+}
+
 struct handler {
     event_handler fn;
     struct handler *next;
@@ -93,6 +168,9 @@ void event_fire(EventType type)
           || for_iface_only(e->type))) {
         dispatch(e);
     }
+    if (e->type == EV_FRAME) {
+        frame_timer_countdown();
+    }
 
     if (type == EV_STEP) {
         // Not allowed to change PC in STEP, PEEK, POKE events...
@@ -102,7 +180,7 @@ void event_fire(EventType type)
     free(e);
 }
 
-extern int event_fire_peek(word loc)
+int event_fire_peek(word loc)
 {
     Event *e = xalloc(sizeof *e);
     *e = evinit;
@@ -112,13 +190,14 @@ extern int event_fire_peek(word loc)
     word pc = PC; // may not eq current_instruction, if we're in the midst
                   //  of some CPU thing
     iface_fire(e);
+    dispatch(e);
     assert(pc == PC);
     int val = e->val;
     free(e);
     return val;
 }
 
-extern bool event_fire_poke(word loc, byte val)
+bool event_fire_poke(word loc, byte val)
 {
     Event *e = xalloc(sizeof *e);
     *e = evinit;
@@ -129,8 +208,20 @@ extern bool event_fire_poke(word loc, byte val)
     word pc = PC; // may not eq current_instruction, if we're in the midst
                   //  of some CPU thing
     iface_fire(e);
+    dispatch(e);
     assert(pc == PC);
     bool suppress = e->suppress;
     free(e);
     return suppress;
+}
+
+void event_fire_disk_active(int val)
+{
+    Event *e = xalloc(sizeof *e);
+    *e = evinit;
+    e->type = EV_DISK_ACTIVE;
+    e->val = val;
+
+    iface_fire(e);
+    free(e);
 }
