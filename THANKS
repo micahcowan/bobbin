@@ -5,7 +5,7 @@ whose responsively-reloading emulator paradigm directly inspired the
 creation of Bobbin, and the --watch feature.
 
 Kalus Dormann (Klaus2m5 on Github), for writing the exhaustive 6502 test
-battery that was critically important to verify bobbin's functionality
+battery that was critically important to verify Bobbin's functionality
 
 Adam Barnes (amb5l on GitHub), for porting Dormann's test battery to the
 ca65 assembler.
@@ -13,7 +13,17 @@ ca65 assembler.
 Bruce Clark, for writing the BCD-specific 6502 tests.
 
 Alain Mosnier <alain@wanamoon.net>, for creating the sha-256 module that
-bobbin uses to verify ROM checksums, and releasing it to the
+Bobbin uses to verify ROM checksums, and releasing it to the
 public domain.
+
+Will Scullin <scullin@scullinsteel.com>, author of the apple2js
+emulator (https://www.scullinsteel.com/apple2//e)
+The disk file-format-related code was of particular help to me in adding .nib
+and .dsk support to Bobbin.
+
+Andy McFadden <fadden@fadden.com>, author of CiderPress and
+6502bench SourceGen. Andy's extremely useful hyperlinked disassemblies
+at https://6502disassembly.com/ have been an indispensable
+and constantly-at-my-side reference throughout all of my development for A2.
 
 James Hall, who helped early on with testing and feedback
