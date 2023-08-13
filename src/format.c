@@ -8,9 +8,13 @@ static const size_t dsk_disksz = 143360;
 
 extern DiskFormatDesc nib_insert(const char*, byte *, size_t);
 extern DiskFormatDesc dsk_insert(const char *, byte *, size_t);
+extern DiskFormatDesc empty_disk_desc;
 
 DiskFormatDesc disk_insert(const char *path)
 {
+    if (path == NULL) {
+        return empty_disk_desc;
+    }
     byte *buf;
     size_t sz;
     int err = mmapfile(cfg.disk, &buf, &sz, O_RDWR);

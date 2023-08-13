@@ -24,6 +24,7 @@ static bool motor_on;
 static bool drive_two;
 static bool write_mode;
 static DiskFormatDesc disk1;
+static DiskFormatDesc disk2;
 static byte data_register; // only used for write
 static byte *rombuf;
 static const size_t dsk_disksz = 143360;
@@ -38,6 +39,9 @@ bool drive_spinning(void)
 
 static void init(void)
 {
+    disk1 = disk_insert(NULL);
+    disk2 = disk_insert(NULL);
+
     rombuf = load_rom("cards/disk2.rom", 256, false);
     disk1 = disk_insert(cfg.disk);
 }
