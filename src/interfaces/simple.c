@@ -19,6 +19,7 @@ static bool eof_found;
 static bool token_err_found;
 static bool suppress_input;
 static bool setup_list_return;
+static bool exit_on_spindown;
 static int tokenfd;
 static FILE *tokenf;
 static unsigned long line_number = 0;
@@ -208,6 +209,8 @@ recheck:
     c = -1;
     if (suppress_input) {
         // no input
+    } else if (exit_on_spindown) {
+        // no input
     } else if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
         if (interactive) {
@@ -313,6 +316,12 @@ void consume_char(void)
             DIE_CONT(1,"");
         } else {
             tokenize();
+        }
+    } else if (drive_spinning()) {
+        if (!exit_on_spindown) {
+            // Wait for disk activity to end.
+            exit_on_spindown = true;
+            INFO("Waiting for disk activity to end...\n");
         }
     } else {
         // Exit gracefully.
@@ -664,6 +673,13 @@ static void iface_simple_event(Event *e)
             break;
         case EV_REHOOK:
             iface_simple_rehook();
+            break;
+        case EV_DISK_ACTIVE:
+            if (exit_on_spindown && e->val == 0) {
+                INFO("Disk inactive, exiting.\n");
+                putchar('\n');
+                exit(0);
+            }
             break;
         default:
             ; // Nothing

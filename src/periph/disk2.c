@@ -31,6 +31,11 @@ static int pr_count;
 static bool steppers[4];
 static int  cog = 0;
 
+bool drive_spinning(void)
+{
+    return motor_on;
+}
+
 static void init(void)
 {
     rombuf = load_rom("cards/disk2.rom", 256, false);

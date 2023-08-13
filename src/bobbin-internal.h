@@ -450,6 +450,9 @@ extern void periph_sw_poke(word loc, byte val);
 extern byte periph_rom_peek(word loc);
 extern void periph_rom_poke(word loc, byte val);
 
+// Disk ][ controller
+extern bool drive_spinning(void);
+
 /********** FORMATS  **********/
 
 #define NUM_TRACKS      35
