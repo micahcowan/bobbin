@@ -494,6 +494,7 @@ extern void breakpoint_set(word loc);
 
 extern void *xalloc(size_t sz);
 extern int mmapfile(const char *fname, byte **buf, size_t *sz, int flags);
+extern const char *get_file_ext(const char *path);
 extern void util_print_state(FILE *f, word pc, Registers *reg);
 extern bool util_isflashing(int c);
 extern bool util_isreversed(int c, bool flash);

@@ -3,10 +3,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+const char *get_file_ext(const char *path)
+{
+    const char *ext = strrchr(path, '.');
+    if (ext == NULL) {
+        return strrchr(path, '\0');
+    }
+    return ext+1;
+}
 
 void *xalloc(size_t sz)
 {

@@ -14,30 +14,31 @@
 #define VOLUME_NUMBER       254
 #define DSK_TRACK_SIZE      (DSK_SECTOR_SIZE * MAX_SECTORS)
 
-struct doprivdat {
+struct dskprivdat {
     const char *path;
     byte *realbuf;
     byte *buf;
+    const byte *secmap;
     int bytenum;
     uint64_t dirty_tracks;
 };
-static const struct doprivdat datinit = { 0 };
+static const struct dskprivdat datinit = { 0 };
 
 static const size_t nib_disksz = 232960;
-static const size_t do_disksz = 143360;
-
-// DOS 3.3 Logical sector order (index is DOS sector,
-//  value is physical sector).
-const byte DOrvrs[] = {
-    0x0, 0xD, 0xB, 0x9, 0x7, 0x5, 0x3, 0x1,
-    0xE, 0xC, 0xA, 0x8, 0x6, 0x4, 0x2, 0xF
-};
+static const size_t dsk_disksz = 143360;
 
 //  DOS 3.3 Physical sector order (index is physical sector,
 //  value is DOS sector)
 const byte DO[] = {
     0x0, 0x7, 0xE, 0x6, 0xD, 0x5, 0xC, 0x4,
     0xB, 0x3, 0xA, 0x2, 0x9, 0x1, 0x8, 0xF
+};
+
+// ProDOS Physical sector order (index is physical sector,
+// value is ProDOS sector).
+const byte PO[] = {
+    0x0, 0x8, 0x1, 0x9, 0x2, 0xa, 0x3, 0xb,
+    0x4, 0xc, 0x5, 0xd, 0x6, 0xe, 0x7, 0xf
 };
 
 const byte TRANS62[] = {
@@ -72,7 +73,7 @@ static const int DETRANS62[] = {
 
 static void implodeDo(DiskFormatDesc *desc)
 {
-    struct doprivdat *dat = desc->privdat;
+    struct dskprivdat *dat = desc->privdat;
 
     const byte *rd = dat->buf; // nibble buf
     const byte *end = dat->buf + nib_disksz;
@@ -120,7 +121,7 @@ header:
 
         // Translate sector data field
         {
-            int s_ = DO[s];
+            int s_ = dat->secmap[s];
             byte *data = dat->realbuf + (t * DSK_TRACK_SIZE)
                 + (s_ * DSK_SECTOR_SIZE);
             byte data2[0x55];
@@ -200,7 +201,7 @@ done:
 
 static void spin(DiskFormatDesc *desc, bool b)
 {
-    struct doprivdat *dat = desc->privdat;
+    struct dskprivdat *dat = desc->privdat;
     if (!b && dat->dirty_tracks != 0) {
         implodeDo(desc);
         // For now, sync the entire disk
@@ -216,7 +217,7 @@ static void spin(DiskFormatDesc *desc, bool b)
 
 static byte read_byte(DiskFormatDesc *desc)
 {
-    struct doprivdat *dat = desc->privdat;
+    struct dskprivdat *dat = desc->privdat;
     size_t pos = (desc->halftrack/2) * NIBBLE_TRACK_SIZE;
     pos += (dat->bytenum % NIBBLE_TRACK_SIZE);
     byte val = dat->buf[pos];
@@ -226,7 +227,7 @@ static byte read_byte(DiskFormatDesc *desc)
 
 static void write_byte(DiskFormatDesc *desc, byte val)
 {
-    struct doprivdat *dat = desc->privdat;
+    struct dskprivdat *dat = desc->privdat;
     if ((val & 0x80) == 0) {
         // D2DBG("dodged write $%02X", val);
         return; // must have high bit
@@ -325,12 +326,12 @@ static void explodeSector(byte vol, byte track, byte sector,
     *nibSec = wr;
 }
 
-static void explodeDo(byte *nibbleBuf, byte *dskBuf)
+static void explodeDsk(byte *nibbleBuf, byte *dskBuf, const byte *secmap)
 {
     for (int t = 0; t < NUM_TRACKS; ++t) {
         byte *writePtr = nibbleBuf;
         for (int phys_sector = 0; phys_sector < MAX_SECTORS; ++phys_sector) {
-            const byte dos_sector = DO[phys_sector];
+            const byte dos_sector = secmap[phys_sector];
             const size_t off = ((MAX_SECTORS * t + dos_sector)
                                 * DSK_SECTOR_SIZE);
             explodeSector(VOLUME_NUMBER, t, phys_sector,
@@ -344,23 +345,32 @@ static void explodeDo(byte *nibbleBuf, byte *dskBuf)
     }
 }
 
-DiskFormatDesc do_insert(const char *path, byte *buf, size_t sz)
+DiskFormatDesc dsk_insert(const char *path, byte *buf, size_t sz)
 {
-    if (sz != do_disksz) {
+    if (sz != dsk_disksz) {
         DIE(0,"Wrong disk image size for %s:\n", cfg.disk);
-        DIE(1,"  Expected %zu, got %zu.\n", do_disksz, sz);
+        DIE(1,"  Expected %zu, got %zu.\n", dsk_disksz, sz);
     }
 
     size_t len = strlen(path)+1;
     char *pathcp = xalloc(len);
     memcpy(pathcp, path, len);
 
-    struct doprivdat *dat = xalloc(sizeof *dat);
+    struct dskprivdat *dat = xalloc(sizeof *dat);
     *dat = datinit;
     dat->realbuf = buf;
     dat->path = pathcp;
     dat->buf = xalloc(nib_disksz);
-    explodeDo(dat->buf, dat->realbuf);
+
+    const char *ext = get_file_ext(path);
+    if (STREQCASE(ext, "PO"))  {
+        INFO("Opening %s as PO.\n", cfg.disk);
+        dat->secmap = PO;
+    } else {
+        INFO("Opening %s as DO.\n", cfg.disk);
+        dat->secmap = DO;
+    }
+    explodeDsk(dat->buf, dat->realbuf, dat->secmap);
 
     return (DiskFormatDesc){
         .privdat = dat,

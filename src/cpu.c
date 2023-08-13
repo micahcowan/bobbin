@@ -943,6 +943,9 @@ void cpu_step(void)
         case 0xE9: // SBC, immed.
             OP_READ_IMM(do_sbc(val));
             break;
+        case 0x1A: // UNDOCUMENTED nop (when 6502). ProDOS 2.4.2 uses it
+                   //  to distinguish CPU types...
+                   //  # cycles/order of ops may be wrong...
         case 0xEA: // NOP
             OP_RMW_IMPL(); // empty statement
             break;
