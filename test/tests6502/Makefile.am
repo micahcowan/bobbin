@@ -10,10 +10,8 @@ LD65 = @LD65@
 EXTRA_DIST = $(SRCS) example.cfg readme.txt 65C02_extended_opcodes_test.ca65
 CLEANFILES = $(OBJS) $(SRCS:%.ca65=%.lst) $(SRCS:%.ca65=%.map) $(SRCS:%.ca65=%.o) trace.log
 
-BOBBIN_TARGETS = $(top_builddir)/src/bobbin
-
 all:
-check: $(OBJS) $(BOBBIN_TARGETS)
+check: $(OBJS)
 	set -e; \
 	if test "$(CA65)" != ":" -a "$(LD65)" != ":"; then \
 	    for test in $(SRCS:%.ca65=%); do \
@@ -31,6 +29,3 @@ check: $(OBJS) $(BOBBIN_TARGETS)
 %.bin: %.ca65
 	ca65 -l $*.lst -o $*.o $<
 	ld65 $*.o -o $@ -m $*.map -C $(srcdir)/example.cfg
-
-$(BOBBIN_TARGETS):
-	$(MAKE) -C $(top_builddir)/src all
