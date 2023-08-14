@@ -44,6 +44,9 @@ AS_IF([test "x$PYTHON" != "x" -a "x$PYTHON" != "x:"],
             AC_MSG_WARN([pexpect not found, disabling python tests])
             PYTHON=''])])
 
+AM_CONDITIONAL([HAVE_CA65], [test "$CA65" != ":" -a "$LD65" != ":"])
+AM_CONDITIONAL([HAVE_PEXPECT], [test "x${PYTHON}" != x: -a "x${PYTHON}" != x])
+
 AC_CONFIG_HEADERS([src/ac-config.h])
 AC_CONFIG_FILES([
     Makefile
