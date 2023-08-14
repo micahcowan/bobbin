@@ -417,8 +417,12 @@ void vidout(void)
     int c = util_toascii(ACC);
     if (c < 0) return;
 
-    if (suppress == SUPPRESS_LINE || suppress == SUPPRESS_ALWAYS)
+    if (suppress == SUPPRESS_ALWAYS)
         return;
+    if (suppress == SUPPRESS_LINE) {
+        if (c == '\r') output_suppressed = SUPPRESS_NONE;
+        return;
+    }
 
     if (util_isprint(c)
         || c == '\t' || c == '\b') {
