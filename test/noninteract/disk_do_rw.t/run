@@ -1,0 +1,18 @@
+#!/bin/sh
+
+rm -f testdisk.dsk
+cp template.dsk testdisk.dsk
+
+$BOBBIN -m plus --disk testdisk.dsk <<EOF
+10 FOR I=1 TO 10
+20 ? SPC(I);"BOBBIN RULES!"
+30 NEXT I
+CATALOG
+INIT RUN
+EOF
+
+echo '+++++'
+
+$BOBBIN -m plus --disk testdisk.dsk <<EOF
+CATALOG
+EOF
