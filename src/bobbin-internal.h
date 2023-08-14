@@ -4,8 +4,8 @@
 #include "ac-config.h"
 #ifdef _XOPEN_SOURCE
 #undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE   700
 #endif
+#define _XOPEN_SOURCE   700
 
 #include <signal.h>
 #include <stdarg.h>
