@@ -2,11 +2,14 @@
 
 main() {
     status=0
-    for test in "$TESTDIR"/*.t; do
+    for rundir; do
         # Set up execution dir
-        rundir=${test##*/}
+        test="${TESTDIR}/${rundir}"
         mkdir -p "$rundir"
-        if test -e "$test"/run -a ! -e "$rundir"/run; then
+        if ! test -e "$test"/run; then
+            echo "NO RUN SCRIPT FOUND FOR TEST $test"
+        elif test ! -e "$rundir"/run; then
+            # builddir != srcdir, so copy needed files
             for file in "$test"/*; do
                 fn=${test##*/}
                 if test "$fn" != "run"; then
