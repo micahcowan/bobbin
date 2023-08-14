@@ -173,6 +173,21 @@ header:
             WARN("Probable disk corruption for %s\n", dat->path);
         }
 
+        byte truet = (rd - dat->buf)/NIBBLE_TRACK_SIZE;
+        if (t != truet) {
+            WARN("Sector header lying about track number"
+                 " at nibblized pos %zu\n", (size_t)(rd - dat->buf));
+            WARN("  (says %d but we're on track %d). Skipping sector.\n",
+                 (int)t, (int)truet);
+            continue;
+        }
+        if (s >= MAX_SECTORS) {
+            WARN("Sector header sec# too high (%d; max is %d).\n",
+                 (int)s, (int)MAX_SECTORS);
+            WARN("  Skipping sector.\n");
+            continue;
+        }
+
         const int data_field_sz = 0x15A; //counts prologue, not epilogue
         for (;;) {
             if (rd >= (end - 0x15A)) goto bail;
@@ -190,7 +205,7 @@ header:
             int s_ = dat->secmap[s];
             byte *data = dat->realbuf + (t * DSK_TRACK_SIZE)
                 + (s_ * DSK_SECTOR_SIZE);
-            byte data2[0x55];
+            byte data2[0x56];
             byte last = 0;
             int val;
 
@@ -272,7 +287,7 @@ static void spin(DiskFormatDesc *desc, bool b)
         implodeDo(desc);
         // For now, sync the entire disk
         errno = 0;
-        int err = msync(dat->realbuf, nib_disksz, MS_SYNC);
+        int err = msync(dat->realbuf, dsk_disksz, MS_SYNC);
         if (err < 0) {
             DIE(1,"Couldn't sync to disk file %s: %s\n",
                 cfg.disk, strerror(errno));
