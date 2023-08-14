@@ -70,6 +70,7 @@
 
 // The following locations may be specific to the ][+ firmware only
 #define FP_ERROR2       0xD419 /* error handling when no ON ERR */
+#define FP_RESTART      0xD43C /* CR emitted before prompt in AppleSoft */
 #define FP_NOT_NUMBERED 0xD456
 #define FP_LINE_EXISTS  0xD471
 #define FP_CK_PAST_LINE 0xD63A /* If carry is clear at this loc,
