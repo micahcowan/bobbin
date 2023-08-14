@@ -47,7 +47,10 @@ main() {
                 exit 1
             fi
         )
-        status=$?
+        newstat=$?
+        if test "$newstat" -ne 0; then
+            status=$newstat
+        fi
     done
     exit "$status"
 }
