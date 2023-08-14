@@ -49,6 +49,7 @@ AC_CONFIG_FILES([
     Makefile
     src/Makefile
     test/Makefile
+    test/noninteract/Makefile
     test/tests6502/Makefile
     test/pexpect/Makefile
 ])

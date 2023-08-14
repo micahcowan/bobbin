@@ -1,5 +1,5 @@
 BOBBIN_TARGETS = $(top_builddir)/src/bobbin
-SUBDIRS = pexpect tests6502
+SUBDIRS = noninteract pexpect tests6502
 
 check-recursive: $(BOBBIN_TARGETS)
 

@@ -6,6 +6,7 @@ bobbin-v*.zip
 build
 compile
 configure
+configure~
 config.log
 config.status
 .deps
@@ -32,4 +33,6 @@ src/machine-names.h
 src/stamp-h1
 test/pexpect/__pycache__
 test/pexpect/bobbin
+test/noninteract/*/output
+test/noninteract/*/testdisk.*
 *.pyc
