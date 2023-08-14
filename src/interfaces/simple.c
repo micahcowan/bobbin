@@ -598,7 +598,7 @@ static void iface_simple_step(void)
             break;
         case FP_RESTART:
             // pre-prompt CR output in AppleSoft
-            if (mem_match(FP_RESTART, 8, 0x20, 0xFB, 0xDA,
+            if (!interactive && mem_match(FP_RESTART, 8, 0x20, 0xFB, 0xDA,
                           0xA2, 0xDD, 0x20, 0x2E, 0xD5)) {
                 output_suppressed = SUPPRESS_CR;
             }
