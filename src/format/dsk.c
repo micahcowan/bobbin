@@ -71,9 +71,75 @@ static const int DETRANS62[] = {
       -1, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
+static void realign_tracks(DiskFormatDesc *desc)
+{
+    /*
+       When we unpack a .dsk into nibblized form, it's
+       automatically aligned neatly within our track-storage
+       boundaries within the disk buffer, because that's how
+       we laid 'em out.
+
+       When a sector is written or updated, it will
+       tend to stay aligned, because the program had to 
+       find the existing sector to write to, to keep things
+       in order.
+
+       However, in the event of reformatting, there are no
+       guarantees about the track being aligned conveniently.
+       The formatting program can start at any old position
+       and just start writing, because no existing data is going
+       to be preserved.
+
+       To deal with this, we could either:
+         1) Be prepared to loop back around our track's buffer,
+            mid-sector
+         2) Re-align the track at our convenience, to start
+            somewhere that we know for sure can't be the middle of
+            sector data.
+
+       I've opted for option (2). It would be a bad option if
+       we're reading and writing a .nib file, because we'd be
+       unnecessarily altering the file's structure (in cases
+       where it had NOT been reformatted), but it's perfectly
+       fine when we'll be discarding the nibblized format anyway.
+
+       We handle this by seeking forward to the first sector-field
+       start boundary (D5 AA 96) that we can find, and make that
+       the new "start" of our track. It doesn't matter if it's a
+       false-start that doesn't start a real sector-field, because one
+       thing we know for *sure* is that first D5 can't be found
+       in the middle of a legitimate header or data field.
+    */
+
+    struct dskprivdat *dat = desc->privdat;
+    byte *buf = dat->buf;
+    byte *secbuf = xalloc(NIBBLE_TRACK_SIZE);
+    for (int t=0; t != NUM_TRACKS; ++t) {
+        byte *tstart = buf + (t * NIBBLE_TRACK_SIZE);
+        byte *tend   = buf + ((t + 1) * NIBBLE_TRACK_SIZE);
+        byte *talign;
+        for (talign = tstart; talign <= (tend - 3); ++talign) {
+            if (talign[0] == 0xD5 && talign[1] == 0xAA && talign[2] == 0x96) {
+                if (talign == tstart) {
+                    // Nothing to do, already aligned.
+                } else {
+                    size_t rollsz = talign - tstart;
+                    memcpy(secbuf, tstart, rollsz);
+                    memmove(tstart, talign, tend-talign);
+                    memcpy(tend - rollsz, secbuf, rollsz);
+                }
+                break; // handle next track
+            }
+        }
+    }
+    free(secbuf);
+}
+
 static void implodeDo(DiskFormatDesc *desc)
 {
     struct dskprivdat *dat = desc->privdat;
+
+    realign_tracks(desc);
 
     const byte *rd = dat->buf; // nibble buf
     const byte *end = dat->buf + nib_disksz;
@@ -84,10 +150,10 @@ static void implodeDo(DiskFormatDesc *desc)
         // Scan forward for a sector header
         const int sector_hdr_sz = 11; // counts prologue, but not epilogue
         for (;;) {
+            // This is the only place we're "allowed" to end processing.
             if (rd >= (end - sector_hdr_sz)) goto done;
             if (rd[0] == 0xD5 && rd[1] == 0xAA && rd[2] == 0x96) break;
             ++rd;
-            // This is the only place we're "allowed" to end processing.
         }
 
 header:
