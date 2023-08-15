@@ -390,6 +390,8 @@ void do_trace_to(const char *arg)
     }
 
     ++cfg.trace_end;
+
+    trace_reg();
 }
 
 void do_load_basic(const char *arg)

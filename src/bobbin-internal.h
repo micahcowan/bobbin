@@ -477,6 +477,7 @@ extern DiskFormatDesc disk_insert(const char *path);
 extern const char *trfile_name;
 extern FILE *trfile;
 
+extern void trace_reg(void);
 extern void trace_step(Event *e);
 extern void trace_on(char *format, ...);
 extern void trace_off(void);

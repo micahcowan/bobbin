@@ -61,6 +61,14 @@ void trace_step(Event *e)
     }
 }
 
+void trace_reg(void)
+{
+    if (!handler_registered) {
+        handler_registered = true;
+        event_reghandler(trace_step);
+    }
+}
+
 int tracing(void)
 {
     return traceon;
