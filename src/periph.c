@@ -53,7 +53,7 @@ void periph_rom_poke(word loc, byte val)
 
 void periph_init(void)
 {
-    if (cfg.disk) {
+    if (cfg.disk || cfg.disk2) {
         slot[6] = &disk2card;
     }
     

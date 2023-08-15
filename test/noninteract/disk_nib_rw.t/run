@@ -1,7 +1,7 @@
 #!/bin/sh
 
 rm -f testdisk.nib
-cp template.nib testdisk.nib
+cp indisk.nib testdisk.nib
 
 $BOBBIN -m plus --disk testdisk.nib <<EOF
 10 FOR I=1 TO 10

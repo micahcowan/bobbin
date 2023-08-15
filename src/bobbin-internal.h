@@ -94,6 +94,7 @@ struct Config {
     // machine/emulation config optioons
     const char *    machine;
     const char *    disk;
+    const char *    disk2;
     bool            machine_set;
     size_t          amt_ram;
     bool            load_rom;

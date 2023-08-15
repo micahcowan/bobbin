@@ -34,5 +34,5 @@ src/stamp-h1
 test/pexpect/__pycache__
 test/pexpect/bobbin
 test/noninteract/*/output
-test/noninteract/*/testdisk.*
+test/noninteract/*/testdisk*
 *.pyc

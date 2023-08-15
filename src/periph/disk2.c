@@ -30,7 +30,13 @@ static byte *rombuf;
 static const size_t dsk_disksz = 143360;
 static int pr_count;
 static bool steppers[4];
-static int  cog = 0;
+static int cog1 = 0;
+static int cog2 = 0;
+
+static inline DiskFormatDesc *active_disk(void)
+{
+    return drive_two? &disk2 : &disk1;
+}
 
 bool drive_spinning(void)
 {
@@ -43,38 +49,51 @@ static void init(void)
     disk2 = disk_insert(NULL);
 
     rombuf = load_rom("cards/disk2.rom", 256, false);
-    disk1 = disk_insert(cfg.disk);
+
+    if (cfg.disk) {
+        disk1 = disk_insert(cfg.disk);
+    }
+    if (cfg.disk2) {
+        disk2 = disk_insert(cfg.disk2);
+    }
 }
 
 // NOTE: cog "left" and "right" refers only to the number line,
 //       and not the physical cog or track head movement.
-static inline bool cogleft(void)
+static inline bool cogleft(int *cog)
 {
-    int cl = (cog + 3) % 4; // position to the "left" of cog
-    return (!steppers[cog] && steppers[cl]);
+    int cl = ((*cog) + 3) % 4; // position to the "left" of cog
+    return (!steppers[(*cog)] && steppers[cl]);
 }
 
 // NOTE: cog "left" and "right" refers only to the number line,
 //       and not the physical cog or track head movement.
-static inline bool cogright(void)
+static inline bool cogright(int *cog)
 {
-    int cr = (cog + 1) % 4; // position to the "right" of cog
-    return (!steppers[cog] && steppers[cr]);
+    int cr = ((*cog) + 1) % 4; // position to the "right" of cog
+    return (!steppers[(*cog)] && steppers[cr]);
+}
+
+static inline int *active_cog(void)
+{
+    return drive_two? &cog2 : &cog1;
 }
 
 static void adjust_track(void)
 {
+    DiskFormatDesc *disk = active_disk();
+    int *cog = active_cog();
     D2DBG("halftrack: ");
-    if (cogleft()) {
-        cog = (cog + 3) % 4;
-        if (disk1.halftrack > 0) --disk1.halftrack;
-        D2DBG("dec to %d", disk1.halftrack);
-    } else if (cogright()) {
-        cog = (cog + 1) % 4;
-        if (disk1.halftrack < 69) ++disk1.halftrack;
-        D2DBG("inc to %d", disk1.halftrack);
+    if (cogleft(cog)) {
+        *cog = ((*cog) + 3) % 4;
+        if (disk->halftrack > 0) --disk->halftrack;
+        D2DBG("dec to %d", disk->halftrack);
+    } else if (cogright(cog)) {
+        *cog = ((*cog) + 1) % 4;
+        if (disk->halftrack < 69) ++disk->halftrack;
+        D2DBG("inc to %d", disk->halftrack);
     } else {
-        D2DBG("no change (%d)", disk1.halftrack);
+        D2DBG("no change (%d)", disk->halftrack);
     }
 }
 
@@ -96,7 +115,8 @@ static inline byte encode4x4(byte orig)
 static void turn_off_motor(void)
 {
     motor_on = false;
-    disk1.spin(&disk1, false);
+    DiskFormatDesc *disk = active_disk();
+    disk->spin(disk, false);
     event_fire_disk_active(0);
 }
 
@@ -139,34 +159,50 @@ static byte handler(word loc, int val, int ploc, int psw)
             }
             break;
         case 0x09:
+        {
             frame_timer_cancel(turn_off_motor);
             motor_on = true;
-            disk1.spin(&disk1, true);
+            DiskFormatDesc *disk = active_disk();
+            disk->spin(disk, true);
             event_fire_disk_active(drive_two? 2 : 1);
+        }
             break;
         case 0x0A:
+            if (motor_on && drive_two) {
+                disk2.spin(&disk2, false);
+                disk1.spin(&disk1, true);
+            }
             drive_two = false;
-            if (motor_on)
+            if (motor_on) {
                 event_fire_disk_active(1);
+            }
             break;
         case 0x0B:
+            if (motor_on && !drive_two) {
+                disk1.spin(&disk1, false);
+                disk2.spin(&disk2, true);
+            }
             drive_two = true;
-            if (motor_on)
+            if (motor_on) {
                 event_fire_disk_active(2);
+            }
             break;
         case 0x0C:
-            if (!motor_on || drive_two) {
+        {
+            DiskFormatDesc *disk = active_disk();
+            if (!motor_on) {
                 // do nothing
             } else if (write_mode) {
                 // XXX ignores timing
-                disk1.write_byte(&disk1, data_register);
+                disk->write_byte(disk, data_register);
                 data_register = 0; // "shifted out".
             } else {
                 // XXX any even-numbered switch can be used
                 //  to read a byte. But for now we do so only
                 //  through the sanctioned switch for that purpose.
-                ret = data_register = disk1.read_byte(&disk1);
+                ret = data_register = disk->read_byte(disk);
             }
+        }
             break;
         case 0x0D:
 #if 0

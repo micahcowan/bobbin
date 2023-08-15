@@ -1,4 +1,4 @@
-EXTRA_DIST = $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/template.nib)
+EXTRA_DIST = $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/indisk*)
 CLEANFILES = *.t/output *.t/testdisk.*
 BTESTS = $(notdir $(wildcard $(srcdir)/*.t) )
 check:

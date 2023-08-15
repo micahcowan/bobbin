@@ -295,11 +295,15 @@ If standard input is from a terminal, then the default value is `tty`, which pro
 
 Alias for `--interface=simple`.
 
-##### --disk *arg*
+##### --disk, --disk1 *arg*
 
 Load the given disk file to drive 1.
 
-If this option is not used, then a disk controller card is not included in the emulated machine, causing it to boot immediately into BASIC. This differs from many emulators, which include a disk controller card even when no disks are inserted, causing the boot to hang forever until Ctrl-RESET breaks out from the boot.
+If neither `--disk` nor `--disk2` are used, then a disk controller card is not included in the emulated machine, causing it to boot immediately into BASIC. This differs from many emulators, which include a disk controller card even when no disks are inserted, causing the boot to hang forever until Ctrl-RESET breaks out from the boot.
+
+##### --disk2 *arg*
+
+Load the given disk file to drive 2.
 
 #### Special options
 

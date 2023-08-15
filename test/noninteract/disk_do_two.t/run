@@ -1,0 +1,10 @@
+rm -f testdisk*.dsk
+cp indisk-a.dsk testdisk-a.dsk
+cp indisk-b.dsk testdisk-b.dsk
+
+$BOBBIN -m plus --disk testdisk-a.dsk --disk2 testdisk-b.dsk <<EOF
+CATALOG
+CATALOG,D2
+RUN DISK B
+RUN DISK A,D1
+EOF

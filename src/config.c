@@ -91,6 +91,7 @@ const OptInfo options[] = {
     { OUTPUT_OPT_NAMES, T_STRING_ARG, &cfg.outputfile },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine, &cfg.machine_set },
     { DISK_OPT_NAMES, T_STRING_ARG, &cfg.disk },
+    { DISK2_OPT_NAMES, T_STRING_ARG, &cfg.disk2 },
     { LANG_CARD_OPT_NAMES, T_BOOL, &cfg.lang_card, &cfg.lang_card_set },
     { BELL_OPT_NAMES, T_BOOL, &cfg.bell },
     { TURBO_OPT_NAMES, T_BOOL, &cfg.turbo, &cfg.turbo_was_set },
