@@ -1,8 +1,5 @@
 #!/bin/sh
 
-rm -f testdisk.dsk
-cp indisk.dsk testdisk.dsk
-
 $BOBBIN -m plus --disk testdisk.dsk <<EOF
 10 FOR I=1 TO 10
 20 ? SPC(I);"BOBBIN RULES!"

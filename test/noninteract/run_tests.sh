@@ -17,9 +17,20 @@ main() {
                 fi
             done
         fi
+
         (
             cd "$rundir"
             printf '%s' "TEST $rundir: "
+
+            # Copy indisk* to testdisk*
+            for dsk in indisk*; do
+                if test -e "$dsk"; then # guards against dsk='indisk*'
+                    testdisk="testdisk${dsk#indisk}"
+                    rm -f "$testdisk"
+                    cp "$dsk" "$testdisk"
+                    chmod +w "$testdisk"
+                fi
+            done
 
             # Run the test
             sh ./run >output 2>&1

@@ -1,8 +1,7 @@
 #!/bin/sh
 
 $BOBBIN -m plus --disk testdisk-a.dsk --disk2 testdisk-b.dsk <<EOF
-CATALOG
-CATALOG,D2
-RUN DISK B
-RUN DISK A,D1
+RUN HELLO
+RUN HELLO,D2
+RUN HELLO,D1
 EOF
