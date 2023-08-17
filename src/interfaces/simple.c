@@ -37,9 +37,9 @@ enum mon_rom_check_status {
 };
 bool mon_entered = false;
 
-unsigned char linebuf[256];
-unsigned char *lbuf_start = linebuf;
-unsigned char *lbuf_end = linebuf;
+static unsigned char linebuf[256];
+static unsigned char *lbuf_start = linebuf;
+static unsigned char *lbuf_end = linebuf;
 
 #define SUPPRESS_NONE    0
 #define SUPPRESS_CR      1

@@ -14,7 +14,7 @@ struct Breakpoint {
 
 Breakpoint *bp_head = NULL;
 
-char linebuf[256];
+static char linebuf[256];
 
 bool debugging_flag = false;
 bool print_message = true;
