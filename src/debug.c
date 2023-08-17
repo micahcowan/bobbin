@@ -16,8 +16,10 @@ Breakpoint *bp_head = NULL;
 
 static char linebuf[256];
 
-bool debugging_flag = false;
-bool print_message = true;
+static bool debugging_flag = false;
+static bool print_message = true;
+static bool go_until_rts = false;
+static byte stack_min;
 
 bool debugging(void)
 {
@@ -50,12 +52,82 @@ void breakpoint_set(word loc)
 
 static bool bp_reached(void)
 {
+    byte op = peek_sneaky(current_pc());
+    if (go_until_rts && SP >= stack_min) {
+        go_until_rts = false;
+        printf("Returned.\n");
+        return true;
+    }
+
     Breakpoint *bp;
     word pc = current_pc();
     for (bp = bp_head; bp != NULL; bp = bp->next) {
-        if (pc == bp->loc) return true;
+        if (pc == bp->loc) {
+            printf("Breakpoint at %04X.\n", current_pc());
+            return true;
+        }
     }
     return false;
+}
+
+static inline void preface_read(word loc)
+{
+    printf("\n%04X:", loc);
+}
+
+static void mlcmd_read(word first, word last)
+{
+    word next = first;
+    preface_read(next);
+    printf(" %02X", peek_sneaky(next));
+    while(++next < last) {
+        if (next % 8 == 0) preface_read(next);
+        printf(" %02X", peek_sneaky(next));
+    }
+    printf("\n\n");
+}
+
+static void mlcmd_list(word first, word last)
+{
+    // Note: `last` is ignored, we always print 16 instr
+    word next = first;
+    putchar('\n');
+    for (int i = 0; i != 16; ++i) {
+        next = print_disasm(stdout, next, &theCpu.regs);
+    }
+}
+
+// returns true if command in linebuf was handled.
+static bool handle_monitor_like_cmd(void)
+{
+    unsigned long first, second = 0;
+    char *str = linebuf, *end;
+
+    // See if we've got a hex number
+    first = strtoul(str, &end, 16);
+    if (end == str) return false;
+    second = first;
+    str = end;
+
+    // See if we got a second one
+    if (*str == '.') {
+        ++str;
+        second = strtoul(str, &end, 16);
+        if (end == str) return false; // can't end on "."
+        str = end;
+    }
+
+    // Is there a command?
+    if (STREQCASE(str, "L")) {
+        mlcmd_list(first, second);
+    } else if (*str == '\0') {
+        mlcmd_read(first, second);
+    } else {
+        // Garbage at end of line: unrecognized command overall.
+        return false;
+    }
+
+    return true;
 }
 
 void debugger(void)
@@ -63,12 +135,12 @@ void debugger(void)
     if (STREQ(cfg.interface, "tty")) return; // for now
 
     if (debugging_flag) {
-        // Nothing. Proceed.
+        go_until_rts = 0;
     } else {
         if (sigint_received >= 2) {
             fputs("Debug entered via ^C^C.\n", stdout);
         } else if (bp_reached()) {
-            printf("Breakpoint at %04X.\n", current_pc());
+            // Handled
         } else {
             return;
         }
@@ -90,8 +162,8 @@ void debugger(void)
                 "  q = quit bobbin, r or w = warm reset, rr = cold reset\n"
                 "-----\n");
     }
-    bool handled = false;
-    while(!handled) {
+    bool loop = true;
+    while(loop) {
         util_print_state(stdout, current_pc(), &theCpu.regs);
         fputc('>', stdout);
         fflush(stdout);
@@ -116,27 +188,47 @@ void debugger(void)
         }
 
 #define HAVE(val) STREQ((val), linebuf)
-        handled = command_do(linebuf, printf);
-        debugging_flag = !handled;
-
-        if (handled)
+        bool handled = command_do(linebuf, printf);
+        if (handled) {
+            loop = false;
+            debugging_flag = false;
             break;
+        }
 
         // not yet handled by non-debugger commands...
-        handled = true; // ...but for now assume it will have been
-        if (HAVE("") || HAVE(" ")) {
+        loop = true;
+        if (HAVE("") || HAVE(" ") || HAVE("s")) {
             // Do nothing; execute the instruction and return here
             //  on the next one.
+            loop = false;
         } else if (HAVE("c")) {
             fputs("Continuing...\n", stdout);
-            debugging_flag = false;
+            loop = debugging_flag = false;
         } else if (linebuf[0] == 'b' && linebuf[1] == ' ') {
             // FIXME: very crude.
             unsigned long bploc = strtoul(&linebuf[2], NULL, 16);
             breakpoint_set(bploc);
-            handled = false;
+        } else if (HAVE("n")) {
+            byte op = peek_sneaky(current_pc());
+            if (op == 0x20) {
+                // Run until after stack is back to the current size
+                fputs("Skipping subroutine call...\n", stdout);
+                go_until_rts = true;
+                stack_min = SP;
+                loop = debugging_flag = false;
+            } else {
+                // Treat as equivalent to "s"
+                loop = false;
+            }
+        } else if (HAVE("rts")) {
+            // Run until stack is two higher than current
+            fputs("Continuing until RTS...\n", stdout);
+            go_until_rts = true;
+            stack_min = LO(SP+2);
+            loop = debugging_flag = false;
+        } else if (handle_monitor_like_cmd()) {
+            // Handled. But loop.
         } else {
-            handled = false; // Loop back around / try again
             fputs("Unrecognized command!\n", stdout);
         }
 #undef HAVE

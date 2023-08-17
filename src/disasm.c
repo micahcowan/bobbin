@@ -446,7 +446,7 @@ static void pracc_zp(FILE *f, byte addr)
             peek_sneaky(LO(addr+1)));
 }
 
-static void print_access(FILE *f, word pc, Registers *regs,
+static void print_access(FILE *f, word pc, const Registers *regs,
                          int type, byte m[2])
 {
     switch (type) {
@@ -490,7 +490,7 @@ static void print_access(FILE *f, word pc, Registers *regs,
     }
 }
 
-word print_disasm(FILE *f, word pc, Registers *regs)
+word print_disasm(FILE *f, word pc, const Registers *regs)
 {
     byte m[3];
     for (int i=0; i != (sizeof m); ++i) {

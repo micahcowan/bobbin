@@ -515,7 +515,7 @@ extern void setup_watches(void);
 extern bool check_watches(void);
 
 /* TBD */
-extern word print_disasm(FILE *f, word pos, Registers *regs);
+extern word print_disasm(FILE *f, word pos, const Registers *regs);
 
 #define NS_PER_FRAME        16651559
 #define CYCLES_PER_FRAME    17030
