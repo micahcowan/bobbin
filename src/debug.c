@@ -43,10 +43,10 @@ static void breakpoint_set_(word loc, bool wp)
     bp->loc = loc;
     bp->enabled = true;
     bp->next = NULL;
+    bp->is_watchpoint = wp;
     if (wp) {
-        bp->is_watchpoint = wp;
         bp->val = peek_sneaky(loc);
-    };
+    }
 
     // Find tail of chain
     if (bp_head == NULL) {

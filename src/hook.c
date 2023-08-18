@@ -56,41 +56,33 @@ static void read_rb_params(struct rb_params *p, word addr)
     p->blocknum = WORD(peek_sneaky(addr + 4), peek_sneaky(addr + 5));
 }
 
-static void prodos_read_block_hook(Event *e)
+static byte last_unitNum;
+static void prodos_hook(Event *e)
 {
-    word pc = current_pc();
-    if (e->type == EV_STEP && pc == 0xBF00) {
-        // ProDOS MLI called
-        word rtn = peek_return_sneaky();
-        byte cmd = peek_sneaky(rtn);
-
+    byte unitNum = peek_sneaky(0x43);
+    if (unitNum != last_unitNum) {
+        fprintf(stderr, "unitNum changed from $%02X to $%02X.\n",
+                (unsigned int)last_unitNum, (unsigned int)unitNum);
 #if 0
-        fprintf(stderr, "MLI CALL. Rtn is $%04X, cmd is $%02X.\n",
-                (unsigned int)rtn, (unsigned int)cmd);
-        dbg_on();
-#endif
-        if (cmd != 0x80) return; // want READ_BLOCK command
-
-        word paramAddr = WORD(peek_sneaky(rtn+1), peek_sneaky(rtn+2));
-        struct rb_params p;
-        read_rb_params(&p, paramAddr);
-
-        static bool hit_d2 = true;
-        if (p.drive_two) {
-            hit_d2 = true; // from now on, log all READ_BLOCKs.
-        } else if (!hit_d2) {
-            return; // haven't hit drive 2 yet, skip boot-up reads.
+        if (last_unitNum == 0xE0 && unitNum == 0x60) {
+            trace_on("$E0 -> $60");
+        } else if (last_unitNum == 0x60 && unitNum == 0xE0 && tracing()) {
+            trace_off();
         }
-
-        fprintf(stderr, "MLI READ_BLOCK call. Drive %d, slot %u, block %u.\n"
-                "Params are at $%04X.\n",
-                p.drive_two? 2 : 1, p.slot, p.blocknum, paramAddr);
+#endif
+        last_unitNum = unitNum;
+        util_print_state(stderr, current_pc(), &theCpu.regs);
+        fputc('\n', stderr);
+    }
+    if (e->type == EV_STEP && current_pc() == 0xD000) {
+        fprintf(stderr, "BlockIO entered. Drive %d, slot %d, block %d.\n",
+                (unitNum & 0x80) != 0? 2 : 1, (unitNum & 0x70) >> 4,
+                peek_sneaky(0x46));
     }
 }
 
 void hooks_init(void)
 {
-    event_reghandler(prodos_read_block_hook);
     if (cfg.trap_failure_on || cfg.trap_success_on) {
         event_reghandler(trap_step);
     }
