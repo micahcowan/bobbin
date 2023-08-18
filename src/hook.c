@@ -42,8 +42,55 @@ void delay_step(Event *e)
     }
 }
 
+struct rb_params {
+    bool drive_two;
+    unsigned int slot;
+    unsigned int blocknum;
+};
+
+static void read_rb_params(struct rb_params *p, word addr)
+{
+    byte unitNum = peek_sneaky(addr + 1);
+    p->drive_two = (unitNum & 0x80) != 0;
+    p->slot = (unitNum & 0x70) >> 4;
+    p->blocknum = WORD(peek_sneaky(addr + 4), peek_sneaky(addr + 5));
+}
+
+static void prodos_read_block_hook(Event *e)
+{
+    word pc = current_pc();
+    if (e->type == EV_STEP && pc == 0xBF00) {
+        // ProDOS MLI called
+        word rtn = peek_return_sneaky();
+        byte cmd = peek_sneaky(rtn);
+
+#if 0
+        fprintf(stderr, "MLI CALL. Rtn is $%04X, cmd is $%02X.\n",
+                (unsigned int)rtn, (unsigned int)cmd);
+        dbg_on();
+#endif
+        if (cmd != 0x80) return; // want READ_BLOCK command
+
+        word paramAddr = WORD(peek_sneaky(rtn+1), peek_sneaky(rtn+2));
+        struct rb_params p;
+        read_rb_params(&p, paramAddr);
+
+        static bool hit_d2 = true;
+        if (p.drive_two) {
+            hit_d2 = true; // from now on, log all READ_BLOCKs.
+        } else if (!hit_d2) {
+            return; // haven't hit drive 2 yet, skip boot-up reads.
+        }
+
+        fprintf(stderr, "MLI READ_BLOCK call. Drive %d, slot %u, block %u.\n"
+                "Params are at $%04X.\n",
+                p.drive_two? 2 : 1, p.slot, p.blocknum, paramAddr);
+    }
+}
+
 void hooks_init(void)
 {
+    event_reghandler(prodos_read_block_hook);
     if (cfg.trap_failure_on || cfg.trap_success_on) {
         event_reghandler(trap_step);
     }

@@ -243,7 +243,7 @@ static inline byte stack_get(void)
 
 static inline byte stack_get_sneaky(void)
 {
-    return peek(STACK);
+    return peek_sneaky(STACK);
 }
 
 static inline void stack_put(byte val)
@@ -293,6 +293,14 @@ static inline byte stack_pop_sneaky(void)
 {
     (void) stack_inc();
     return stack_get_sneaky();
+}
+
+static inline word peek_return_sneaky(void)
+{
+    return WORD(
+            peek_sneaky(WORD(LO(SP+1), 0x1)),
+            peek_sneaky(WORD(LO(SP+2), 0x1))
+            ) + 1;
 }
 
 static inline byte pc_get_adv(void)
