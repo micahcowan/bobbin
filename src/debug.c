@@ -8,6 +8,8 @@
 typedef struct Breakpoint Breakpoint;
 struct Breakpoint {
     word loc;
+    bool is_watchpoint;
+    byte val;
     bool enabled;
     Breakpoint *next;
 };
@@ -19,7 +21,9 @@ static char linebuf[256];
 static bool debugging_flag = false;
 static bool print_message = true;
 static bool go_until_rts = false;
+static bool cont_dest_flag = false;
 static byte stack_min;
+static word cont_dest;
 
 bool debugging(void)
 {
@@ -32,13 +36,17 @@ void dbg_on(void)
     print_message = true;
 }
 
-void breakpoint_set(word loc)
+static void breakpoint_set_(word loc, bool wp)
 {
     Breakpoint *bp = xalloc(sizeof *bp);
 
     bp->loc = loc;
     bp->enabled = true;
     bp->next = NULL;
+    if (wp) {
+        bp->is_watchpoint = wp;
+        bp->val = peek_sneaky(loc);
+    };
 
     // Find tail of chain
     if (bp_head == NULL) {
@@ -48,6 +56,23 @@ void breakpoint_set(word loc)
         for (tail = bp_head; tail->next != NULL; tail = tail->next) {}
         tail->next = bp;
     }
+
+    if (wp) {
+        printf("Watchpoint set for $%04X (cur val is $%02X).\n",
+               (unsigned int)bp->loc, (unsigned int)bp->val);
+    } else {
+        printf("Breakpoint set for $%04X.\n", (unsigned int)bp->loc);
+    }
+}
+
+void breakpoint_set(word loc)
+{
+    breakpoint_set_(loc, false);
+}
+
+void watchpoint_set(word loc)
+{
+    breakpoint_set_(loc, true);
 }
 
 static bool bp_reached(void)
@@ -59,15 +84,63 @@ static bool bp_reached(void)
         return true;
     }
 
+    if (cont_dest_flag && current_pc() == cont_dest) {
+        cont_dest_flag = false;
+        printf("Arrived at $%04X.\n", (unsigned int)cont_dest);
+        return true;
+    }
+
     Breakpoint *bp;
     word pc = current_pc();
-    for (bp = bp_head; bp != NULL; bp = bp->next) {
-        if (pc == bp->loc) {
-            printf("Breakpoint at %04X.\n", current_pc());
+    int i;
+    for (bp = bp_head, i = 1; bp != NULL; ++i, bp = bp->next) {
+        byte val = peek_sneaky(bp->loc);
+        if (!bp->enabled) {
+            // skip this one
+        } else if (bp->is_watchpoint && val != bp->val) {
+            printf("Watchpoint %d fired:\n", i);
+            printf("Value changed at $%04X ($%02X -> $%02X).\n",
+                   (unsigned int)(bp->loc), (unsigned int)bp->val,
+                   (unsigned int)val);
+            bp->val = val;
+            return true;
+        } else if (!bp->is_watchpoint && pc == bp->loc) {
+            printf("Breakpoint %d at $%04X.\n", i, current_pc());
             return true;
         }
     }
     return false;
+}
+
+static inline void bp_disable(int num)
+{
+    Breakpoint *bp;
+    int i;
+    for (bp = bp_head, i = 1; bp != NULL; ++i, bp = bp->next) {
+        if (i == num) {
+            bp->enabled = false;
+            printf("Breakpoint %d disabled.\n", i);
+            return;
+        }
+    }
+    printf("ERR: no such breakpoint #%d.\n", num);
+}
+
+static inline void bp_enable(int num)
+{
+    Breakpoint *bp;
+    int i;
+    for (bp = bp_head, i = 1; bp != NULL; ++i, bp = bp->next) {
+        if (i == num) {
+            bp->enabled = true;
+            if (bp->is_watchpoint) {
+                bp->val = peek_sneaky(bp->loc);
+            }
+            printf("Breakpoint %d enabled.\n", i);
+            return;
+        }
+    }
+    printf("ERR: no such breakpoint #%d.\n", num);
 }
 
 static inline void preface_read(word loc)
@@ -98,7 +171,7 @@ static void mlcmd_list(word first, word last)
 }
 
 // returns true if command in linebuf was handled.
-static bool handle_monitor_like_cmd(void)
+static bool handle_monitor_like_cmd(bool *loop)
 {
     unsigned long first, second = 0;
     char *str = linebuf, *end;
@@ -120,6 +193,9 @@ static bool handle_monitor_like_cmd(void)
     // Is there a command?
     if (STREQCASE(str, "L")) {
         mlcmd_list(first, second);
+    } else if (STREQCASE(str, "G")) {
+        PC = first;
+        debugging_flag = *loop = false;
     } else if (*str == '\0') {
         mlcmd_read(first, second);
     } else {
@@ -135,7 +211,7 @@ void debugger(void)
     if (STREQ(cfg.interface, "tty")) return; // for now
 
     if (debugging_flag) {
-        go_until_rts = 0;
+        // Do nothing.
     } else {
         if (sigint_received >= 2) {
             fputs("Debug entered via ^C^C.\n", stdout);
@@ -147,6 +223,9 @@ void debugger(void)
         event_fire(EV_UNHOOK);
         debugging_flag = true;
     }
+
+    go_until_rts = false;
+    cont_dest_flag = false;
 
     sigint_received = 0;
 
@@ -201,9 +280,21 @@ void debugger(void)
             // Do nothing; execute the instruction and return here
             //  on the next one.
             loop = false;
-        } else if (HAVE("c")) {
-            fputs("Continuing...\n", stdout);
-            loop = debugging_flag = false;
+        } else if (linebuf[0] == 'c') {
+            if (linebuf[1] == '\0') {
+                fputs("Continuing...\n", stdout);
+                loop = debugging_flag = false;
+            } else if (linebuf[1] == ' ' && linebuf[2] != '\0') {
+                char *end;
+                unsigned long dest = strtoul(&linebuf[2], &end, 16);
+                if (*end != '\0') {
+                    fputs("ERR: Garbage at end of 'c' command.\n", stdout);
+                }
+                loop = debugging_flag = false;
+                cont_dest = dest;
+                cont_dest_flag = true;
+                printf("Continuing until $%04X...\n", (unsigned int)dest);
+            }
         } else if (linebuf[0] == 'b' && linebuf[1] == ' ') {
             // FIXME: very crude.
             unsigned long bploc = strtoul(&linebuf[2], NULL, 16);
@@ -220,14 +311,43 @@ void debugger(void)
                 // Treat as equivalent to "s"
                 loop = false;
             }
+        } else if (linebuf[0] == 'w' && linebuf[1] == ' ') {
+            char *end;
+            unsigned long dest = strtoul(&linebuf[2], &end, 16);
+            if (*end != '\0') {
+                fputs("ERR: Garbage at end of 'w' command.\n", stdout);
+            }
+            watchpoint_set(dest);
+        } else if (memcmp(linebuf, "disable", 7) == 0) {
+            if (linebuf[7] == ' ') {
+                char *end;
+                unsigned long dest = strtoul(&linebuf[8], &end, 16);
+                if (end == &linebuf[8] || *end != '\0') {
+                    fputs("ERR: Garbage at end of 'disable' command.\n",
+                          stdout);
+                    continue;
+                }
+                bp_disable(dest);
+            }
+        } else if (memcmp(linebuf, "enable", 6) == 0) {
+            if (linebuf[6] == ' ') {
+                char *end;
+                unsigned long dest = strtoul(&linebuf[7], &end, 16);
+                if (end == &linebuf[7] || *end != '\0') {
+                    fputs("ERR: Garbage at end of 'enable' command.\n",
+                          stdout);
+                    continue;
+                }
+                bp_enable(dest);
+            }
         } else if (HAVE("rts")) {
             // Run until stack is two higher than current
             fputs("Continuing until RTS...\n", stdout);
             go_until_rts = true;
             stack_min = LO(SP+2);
             loop = debugging_flag = false;
-        } else if (handle_monitor_like_cmd()) {
-            // Handled. But loop.
+        } else if (handle_monitor_like_cmd(&loop)) {
+            // Handled.
         } else {
             fputs("Unrecognized command!\n", stdout);
         }
