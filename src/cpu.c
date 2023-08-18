@@ -869,6 +869,11 @@ void cpu_step(void)
         case 0xC1: // CMP, (MEM,x)
             OP_READ_INDX(do_cmp(ACC, val));
             break;
+        case 0xC2: // UNDOCUMENTED: NOP, immed.
+            // Used in BITSY.BOOT. Perhaps to distiguish
+            //  a 65816?
+            OP_READ_IMM();
+            break;
         case 0xC4: // CPY, ZP
             OP_READ_ZP(do_cmp(YREG, val));
             break;
