@@ -225,3 +225,14 @@ void event_fire_disk_active(int val)
     iface_fire(e);
     free(e);
 }
+
+void event_fire_switch(SoftSwitchFlagPos f)
+{
+    Event *e = xalloc(sizeof *e);
+    *e = evinit;
+    e->type = EV_SWITCH;
+    e->val = f;
+
+    iface_fire(e);
+    free(e);
+}

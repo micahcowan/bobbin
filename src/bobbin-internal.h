@@ -373,7 +373,10 @@ enum EventType {
         /* Memory is being written to, via the "bus in write-mode.
            Use poke_sneaky() to avoid triggering this. */
     EV_SWITCH,
-        /* An MMU or display soft-switch was altered. */
+        /* An MMU, language card, or display soft-switch was altered.
+           This event is NOT fired for switches that changed
+           due to a RESET, so if you're looking for switch changes,
+           be sure to handle EV_RESET as well. */
 
     /* The following event types are ONLY sent if requested
        via the handler flags. */

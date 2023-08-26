@@ -24,6 +24,33 @@ static unsigned char *rombuf;
 static unsigned char *ramloadbuf;
 static size_t        ramloadsz;
 
+static const char * const switch_names[] = {
+    "LC_PREWRITE",
+    "LC_NO_WRITE",
+    "LC_BANK_ONE",
+    "LC_READ_BSR",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+
+    "RAMRD",
+    "RAMWRT",
+    "INTCXROM",
+    "ALTZP",
+    "INTC8ROM",
+    "SLOTC3ROM",
+    "EIGHTYSTORE",
+    "VERTBLANK",
+    "TEXT",
+    "MIXED",
+    "PAGE2",
+    "HIRES",
+    "ALTCHARSET",
+    "EIGHTYCOL",
+};
+static const char *bad_switch_name = "<NOT A SWITCH>";
+
 static const char * const rom_dirs[] = {
     "BOBBIN_ROMDIR", // not a dirname, an env var name
     "./roms",        // also not a dirname; we'll use bobbin's dir instead
@@ -55,6 +82,19 @@ bool swget(SoftSwitches ss, SoftSwitchFlagPos pos)
     int bitnum = pos % 8;
     assert(bynum < (sizeof (SoftSwitches))/(sizeof ss[0]));
     return (ss[bynum] >> bitnum) & 0x01;
+}
+
+static const char *get_switch_name(SoftSwitchFlagPos f)
+{
+    const char *ret;
+    if (f >= (sizeof switch_names)/(sizeof switch_names[0])) {
+        return bad_switch_name;
+    }
+    ret = switch_names[f];
+    if (ret == NULL) {
+        return bad_switch_name;
+    }
+    return ret;
 }
 
 static const char *get_try_rom_path(const char *fname) {

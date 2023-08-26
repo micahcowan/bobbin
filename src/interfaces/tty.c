@@ -490,6 +490,8 @@ static void if_tty_event(Event *e)
         case EV_PEEK:
             if_tty_peek(e);
             break;
+        case EV_REBOOT:
+        case EV_RESET:
         case EV_SWITCH:
             if_tty_switch();
             break;
