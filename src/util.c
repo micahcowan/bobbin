@@ -71,12 +71,13 @@ bail:
 
 bool util_isflashing(int c)
 {
-    return !(rstsw.altcharset || rstsw.eightycol) && c >= 0x40 && c < 0x80;
+    return !(swget(ss, ss_altcharset) || swget(ss, ss_eightycol))
+        && c >= 0x40 && c < 0x80;
 }
 
 bool util_isreversed(int c, bool flash)
 {
-    if (!(rstsw.altcharset || rstsw.eightycol)) {
+    if (!(swget(ss, ss_altcharset) || swget(ss, ss_eightycol))) {
         return (c < 0x40 || (flash && c < 0x80));
     } else {
         return (c < 0x80 && (!machine_has_mousetext() || c < 0x40 || c >= 0x60));
@@ -96,13 +97,14 @@ int util_todisplay(int c)
     } else if (c >= 0x80) {
         c -= 0x40;
     } else if (c >= 0x60) {
-        if (rstsw.altcharset || rstsw.eightycol) {
+        if (swget(ss, ss_altcharset) || swget(ss, ss_eightycol)) {
             // already lowercase
         } else {
             c -= 0x40;
         }
     } else if (c >= 0x40) {
-        if (machine_has_mousetext() && (rstsw.altcharset || rstsw.eightycol)) {
+        if (machine_has_mousetext() && (swget(ss, ss_altcharset)
+                                        || swget(ss, ss_eightycol))) {
             // mousetext. All @@ for now?
             c = '@';
         } else {

@@ -202,24 +202,38 @@ extern bool machine_has_mousetext(void);
 
 /********** MEMORY **********/
 
-typedef struct RestartSw RestartSw;
-struct RestartSw {
-    bool ramrd : 1; // s/b auxrd
-    bool ramwrt: 1; // s/b auxwrt
-    bool intcxrom : 1;
-    bool altzp : 1;
-    bool intc8rom : 1;
-    bool slotc3rom : 1;
-    bool eightystore : 1;
-    bool vertblank : 1;
-    bool text : 1;
-    bool mixed : 1;
-    bool page2 : 1;
-    bool hires : 1;
-    bool altcharset : 1;
-    bool eightycol : 1;
-};
-extern RestartSw rstsw;
+typedef byte SoftSwitches[3];
+
+extern SoftSwitches ss;
+
+// Flag positions for various soft switches
+typedef enum {
+    ss_lc_prewrite = 0,
+    ss_lc_no_write,
+    ss_lc_bank_one,
+    ss_lc_read_bsr,
+
+    // Flags below here get cleared on any RESET
+    ss_ramrd = 8,
+    ss_ramwrt,
+    ss_intcxrom,
+    ss_altzp,
+    ss_intc8rom,
+    ss_slotc3rom,
+    ss_eightystore,
+    ss_vertblank,
+    ss_text,
+    ss_mixed,
+    ss_page2,
+    ss_hires,
+    ss_altcharset,
+    ss_eightycol,
+
+} SoftSwitchFlagPos;
+
+// Soft switch get/set fns
+extern void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val);
+extern bool swget(SoftSwitches ss, SoftSwitchFlagPos pos);
 
 extern void mem_init(void);
 extern void mem_reset(void);

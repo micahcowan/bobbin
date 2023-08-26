@@ -17,25 +17,7 @@
 //  are read at alternate banks of RAM for locations $D000 - $DFFF
 static byte membuf[128 * 1024];
 
-// Language Card soft switches aren't impacted by reset, but ARE
-// impacted by reboot.
-typedef struct RebootSw RebootSw;
-struct RebootSw {
-    bool lc_prewrite;
-    bool lc_write;
-               // ^ note that the value of this is the opposite of the real
-               // hardware flip-flop... but using write == true to mean
-               // you _can't_ write would be confusing...
-    bool lc_bank_one;
-    bool lc_read_bsr;
-};
-static const RebootSw rbswdfl = {
-    .lc_write = true, // remainder are false (reset)
-};
-static RebootSw rbsw;
-
-static const RestartSw rstswdfl = { 0 };
-RestartSw rstsw;
+SoftSwitches ss;
 
 // Pointer to firmware, mapped into the Apple starting at $D000
 static unsigned char *rombuf;
@@ -53,6 +35,26 @@ static const char * const * const romdend = rom_dirs + (sizeof rom_dirs)/(sizeof
 const byte *getram(void)
 {
     return membuf;
+}
+
+void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val)
+{
+    int bynum = pos / 8;
+    int bitnum = pos % 8;
+    assert(bynum < (sizeof (SoftSwitches))/(sizeof ss[0]));
+    if (val) {
+        ss[bynum] |= (1 << bitnum);
+    } else {
+        ss[bynum] &= ~(1 << bitnum);
+    }
+}
+
+bool swget(SoftSwitches ss, SoftSwitchFlagPos pos)
+{
+    int bynum = pos / 8;
+    int bitnum = pos % 8;
+    assert(bynum < (sizeof (SoftSwitches))/(sizeof ss[0]));
+    return (ss[bynum] >> bitnum) & 0x01;
 }
 
 static const char *get_try_rom_path(const char *fname) {
@@ -414,7 +416,7 @@ static void fillmem(void)
 
 static inline void mem_init_langcard(void)
 {
-    rbsw = rbswdfl;
+    ss[0] = 0;
 }
 
 void mem_init(void)
@@ -440,7 +442,7 @@ void mem_init(void)
 
 void mem_reset(void)
 {
-    rstsw = rstswdfl;
+    memset(ss, 0, (sizeof ss)/(sizeof ss[0]));
 }
 
 void mem_reboot(void)
@@ -463,17 +465,22 @@ static int maybe_language_card(word loc, bool wr)
 {
     if ((loc & 0xFFF0) != SS_LANG_CARD) return -1;
     if (wr)
-        rbsw.lc_prewrite = false;
+        swset(ss, ss_lc_prewrite, false);
 
     if ( ! (loc & 0x0001)) {
-        rbsw.lc_prewrite = rbsw.lc_write = false;
+        swset(ss, ss_lc_prewrite, false);
+        swset(ss, ss_lc_no_write, true);
     } else {
-        if (rbsw.lc_prewrite) rbsw.lc_write = true;
-        if (!wr) rbsw.lc_prewrite = true;
+        if (swget(ss, ss_lc_prewrite)) {
+            swset(ss, ss_lc_no_write, false);
+        }
+        if (!wr) {
+            swset(ss, ss_lc_prewrite, true);
+        }
     }
 
-    rbsw.lc_bank_one = (loc & 0x0008) != 0;
-    rbsw.lc_read_bsr = ((loc & 0x0002) >> 1) == (loc & 0x0001);
+    swset(ss, ss_lc_bank_one, (loc & 0x0008) != 0);
+    swset(ss, ss_lc_read_bsr, ((loc & 0x0002) >> 1) == (loc & 0x0001));
 
     return 0; // s/b floating bus
 }
@@ -486,15 +493,17 @@ size_t mem_transform_aux(word loc, bool wr)
         // Auxilliary memory has been disabled.
         return loc;
     }
-    aux = rstsw.altzp && (loc < LOC_STACK_END || loc > SS_START);
-    if (rstsw.eightystore
+    aux = (swget(ss, ss_altzp)
+           && (loc < LOC_STACK_END || loc > SS_START));
+    if (swget(ss, ss_eightystore)
         && ((loc >= LOC_TEXT1 && loc < LOC_TEXT2)
-            || (rstsw.hires
+            || (swget(ss, ss_hires)
                 && (loc >= LOC_HIRES1 && loc < LOC_HIRES2)))) {
-        aux = aux || rstsw.page2;
+        aux = aux || swget(ss, ss_page2);
     } else {
         aux = aux || (loc >= LOC_STACK_END && loc < SS_START
-                 && ((!wr && rstsw.ramrd) || (wr && rstsw.ramwrt)));
+                      && ((!wr && swget(ss, ss_ramrd))
+                          || (wr && swget(ss, ss_ramwrt))));
     }
 
     return loc | (aux? LOC_AUX_START : 0);
@@ -503,10 +512,11 @@ size_t mem_transform_aux(word loc, bool wr)
 static byte lc_peek(word loc)
 {
     byte val;
-    if (rombuf && (!cfg.lang_card || !rbsw.lc_read_bsr)) {
+    if (rombuf && (!cfg.lang_card || !swget(ss, ss_lc_read_bsr))) {
         size_t romsz = expected_rom_size();
         val = rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
-    } else if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
+    } else if (cfg.lang_card && swget(ss, ss_lc_bank_one)
+               && loc < LOC_BSR_END) {
         val = membuf[
             mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), false)
         ];
@@ -522,10 +532,11 @@ static byte lc_peek(word loc)
 static bool lc_poke(word loc, byte val)
 {
     if (loc < LOC_BSR_START) return false; // write not ours to handle
-    if ((rombuf && !cfg.lang_card) || (cfg.lang_card && !rbsw.lc_write))
+    if ((rombuf && !cfg.lang_card)
+        || (cfg.lang_card && swget(ss, ss_lc_no_write)))
         return true; // throw away write
 
-    if (cfg.lang_card && rbsw.lc_bank_one && loc < LOC_BSR_END) {
+    if (cfg.lang_card && swget(ss, ss_lc_bank_one) && loc < LOC_BSR_END) {
         membuf[
             mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), true)
         ] = val;
@@ -569,27 +580,27 @@ int slot_access_switches(word loc, int val)
     int ret = -1;
     bool wr = (val != -1);
     //RestartSw oldsw = rstsw;
-    if (loc >= 0xC300 && loc < 0xC400 && !rstsw.slotc3rom) {
-        rstsw.intc8rom = true;
+    if (loc >= 0xC300 && loc < 0xC400 && !swget(ss, ss_slotc3rom)) {
+        swset(ss, ss_intc8rom, true);
     } else if (loc == 0xCFFF) {
-        rstsw.intc8rom = false;
+        swset(ss, ss_intc8rom, false);
     } else if ((loc & 0xFFF0) == 0xC050) {
         switch (loc & 0x000F) {
             case 0:
             case 1:
-                rstsw.text = loc & 1;
+                swset(ss, ss_text, loc & 1);
                 break;
             case 2:
             case 3:
-                rstsw.mixed = loc & 1;
+                swset(ss, ss_mixed, loc & 1);
                 break;
             case 4:
             case 5:
-                rstsw.page2 = loc & 1;
+                swset(ss, ss_page2, loc & 1);
                 break;
             case 6:
             case 7:
-                rstsw.hires = loc & 1;
+                swset(ss, ss_hires, loc & 1);
                 break;
             // annunciators not yet handled
         }
@@ -605,35 +616,35 @@ int slot_access_switches(word loc, int val)
         switch(loc & 0x000F) {
             case 0:
             case 1:
-                rstsw.eightystore = loc & 1;
+                swset(ss, ss_eightystore, loc & 1);
                 break;
             case 2:
             case 3:
-                rstsw.ramrd = loc & 1;
+                swset(ss, ss_ramrd, loc & 1);
                 break;
             case 4:
             case 5:
-                rstsw.ramwrt = loc & 1;
+                swset(ss, ss_ramwrt, loc & 1);
                 break;
             case 6:
             case 7:
-                rstsw.intcxrom = loc & 1;
+                swset(ss, ss_intcxrom, loc & 1);
                 break;
             case 8:
             case 9:
-                rstsw.altzp = loc & 1;
+                swset(ss, ss_altzp, loc & 1);
                 break;
             case 0xA:
             case 0xB:
-                rstsw.slotc3rom = loc & 1;
+                swset(ss, ss_slotc3rom, loc & 1);
                 break;
             case 0xC:
             case 0xD:
-                rstsw.eightycol = loc & 1;
+                swset(ss, ss_eightycol, loc & 1);
                 break;
             case 0xE:
             case 0xF:
-                rstsw.altcharset = loc & 1;
+                swset(ss, ss_altcharset, loc & 1);
                 break;
         }
         // prsw();
@@ -647,9 +658,9 @@ static byte *slot_area_access_sneaky(word loc, bool wr)
     if (wr || loc < LOC_SLOTS_START || loc > LOC_SLOTS_END
         || !machine_is_iie()) return NULL;
 
-    if ((!rstsw.slotc3rom && loc >= 0xC300 && loc < 0xC400)
-        || (rstsw.intc8rom && loc >= 0xC800)
-        || rstsw.intcxrom) {
+    if ((!swget(ss, ss_slotc3rom) && loc >= 0xC300 && loc < 0xC400)
+        || (swget(ss, ss_intc8rom) && loc >= 0xC800)
+        || swget(ss, ss_intcxrom)) {
 
         size_t romsz = expected_rom_size();
         assert(loc >= (LOC_ADDRESSABLE_END - romsz));
@@ -670,49 +681,49 @@ static int switch_reads(word loc)
             // Any key down. Interface must handle.
             return -1;
         case 1:
-            b = !rbsw.lc_bank_one;
+            b = !swget(ss, ss_lc_bank_one);
             break;
         case 2:
-            b = rbsw.lc_read_bsr;
+            b = swget(ss, ss_lc_read_bsr);
             break;
         case 3:
-            b = rstsw.ramrd; // s/b auxrd
+            b = swget(ss, ss_ramrd); // s/b auxrd
             break;
         case 4:
-            b = rstsw.ramwrt;// s/b auxwrt
+            b = swget(ss, ss_ramwrt);// s/b auxwrt
             break;
         case 5:
-            b = rstsw.intcxrom;
+            b = swget(ss, ss_intcxrom);
             break;
         case 6:
-            b = rstsw.altzp;
+            b = swget(ss, ss_altzp);
             break;
         case 7:
-            b = rstsw.slotc3rom;
+            b = swget(ss, ss_slotc3rom);
             break;
         case 8:
-            b = rstsw.eightystore;
+            b = swget(ss, ss_eightystore);
             break;
         case 9:
-            b = rstsw.vertblank;
+            b = swget(ss, ss_vertblank);
             break;
         case 0xA:
-            b = rstsw.text;
+            b = swget(ss, ss_text);
             break;
         case 0xB:
-            b = rstsw.mixed;
+            b = swget(ss, ss_mixed);
             break;
         case 0xC:
-            b = rstsw.page2;
+            b = swget(ss, ss_page2);
             break;
         case 0xD:
-            b = rstsw.hires;
+            b = swget(ss, ss_hires);
             break;
         case 0xE:
-            b = rstsw.altcharset;
+            b = swget(ss, ss_altcharset);
             break;
         case 0xF:
-            b = rstsw.eightycol;
+            b = swget(ss, ss_eightycol);
             break;
     }
 

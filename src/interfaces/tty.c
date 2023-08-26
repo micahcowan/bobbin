@@ -254,24 +254,24 @@ static void if_tty_start(void)
 static void if_tty_switch(void)
 {
     word prev_page = text_page;
-    if (rstsw.page2 && !rstsw.eightycol) {
+    if (swget(ss, ss_page2) && !swget(ss, ss_eightycol)) {
         text_page = 0x8;
     } else {
         text_page = 0x4;
     }
 
     int prevcols = cols;
-    if (rstsw.eightycol) {
+    if (swget(ss, ss_eightycol)) {
         cols = 80;
         text_page = 0x4;
     } else {
         cols = 40;
-        text_page = rstsw.page2 ? 0x8 : 0x4;
+        text_page = swget(ss, ss_page2) ? 0x8 : 0x4;
     }
 
     bool oldcharset = altcharset;
-    if (rstsw.altcharset != altcharset) {
-        altcharset = rstsw.altcharset;
+    if (swget(ss, ss_altcharset) != altcharset) {
+        altcharset = swget(ss, ss_altcharset);
     }
 
     refresh_all = refresh_all || (prev_page != text_page || prevcols != cols
@@ -320,7 +320,8 @@ static void if_tty_poke(Event *e)
                     // we aren't displaying.
         }
         int c = util_todisplay(val);
-        bool flash = (cols == 80) || rstsw.altcharset? false : saved_flash;
+        bool flash = (cols == 80)
+            || swget(ss, ss_altcharset)? false : saved_flash;
         if (util_isreversed(val, flash)) c |= A_REVERSE;
         mvaddch(y, x, c);
         refresh_overlay = true;
@@ -400,7 +401,7 @@ static void if_tty_frame(void)
 {
     bool flash = text_flash;
     do_overlay_timer();
-    if (cols == 80 || rstsw.altcharset) flash = false;
+    if (cols == 80 || swget(ss, ss_altcharset)) flash = false;
     if (flash != saved_flash) {
         repaint_flash(flash);
         refresh_overlay = true;
