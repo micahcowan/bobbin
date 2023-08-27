@@ -117,7 +117,7 @@ void log_prodos_switches(Event *e)
 
 void hooks_init(void)
 {
-#define MEMLOG
+//#define MEMLOG
 #ifdef MEMLOG
     memlog = fopen("memlog.log", "w");
     if (memlog == NULL) DIE(1,"Couldn't open memlog.\n");

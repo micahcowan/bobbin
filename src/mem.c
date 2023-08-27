@@ -510,6 +510,65 @@ void mem_reboot(void)
     mem_reset();
 }
 
+static bool is_aux_mem(word loc, bool wr)
+{
+    bool aux = false;
+
+    if (wr && cfg.amt_ram == LOC_AUX_START) {
+        // Auxilliary memory has been disabled.
+        return loc;
+    }
+    aux = (swget(ss, ss_altzp)
+           && (loc < LOC_STACK_END || loc > SS_START));
+    if (swget(ss, ss_eightystore)
+        && ((loc >= LOC_TEXT1 && loc < LOC_TEXT2)
+            || (swget(ss, ss_hires)
+                && (loc >= LOC_HIRES1 && loc < LOC_HIRES2)))) {
+        aux = aux || swget(ss, ss_page2);
+    } else {
+        aux = aux || (loc >= LOC_STACK_END && loc < SS_START
+                      && ((!wr && swget(ss, ss_ramrd))
+                          || (wr && swget(ss, ss_ramwrt))));
+    }
+
+    return aux;
+}
+
+void mem_get_true_access(word loc, bool wr, size_t *bufloc, bool *in_aux, MemAccessType *access)
+{
+    if (loc < SS_START) {
+        *access = MA_MAIN;
+        *bufloc = loc;
+    } else if (loc < LOC_ROM_START) {
+        *access = MA_SLOTS;
+        *bufloc = loc;
+    } else if (rombuf && (!cfg.lang_card
+                   || (wr? swget(ss, ss_lc_no_write)
+                         : !swget(ss, ss_lc_read_bsr)))) {
+        *access = MA_ROM;
+        size_t romsz = expected_rom_size();
+        *bufloc = loc - (LOC_ADDRESSABLE_END - romsz);
+    } else if (cfg.lang_card && swget(ss, ss_lc_bank_one)
+               && loc < LOC_BSR_END) {
+        *access = MA_LC_BANK1;
+        *bufloc = loc - (LOC_BSR_START - LOC_BSR1_START);
+    } else if (loc < LOC_BSR_END) {
+        *access = MA_LC_BANK2;
+        *bufloc = loc;
+    } else {
+        *access = MA_LANG_CARD;
+        *bufloc = loc;
+    }
+
+    // If not ROM and not SLOTS, check for aux
+    if (*access == MA_ROM || *access == MA_SLOTS) {
+        *in_aux = false;
+    } else {
+        *in_aux = is_aux_mem(loc, wr);
+        if (*in_aux) *bufloc |= LOC_AUX_START;
+    }
+}
+
 static int maybe_language_card(word loc, bool wr)
 {
     if ((loc & 0xFFF0) != SS_LANG_CARD) return -1;
@@ -532,71 +591,6 @@ static int maybe_language_card(word loc, bool wr)
     swsetfire(ss, ss_lc_read_bsr, ((loc & 0x0002) >> 1) == (loc & 0x0001));
 
     return 0; // s/b floating bus
-}
-
-size_t mem_transform_aux(word loc, bool wr)
-{
-    bool aux = false;
-
-    if (wr && cfg.amt_ram == LOC_AUX_START) {
-        // Auxilliary memory has been disabled.
-        return loc;
-    }
-    aux = (swget(ss, ss_altzp)
-           && (loc < LOC_STACK_END || loc > SS_START));
-    if (swget(ss, ss_eightystore)
-        && ((loc >= LOC_TEXT1 && loc < LOC_TEXT2)
-            || (swget(ss, ss_hires)
-                && (loc >= LOC_HIRES1 && loc < LOC_HIRES2)))) {
-        aux = aux || swget(ss, ss_page2);
-    } else {
-        aux = aux || (loc >= LOC_STACK_END && loc < SS_START
-                      && ((!wr && swget(ss, ss_ramrd))
-                          || (wr && swget(ss, ss_ramwrt))));
-    }
-
-    return loc | (aux? LOC_AUX_START : 0);
-}
-
-static byte lc_peek(word loc)
-{
-    byte val;
-    if (rombuf && (!cfg.lang_card || !swget(ss, ss_lc_read_bsr))) {
-        size_t romsz = expected_rom_size();
-        val = rombuf[loc - (LOC_ADDRESSABLE_END - romsz)];
-    } else if (cfg.lang_card && swget(ss, ss_lc_bank_one)
-               && loc < LOC_BSR_END) {
-        val = membuf[
-            mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), false)
-        ];
-    } else {
-        // Either there's no language card enabled and no ROM,
-        // Or the language card is set to bank two, or we're
-        //   outside the banked-ram region (0xD000-0xE000)
-        val = membuf[mem_transform_aux(loc, false)];
-    }
-    return val;
-}
-
-static bool lc_poke(word loc, byte val)
-{
-    if (loc < LOC_BSR_START) return false; // write not ours to handle
-    if ((rombuf && !cfg.lang_card)
-        || (cfg.lang_card && swget(ss, ss_lc_no_write)))
-        return true; // throw away write
-
-    if (cfg.lang_card && swget(ss, ss_lc_bank_one) && loc < LOC_BSR_END) {
-        membuf[
-            mem_transform_aux(loc - (LOC_BSR_START - LOC_BSR1_START), true)
-        ] = val;
-    } else {
-        // Either language card write is enabled for bank two,
-        // or language card write is enabled and we're not in $Dxxx,
-        // or else there's no language card, and also no ROM
-        // (all-ram memory configuration, e.g. for testing).
-        membuf[mem_transform_aux(loc, true)] = val;
-    }
-    return true;
 }
 
 int slot_access_switches(word loc, int val)
@@ -792,18 +786,23 @@ byte peek_sneaky(word loc)
     if ((val = switch_reads(loc)) != -1) {
         return val;
     }
-    if (loc >= LOC_ROM_START) {
-        return lc_peek(loc);
-    }
-    else if (loc >= cfg.amt_ram && loc < SS_START) {
-        return 0; // s/b floating bus? not sure, in sneaky
-    }
-    else if (loc >= LOC_SLOTS_START && loc < LOC_SLOT_EXPANDED_AREA) {
+    if (loc >= LOC_SLOTS_START && loc < LOC_SLOT_EXPANDED_AREA) {
         return periph_rom_peek(loc);
     }
+    if (loc >= cfg.amt_ram && loc < SS_START) {
+        return 0; // s/b floating bus? not sure, in sneaky
+    }
+
+    size_t bufloc;
+    bool aux;
+    MemAccessType acc;
+    mem_get_true_access(loc, false, &bufloc, &aux, &acc);
+
+    if (acc == MA_ROM) {
+        return rombuf[bufloc];
+    }
     else {
-        size_t rloc = mem_transform_aux(loc, false);
-        return membuf[rloc];
+        return membuf[bufloc];
     }
 }
 
@@ -812,8 +811,6 @@ void poke(word loc, byte val)
     if (event_fire_poke(loc, val))
         return;
     if (maybe_language_card(loc, true) >= 0)
-        return;
-    if (lc_poke(loc, val))
         return;
     if (loc >= 0xC000 && loc < 0xC100) {
         (void) slot_access_switches(loc, val);
@@ -824,10 +821,16 @@ void poke(word loc, byte val)
 
 void poke_sneaky(word loc, byte val)
 {
-    // POKE_SNEAKY event handler?
     // XXX should handle slot-area writes
-    size_t rloc = mem_transform_aux(loc, true);
-    membuf[rloc] = val;
+
+    size_t bufloc;
+    bool aux;
+    MemAccessType acc;
+    mem_get_true_access(loc, true, &bufloc, &aux, &acc);
+
+    if (acc != MA_ROM && acc != MA_SLOTS) {
+        membuf[bufloc] = val;
+    }
 }
 
 bool mem_match(word loc, unsigned int nargs, ...)

@@ -229,8 +229,16 @@ typedef enum {
     ss_hires,
     ss_altcharset,
     ss_eightycol,
-
 } SoftSwitchFlagPos;
+
+typedef enum {
+    MA_MAIN = 1,
+    MA_SLOTS,
+    MA_ROM,
+    MA_LC_BANK1,
+    MA_LC_BANK2,
+    MA_LANG_CARD, // (neither bank 1 nor bank 2: other lang card ram)
+} MemAccessType;
 
 // Soft switch get/set fns
 extern void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val);
@@ -250,7 +258,10 @@ extern void poke_sneaky(word loc, byte val);
 extern bool mem_match(word loc, unsigned int nargs, ...);
 extern byte *load_rom(const char *fname, size_t expected, bool exact);
 extern void load_ram_finish(void);
-extern size_t mem_transform_aux(word loc, bool wr);
+
+// NOTE: Does not account for bank-switched ROM in slots area,
+//       nor <64k configured RAM
+extern void mem_get_true_access(word loc, bool wr, size_t *bufloc, bool *in_aux, MemAccessType *access);
 
 static inline byte stack_get(void)
 {
@@ -425,6 +436,9 @@ struct Event {
            read.
            POKE will set to the value that is planned to be written
            to LOC. */
+    bool aux;
+        /* Is this memory access to auxilliary memory? */
+    MemAccessType acctype;
 };
 
 typedef void (*event_handler)(Event *e);

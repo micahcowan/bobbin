@@ -186,7 +186,9 @@ int event_fire_peek(word loc)
     *e = evinit;
     e->type = EV_PEEK;
     e->loc = loc;
-    e->aloc = mem_transform_aux(loc, false);
+    size_t bufloc; // throw-away
+    mem_get_true_access(loc, false, &bufloc, &e->aux, &e->acctype);
+    e->aloc = loc | (e->aux? LOC_AUX_START : 0);
     word pc = PC; // may not eq current_instruction, if we're in the midst
                   //  of some CPU thing
     iface_fire(e);
@@ -203,7 +205,9 @@ bool event_fire_poke(word loc, byte val)
     *e = evinit;
     e->type = EV_POKE;
     e->loc = loc;
-    e->aloc = mem_transform_aux(loc, true);
+    size_t bufloc; // throw-away
+    mem_get_true_access(loc, true, &bufloc, &e->aux, &e->acctype);
+    e->aloc = loc | (e->aux? LOC_AUX_START : 0);
     e->val = val;
     word pc = PC; // may not eq current_instruction, if we're in the midst
                   //  of some CPU thing
