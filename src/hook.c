@@ -63,13 +63,6 @@ static void prodos_hook(Event *e)
     if (unitNum != last_unitNum) {
         fprintf(stderr, "unitNum changed from $%02X to $%02X.\n",
                 (unsigned int)last_unitNum, (unsigned int)unitNum);
-#if 0
-        if (last_unitNum == 0xE0 && unitNum == 0x60) {
-            trace_on("$E0 -> $60");
-        } else if (last_unitNum == 0x60 && unitNum == 0xE0 && tracing()) {
-            trace_off();
-        }
-#endif
         last_unitNum = unitNum;
         util_print_state(stderr, current_pc(), &theCpu.regs);
         fputc('\n', stderr);
@@ -81,8 +74,57 @@ static void prodos_hook(Event *e)
     }
 }
 
+static FILE *memlog;
+static SoftSwitches savedsw;
+void log_prodos_switches(Event *e)
+{
+    switch (e->type) {
+        case EV_RESET:
+            // Don't squawk about reset switch changes,
+            // Just update savedsw.
+            memcpy(savedsw, ss, (sizeof ss)/(sizeof ss[0]));
+            break;
+        case EV_SWITCH:
+        {
+            const char *name = get_switch_name(e->val);
+            const char oldsw = swget(savedsw, e->val)? 'T' : 'F';
+            const char newsw = swget(ss, e->val)? 'T' : 'F';
+            fprintf(memlog, "%04X: sw chg: %s: %c -> %c\n",
+                    (unsigned int)current_pc(), name, oldsw, newsw);
+            swset(savedsw, e->val, swget(ss, e->val));
+        }
+            break;
+        case EV_PEEK:
+        case EV_POKE:
+        {
+            word loc = e->loc;
+            size_t aloc = e->aloc;
+            if (aloc >= 0xC000 && aloc < 0xC090 && aloc != 0xC030) {
+                fprintf(memlog, "%04X: sw %s of %04zX\n",
+                        (unsigned int)current_pc(),
+                        e->type == EV_POKE? "wr" : "rd", aloc);
+            } else if (loc >= 0xD000 && loc < 0xE000) {
+                fprintf(memlog, "%04X: LC %s of %04zX\n",
+                        (unsigned int)current_pc(),
+                        e->type == EV_POKE? "wr" : "rd", aloc);
+            }
+        }
+            break;
+        default:
+            ;
+    }
+}
+
 void hooks_init(void)
 {
+#define MEMLOG
+#ifdef MEMLOG
+    memlog = fopen("memlog.log", "w");
+    if (memlog == NULL) DIE(1,"Couldn't open memlog.\n");
+    memset(savedsw, 0, (sizeof savedsw)/(sizeof savedsw[0]));
+    event_reghandler(log_prodos_switches);
+#endif
+
     if (cfg.trap_failure_on || cfg.trap_success_on) {
         event_reghandler(trap_step);
     }
