@@ -208,6 +208,7 @@ extern SoftSwitches ss;
 
 // Flag positions for various soft switches
 typedef enum {
+    ss_no_switch = -1,
     ss_lc_prewrite = 0,
     ss_lc_no_write,
     ss_lc_bank_one,
@@ -234,6 +235,7 @@ typedef enum {
 // Soft switch get/set fns
 extern void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val);
 extern bool swget(SoftSwitches ss, SoftSwitchFlagPos pos);
+extern const char *get_switch_name(SoftSwitchFlagPos f);
 
 extern void mem_init(void);
 extern void mem_reset(void);
@@ -416,7 +418,8 @@ struct Event {
         /* Location of a PEEK or POKE event; unused otherwise. */
     size_t aloc;
         /* In a PEEK or POKE event, will equal loc | 0x10000
-           iff loc refers to a read or write at auxilliary memory. */
+           iff loc refers to a read or write at auxilliary memory
+           (otherwise loc). */
     int val;
         /* May be set by PEEK handlers to override what value will be
            read.
@@ -432,6 +435,7 @@ extern void event_unreghandler(event_handler h);
 extern void event_fire_disk_active(int val);
 extern int event_fire_peek(word loc);
 extern bool event_fire_poke(word loc, byte val);
+extern void event_fire_switch(SoftSwitchFlagPos f);
 extern void event_fire(EventType type); // For all other events
 
 // frame_timer: resets the timer if exists, creates if not

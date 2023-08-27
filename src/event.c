@@ -234,5 +234,6 @@ void event_fire_switch(SoftSwitchFlagPos f)
     e->val = f;
 
     iface_fire(e);
+    dispatch(e);
     free(e);
 }

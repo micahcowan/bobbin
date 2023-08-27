@@ -84,7 +84,16 @@ bool swget(SoftSwitches ss, SoftSwitchFlagPos pos)
     return (ss[bynum] >> bitnum) & 0x01;
 }
 
-static const char *get_switch_name(SoftSwitchFlagPos f)
+static void swsetfire(SoftSwitches ss, SoftSwitchFlagPos pos, bool val)
+{
+    bool oldval = swget(ss, pos);
+    swset(ss, pos, val);
+    if (oldval != val) {
+        event_fire_switch(pos);
+    }
+}
+
+const char *get_switch_name(SoftSwitchFlagPos f)
 {
     const char *ret;
     if (f >= (sizeof switch_names)/(sizeof switch_names[0])) {
@@ -505,22 +514,22 @@ static int maybe_language_card(word loc, bool wr)
 {
     if ((loc & 0xFFF0) != SS_LANG_CARD) return -1;
     if (wr)
-        swset(ss, ss_lc_prewrite, false);
+        swsetfire(ss, ss_lc_prewrite, false);
 
     if ( ! (loc & 0x0001)) {
-        swset(ss, ss_lc_prewrite, false);
-        swset(ss, ss_lc_no_write, true);
+        swsetfire(ss, ss_lc_prewrite, false);
+        swsetfire(ss, ss_lc_no_write, true);
     } else {
         if (swget(ss, ss_lc_prewrite)) {
-            swset(ss, ss_lc_no_write, false);
+            swsetfire(ss, ss_lc_no_write, false);
         }
         if (!wr) {
-            swset(ss, ss_lc_prewrite, true);
+            swsetfire(ss, ss_lc_prewrite, true);
         }
     }
 
-    swset(ss, ss_lc_bank_one, (loc & 0x0008) != 0);
-    swset(ss, ss_lc_read_bsr, ((loc & 0x0002) >> 1) == (loc & 0x0001));
+    swsetfire(ss, ss_lc_bank_one, (loc & 0x0008) != 0);
+    swsetfire(ss, ss_lc_read_bsr, ((loc & 0x0002) >> 1) == (loc & 0x0001));
 
     return 0; // s/b floating bus
 }
@@ -590,57 +599,39 @@ static bool lc_poke(word loc, byte val)
     return true;
 }
 
-#if 0
-void prsw(void)
-{
-    util_print_state(stderr, current_pc(), &theCpu.regs);
-    fprintf(stderr, "Switches: $%02X%02X\n", ((char *)&rstsw)[0],
-            ((char *)&rstsw)[1]);
-#define PRSW(x) fprintf(stderr, "  " #x "%s\n", (rstsw.x)? "on" : "off")
-    PRSW(ramrd);
-    PRSW(ramwrt);
-    PRSW(intcxrom);
-    PRSW(altzp);
-    PRSW(intc8rom);
-    PRSW(slotc3rom);
-    PRSW(eightystore);
-    PRSW(vertblank);
-    PRSW(text);
-    PRSW(mixed);
-    PRSW(page2);
-    PRSW(hires);
-    PRSW(altcharset);
-    PRSW(eightycol);
-#undef PRSW
-}
-#endif
-
 int slot_access_switches(word loc, int val)
 {
     int ret = -1;
     bool wr = (val != -1);
+    SoftSwitchFlagPos f = ss_no_switch;
+    bool fval;
+
     //RestartSw oldsw = rstsw;
-    if (loc >= 0xC300 && loc < 0xC400 && !swget(ss, ss_slotc3rom)) {
-        swset(ss, ss_intc8rom, true);
-    } else if (loc == 0xCFFF) {
-        swset(ss, ss_intc8rom, false);
+    if (loc >= 0xC300 && loc < 0xC400 && !swget(ss, ss_slotc3rom)
+            && machine_is_iie()) {
+        f = ss_intc8rom;
+        fval = true;
+    } else if (loc == 0xCFFF && machine_is_iie()) {
+        f = ss_intc8rom;
+        fval = false;
     } else if ((loc & 0xFFF0) == 0xC050) {
+        fval = loc & 1;
         switch (loc & 0x000F) {
             case 0:
             case 1:
-                swset(ss, ss_text, loc & 1);
+                f = ss_text;
                 break;
             case 2:
             case 3:
-                swset(ss, ss_mixed, loc & 1);
+                f = ss_mixed;
                 break;
             case 4:
             case 5:
-                swset(ss, ss_page2, loc & 1);
+                f = ss_page2;
                 break;
             case 6:
             case 7:
-                swset(ss, ss_hires, loc & 1);
+                f = ss_hires;
                 break;
             // annunciators not yet handled
         }
@@ -653,43 +644,46 @@ int slot_access_switches(word loc, int val)
     } else if (!wr || ((loc & 0xFFF0) != 0xC000) || !machine_is_iie()) {
         // skip the rest, they need writes
     } else {
+        fval = loc & 1;
         switch(loc & 0x000F) {
             case 0:
             case 1:
-                swset(ss, ss_eightystore, loc & 1);
+                f = ss_eightystore;
                 break;
             case 2:
             case 3:
-                swset(ss, ss_ramrd, loc & 1);
+                f = ss_ramrd;
                 break;
             case 4:
             case 5:
-                swset(ss, ss_ramwrt, loc & 1);
+                f = ss_ramwrt;
                 break;
             case 6:
             case 7:
-                swset(ss, ss_intcxrom, loc & 1);
+                f = ss_intcxrom;
                 break;
             case 8:
             case 9:
-                swset(ss, ss_altzp, loc & 1);
+                f = ss_altzp;
                 break;
             case 0xA:
             case 0xB:
-                swset(ss, ss_slotc3rom, loc & 1);
+                f = ss_slotc3rom;
                 break;
             case 0xC:
             case 0xD:
-                swset(ss, ss_eightycol, loc & 1);
+                f = ss_eightycol;
                 break;
             case 0xE:
             case 0xF:
-                swset(ss, ss_altcharset, loc & 1);
+                f = ss_altcharset;
                 break;
         }
         // prsw();
     }
-    event_fire(EV_SWITCH);
+    if (f != ss_no_switch) {
+        swsetfire(ss, f, fval);
+    }
     return ret;
 }
 
