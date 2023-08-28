@@ -1,5 +1,9 @@
 #include "bobbin-internal.h"
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 static const char cmd_help[] = "\
 h, help\n\
     print this message.\n\
@@ -12,6 +16,8 @@ rr\n\
 m\n\
     invoke the Apple ][ monitor.\n\
 ";
+
+static const char SAVE_RAM_STR[] = "save-ram ";
 
 bool command_do(const char *line, printer pr)
 {
@@ -57,6 +63,28 @@ bool command_do(const char *line, printer pr)
         exit(0);
     } else if (HAVE("h") || HAVE("help")) {
         pr("%s", cmd_help);
+    } else if (!memcmp(line, SAVE_RAM_STR, sizeof(SAVE_RAM_STR)-1)) {
+        // XXX disable if I ever add a "safe mode"
+        line += sizeof(SAVE_RAM_STR)-1; // skip to the argument
+        while (*line == ' ') ++line;
+        errno = 0;
+        FILE *ramfile = fopen(line, "w");
+        if (ramfile == NULL) {
+            pr("ERR: Could not open \"%s\" for writing: %s\n",
+               line, strerror(errno));
+            goto ramsave_bail;
+        }
+        errno = 0;
+        int err = fwrite(getram(), 1, 128 * 1024, ramfile);
+        if (err < 0) {
+            pr("ERR: Could not save RAM to \"%s\": %s\n",
+               line, strerror(errno));
+            goto ramsave_bail;
+        }
+
+        pr("Succees: saved RAM to file \"%s\".\n", line);
+ramsave_bail:
+        if (ramfile != NULL) fclose(ramfile);
     } else {
         handled = false;
     }
