@@ -28,17 +28,17 @@ And here's another video (clickable) that showcases additional features in a mor
 
 ### Planned features
 
-- .woz disk format
+- `.woz` disk format, and 13-sector support
 - Full graphics (not to the terminal) and sound emulation, of course
 - Emulate an enhanced Apple //e by default
 - Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
-- Use **bobbin** as a compiler or assembler, by loading in your sources, running your favorite assembler (or what have you) in the emulated Apple, and then save the results back out
-- Remote commands via Unix-socket or network connection
+- Use **bobbin** as a command-line disk editor, using real DOS or ProDOS under emulation to change the contents of a disk image
+- Use **bobbin** as a command-line compiler or assembler, by loading in your sources, running your favorite assembler (or what have you) in the emulated Apple, and then save the results back out
 
 ### Known issues
 
 - No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
-- The BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
+- If booted without a disk operating system, the BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
 
 ## Building Bobbin
 
