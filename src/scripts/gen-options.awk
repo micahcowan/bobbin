@@ -1,5 +1,11 @@
 #!/usr/bin/awk -f
 
+#   scripts/gen-options.awk
+#
+#   Copyright (c) 2023 Micah John Cowan.
+#   This code is licensed under the MIT license.
+#   See the accompanying LICENSE file for details.
+
 BEGIN {
     STARTED=0
     print "// This file was auto-generated from the README.md,"

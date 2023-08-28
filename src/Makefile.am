@@ -17,6 +17,7 @@ BUILT_SOURCES = option-names.h machine-names.h help-text.h
 EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
 	     $(BUILT_SOURCES)
+NO_LICENSE_OK_FILES = sha-256.c sha-256.h apple2.h ac-config.h
 A2ROMS=roms/apple2.rom roms/apple2plus.rom
 dist_rom_DATA=$(A2ROMS)
 dist_cardrom_DATA=roms/cards/disk2.rom
@@ -37,11 +38,33 @@ watch:
 	    inotifywait -e modify -r . ; \
 	done
 
-check: ck-options-impl
+check: ck-options-impl ck-license
+	@missing=; \
+	for file in $(bobbin_SOURCES) $(EXTRA_bobbin_SOURCES) scripts/*.awk; do \
+	    if ! head -n 10 $$file | grep -q 'This code is licensed under the MIT license'; then \
+	        case $$file in \
+	            sha-256.c|sha-256.h|apple2.h|ac-config.h) \
+	                ;; \
+	            *) \
+	                missing="$$missing $$file"; \
+	                ;; \
+	        esac; \
+	    fi; \
+	done; \
+	if test "x$$missing" != x; then \
+	    echo "*** The following files need license info:"; \
+	    for file in $$missing; do \
+	        echo $$file; \
+	    done; \
+	    exit 1; \
+	fi
 
 .PHONY: ck-options-impl
 ck-options-impl: option-names.h $(srcdir)/config.c
 	cat option-names.h $(srcdir)/config.c | $(AWK) -f $(srcdir)/scripts/check-options.awk
+
+.PHONY: ck-license
+ck-license:
 
 option-names.h: ../README.md scripts/gen-options.awk
 	$(AWK) -f $(srcdir)/scripts/gen-options.awk < $< > $@.out

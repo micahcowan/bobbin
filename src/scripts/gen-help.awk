@@ -1,5 +1,11 @@
 #!/usr/bin/awk -f
 
+#   scripts/gen-help.awk
+#
+#   Copyright (c) 2023 Micah John Cowan.
+#   This code is licensed under the MIT license.
+#   See the accompanying LICENSE file for details.
+
 function o(s) {
     print "    \"" s "\\n\"";
 }

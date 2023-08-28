@@ -1,3 +1,9 @@
+//  event.c
+//
+//  Copyright (c) 2023 Micah John Cowan.
+//  This code is licensed under the MIT license.
+//  See the accompanying LICENSE file for details.
+
 #include "bobbin-internal.h"
 
 #include <assert.h>

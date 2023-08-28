@@ -1,5 +1,11 @@
 #!/usr/bin/awk -f
 
+#   scripts/gen-machines.awk
+#
+#   Copyright (c) 2023 Micah John Cowan.
+#   This code is licensed under the MIT license.
+#   See the accompanying LICENSE file for details.
+
 function print_tags() {
     for (name in names_num) {
         tag = toupper(name) "_TAG"
