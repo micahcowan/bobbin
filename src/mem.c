@@ -106,6 +106,26 @@ const char *get_switch_name(SoftSwitchFlagPos f)
     return ret;
 }
 
+const char *mem_get_acctype_name(MemAccessType m)
+{
+    switch (m) {
+        case MA_MAIN:
+            return "MAIN";
+        case MA_SLOTS:
+            return "SLOTS";
+        case MA_ROM:
+            return "ROM";
+        case MA_LC_BANK1:
+            return "BANK1";
+        case MA_LC_BANK2:
+            return "BANK2";
+        case MA_LANG_CARD:
+            return "LCARD";
+        default:
+            return "<NOTYPE>";
+    }
+}
+
 static const char *get_try_rom_path(const char *fname) {
     static char buf[256];
     const char *env;

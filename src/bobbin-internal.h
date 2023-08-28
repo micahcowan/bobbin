@@ -244,6 +244,7 @@ typedef enum {
 extern void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val);
 extern bool swget(SoftSwitches ss, SoftSwitchFlagPos pos);
 extern const char *get_switch_name(SoftSwitchFlagPos f);
+extern const char *mem_get_acctype_name(MemAccessType m);
 
 extern void mem_init(void);
 extern void mem_reset(void);

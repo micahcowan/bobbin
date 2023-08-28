@@ -76,7 +76,7 @@ static void prodos_hook(Event *e)
 
 static FILE *memlog;
 static SoftSwitches savedsw;
-void log_prodos_switches(Event *e)
+static void log_prodos_switches(Event *e)
 {
     switch (e->type) {
         case EV_RESET:
@@ -104,9 +104,10 @@ void log_prodos_switches(Event *e)
                         (unsigned int)current_pc(),
                         e->type == EV_POKE? "wr" : "rd", aloc);
             } else if (loc >= 0xD000 && loc < 0xE000) {
-                fprintf(memlog, "%04X: LC %s of %04zX\n",
+                fprintf(memlog, "%04X: LC %s of %04zX (%s%s)\n",
                         (unsigned int)current_pc(),
-                        e->type == EV_POKE? "wr" : "rd", aloc);
+                        e->type == EV_POKE? "wr" : "rd", aloc,
+                        e->aux? "AUX ": "", mem_get_acctype_name(e->acctype));
             }
         }
             break;
