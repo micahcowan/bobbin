@@ -703,7 +703,7 @@ int slot_access_switches(word loc, int val)
 
 static byte *slot_area_access_sneaky(word loc, bool wr)
 {
-    if (wr || loc < LOC_SLOTS_START || loc > LOC_SLOTS_END
+    if (wr || loc < LOC_SLOTS_START || loc >= LOC_SLOTS_END
         || !machine_is_iie()) return NULL;
 
     if ((!swget(ss, ss_slotc3rom) && loc >= 0xC300 && loc < 0xC400)
