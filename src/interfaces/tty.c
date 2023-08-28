@@ -94,7 +94,9 @@ static void draw_border(void)
     // Draw disk activity
     if (disk_active != 0 && x > DRIVE_INDICATOR_X && y > DRIVE_INDICATOR_Y) {
         move(DRIVE_INDICATOR_Y, DRIVE_INDICATOR_X);
-        addch((disk_active + '0') | disk_attr);
+        attrset(disk_attr);
+        addstr(disk_active == 1? " ONE " : " TWO ");
+        attrset(A_NORMAL);
     }
 }
 
@@ -238,7 +240,7 @@ static void if_tty_start(void)
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_BLACK, COLOR_CYAN);
     init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(4, COLOR_BLACK, COLOR_RED);
+    init_pair(4, COLOR_WHITE, COLOR_RED);
     msg_attr = has_colors()? COLOR_PAIR(1) : A_BOLD;
     cmd_attr = has_colors()? COLOR_PAIR(2) : A_REVERSE;
     badterm_attr = A_BOLD | (has_colors()? COLOR_PAIR(3) : 0);
