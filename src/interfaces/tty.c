@@ -139,11 +139,12 @@ static void refresh_video80(void)
 {
     attrset(A_NORMAL);
     const byte *membuf = getram();
+    bool have_aux = cfg.amt_ram > LOC_AUX_START;
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(0x4, y);
         move(y, 0);
         for (byte x=0; x != 80; ++x) {
-            bool even = (x % 2 == 0);
+            bool even = have_aux && (x % 2 == 0);
             byte mx = x >> 1;
             byte c = membuf[(base | (even? LOC_AUX_START : 0)) + mx];
             byte cd = util_todisplay(c);
@@ -332,6 +333,11 @@ static void if_tty_poke(Event *e)
             || swget(ss, ss_altcharset)? false : saved_flash;
         if (util_isreversed(val, flash)) c |= A_REVERSE;
         mvaddch(y, x, c);
+        if (cols == 80 && cfg.amt_ram <= LOC_AUX_START) {
+            // We're in 80-column mode, but don't have an 80-column
+            // card! ...Mirror the character to both cells.
+            mvaddch(y, x-1, c);
+        }
         refresh_overlay = true;
     } else if ((loc & 0xFFF0) == 0xC010) {
         typed_char &= 0x7F;

@@ -540,7 +540,7 @@ static bool is_aux_mem(word loc, bool wr)
 {
     bool aux = false;
 
-    if (wr && cfg.amt_ram <= LOC_AUX_START) {
+    if (cfg.amt_ram <= LOC_AUX_START) {
         // Auxilliary memory has been disabled.
         return false;
     }
