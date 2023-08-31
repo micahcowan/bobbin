@@ -13,10 +13,10 @@ dnl non-interfering features just because _POSIX_C_SOURCE is defined...
 AC_USE_SYSTEM_EXTENSIONS
 
 AC_ARG_WITH([curses],
-    [AS_HELP_STRING([--with-curses],
-        [Build with the curses/ncurses library. Required for the "tty" interface. @<:@default=check@:>@])],
+    [AS_HELP_STRING([--without-curses],
+        [Build without the curses/ncurses library, disabling the default "tty" interface.])],
     [],
-    [with_curses=check])
+    [with_curses=yes])
 
 LIBCURSES=
 BOBBIN_MAYBE_TTY=
@@ -27,10 +27,7 @@ AS_IF([test "x$with_curses" != "xno"],
          AC_DEFINE([HAVE_LIBCURSES], [1],
                    [Define if you have libcurses])
          ],
-        [if test "x$with_curses" != "check"; then
-            AC_MSG_FAILURE([--with-curses was given, but libcurses not found])
-         fi;
-        ]
+        [AC_MSG_FAILURE([libcurses check failed. Please install the development package for [n]curses on your system, or use --without-curses to configure without it (not recommended); the default interface for bobbin will be disabled.])]
     )])
 
 AC_CHECK_FUNC([inotify_add_watch],[AC_CHECK_HEADERS([sys/inotify.h])])
@@ -59,4 +56,4 @@ AC_CONFIG_FILES([
 AC_OUTPUT
 
 AS_IF([test "x$LIBCURSES" = "x"],
-    [AC_MSG_WARN([The default interface, "tty", will not be built, because libcurses was not found!])])
+    [AC_MSG_WARN([The default interface, "tty", will not be built, because libcurses is not configured!])])
