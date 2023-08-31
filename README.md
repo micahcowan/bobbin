@@ -38,8 +38,11 @@ And here's another video (clickable) that showcases additional features in a mor
 
 ### Known issues
 
-- No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward)
-- If booted without a disk operating system, the BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to force-quit via Ctrl-C. Same for the equivalent monitor commands, `R` and `W`,
+- No way to use the open-apple or closed-apple keys (coming soon, but it'll likely have to be awkward).
+- If booted without a disk operating system, the BASIC `SAVE` command is useless (for now), and `LOAD` will proceed to hang the emulation, requiring you to send a reset (from the Ctrl-C Ctrl-C command interface). Same for the equivalent monitor commands, `R` and `W`,
+- The debugger is mostly untested and likely fairly buggy.
+- The Ctrl-C Ctrl-C command parser is crap and needs to be rewritten, and should probably use libreadline (or libedit).
+- If the `:disk NUM load` command fails (even due to a typo), the emulator quits, instead of just printing an error message.
 
 ## Building Bobbin
 
