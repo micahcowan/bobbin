@@ -300,7 +300,9 @@ Alias for `--interface=simple`.
 
 Load the given disk file to drive 1.
 
-If neither `--disk` nor `--disk2` are used, then a disk controller card is not included in the emulated machine, causing it to boot immediately into BASIC. This differs from many emulators, which include a disk controller card even when no disks are inserted, causing the boot to hang forever until Ctrl-RESET breaks out from the boot.
+If neither `--disk` nor `--disk2` are used, then a disk controller card is not included in the emulated machine, causing it to boot immediately into BASIC. This differs from many emulators, which include a disk controller card even when no disks are inserted, causing the boot to hang forever until Ctrl-RESET breaks out from the boot. You can still insert a disk later, via the `:disk` command in the command interface (Control-C twice), in which event a disk controller card will magically appear in the system!
+
+The currently-supported disk format types are: `.nib`, `.dsk`, `.do`, and `.po`. No attempt is made at "detecting" the format of a `.dsk` file, it is always assumed to be DOS-ordered (rename it to `.po` if it's not). Only 5.25", 16-sector formats are supported at this time.
 
 ##### --disk2 *arg*
 
@@ -336,7 +338,9 @@ Like `--tokenize`, uses an emulated Apple to detokenize the file, and then runs 
 
 ##### --no-bell
 
-Suppress your terminal bell from playing when the Apple issues a beep. Only meaningful in the `tty` interface (`simple` does not sound a bell).
+Suppress your terminal bell from playing when the Apple issues a beep.
+
+Only meaningful in the `tty` interface (`simple` does not sound a bell).
 
 ##### --turbo, --no-turbo
 
