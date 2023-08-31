@@ -304,6 +304,8 @@ If neither `--disk` nor `--disk2` are used, then a disk controller card is not i
 
 The currently-supported disk format types are: `.nib`, `.dsk`, `.do`, and `.po`. No attempt is made at "detecting" the format of a `.dsk` file, it is always assumed to be DOS-ordered (rename it to `.po` if it's not). Only 5.25", 16-sector formats are supported at this time.
 
+Any changes written to disk are synced to the underlying file when the disk-drive motor stops spinning. The current implementation syncs the entire file to disk, even if only a small portion was written. Write-protected disk image files are not yet supported.
+
 ##### --disk2 *arg*
 
 Load the given disk file to drive 2.
