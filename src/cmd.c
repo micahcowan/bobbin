@@ -21,6 +21,8 @@ rr\n\
     send COLD reset.\n\
 m\n\
     invoke the Apple ][ monitor.\n\
+disk NUM { eject | load PATH }.\n\
+    Eject or load a disk image.\n\
 ";
 
 static const char SAVE_RAM_STR[] = "save-ram ";
