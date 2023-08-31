@@ -13,7 +13,7 @@ main() {
             for file in "$test"/*; do
                 fn=${test##*/}
                 if test "$fn" != "run"; then
-                    ( set -x; cp "$fn" "$rundir" )
+                    ( set -x; cp "$file" "$rundir" )
                 fi
             done
         fi

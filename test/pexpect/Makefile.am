@@ -1,4 +1,4 @@
-noinst_PYTHON = basics.py asoft.py common.py run_tests.py
+noinst_PYTHON = basics.py debug.py asoft.py common.py run_tests.py
 DISTCLEANFILES = $(noinst_PYTHON:.py=.pyc)
 all:
 

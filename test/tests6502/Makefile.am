@@ -1,5 +1,5 @@
 SRCS = \
-        language_card.ca65 \
+	language_card.ca65 \
 	6502_decimal_test.ca65 \
 	6502_functional_test.ca65
 
@@ -7,7 +7,7 @@ OBJS = $(SRCS:%.ca65=%.bin)
 
 CA65 = @CA65@
 LD65 = @LD65@
-EXTRA_DIST = $(SRCS) example.cfg readme.txt 65C02_extended_opcodes_test.ca65
+EXTRA_DIST = $(SRCS) example.cfg readme.txt 65C02_extended_opcodes_test.ca65 test.rom
 CLEANFILES = $(OBJS) $(SRCS:%.ca65=%.lst) $(SRCS:%.ca65=%.map) $(SRCS:%.ca65=%.o) trace.log
 
 all:

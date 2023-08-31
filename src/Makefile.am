@@ -39,9 +39,16 @@ watch:
 	done
 
 check: ck-options-impl ck-license
+
+.PHONY: ck-options-impl
+ck-options-impl: option-names.h $(srcdir)/config.c
+	cat option-names.h $(srcdir)/config.c | $(AWK) -f $(srcdir)/scripts/check-options.awk
+
+.PHONY: ck-license
+ck-license:
 	@missing=; \
 	for file in $(bobbin_SOURCES) $(EXTRA_bobbin_SOURCES) scripts/*.awk; do \
-	    if ! head -n 10 $$file | grep -q 'This code is licensed under the MIT license'; then \
+	    if ! head -n 10 $(srcdir)/$$file | grep -q 'This code is licensed under the MIT license'; then \
 	        case $$file in \
 	            sha-256.c|sha-256.h|apple2.h|ac-config.h) \
 	                ;; \
@@ -58,13 +65,6 @@ check: ck-options-impl ck-license
 	    done; \
 	    exit 1; \
 	fi
-
-.PHONY: ck-options-impl
-ck-options-impl: option-names.h $(srcdir)/config.c
-	cat option-names.h $(srcdir)/config.c | $(AWK) -f $(srcdir)/scripts/check-options.awk
-
-.PHONY: ck-license
-ck-license:
 
 option-names.h: ../README.md scripts/gen-options.awk
 	$(AWK) -f $(srcdir)/scripts/gen-options.awk < $< > $@.out
