@@ -57,6 +57,17 @@ void periph_rom_poke(word loc, byte val)
     // XXX
 }
 
+int periph_slot_reg(unsigned int slotnum, PeriphDesc *card)
+{
+    if (slotnum > (sizeof slot)/(sizeof slot[0]))
+        return -1;
+    if (slot[slotnum] != NULL)
+        return -1;
+    slot[slotnum] = card;
+    card->init();
+    return 0;
+}
+
 void periph_init(void)
 {
     if (cfg.disk || cfg.disk2) {

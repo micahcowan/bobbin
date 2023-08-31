@@ -16,7 +16,7 @@ extern DiskFormatDesc nib_insert(const char*, byte *, size_t);
 extern DiskFormatDesc dsk_insert(const char *, byte *, size_t);
 extern DiskFormatDesc empty_disk_desc;
 
-DiskFormatDesc disk_insert(const char *path)
+DiskFormatDesc disk_format_load(const char *path)
 {
     if (path == NULL) {
         return empty_disk_desc;

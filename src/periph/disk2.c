@@ -26,6 +26,7 @@
 # define D2DBG(...)
 #endif
 
+static bool initialized;
 static bool motor_on;
 static bool drive_two;
 static bool write_mode;
@@ -39,7 +40,7 @@ static bool steppers[4];
 static int cog1 = 0;
 static int cog2 = 0;
 
-static inline DiskFormatDesc *active_disk(void)
+static inline DiskFormatDesc *active_disk_obj(void)
 {
     return drive_two? &disk2 : &disk1;
 }
@@ -49,19 +50,68 @@ bool drive_spinning(void)
     return motor_on;
 }
 
+int active_disk(void)
+{
+    return drive_two? 2 : 1;
+}
+
 static void init(void)
 {
-    disk1 = disk_insert(NULL);
-    disk2 = disk_insert(NULL);
+    if (initialized) return;
+    initialized = true;
+
+    disk1 = disk_format_load(NULL);
+    disk2 = disk_format_load(NULL);
 
     rombuf = load_rom("cards/disk2.rom", 256, false);
 
     if (cfg.disk) {
-        disk1 = disk_insert(cfg.disk);
+        disk1 = disk_format_load(cfg.disk);
     }
     if (cfg.disk2) {
-        disk2 = disk_insert(cfg.disk2);
+        disk2 = disk_format_load(cfg.disk2);
     }
+}
+
+int eject_disk(int drive)
+{
+    if (motor_on && active_disk() == drive) {
+        return -1;
+    }
+
+    init(); // to make sure
+
+    if (drive == 1) {
+        disk1.eject(&disk1);
+        disk1 = disk_format_load(NULL);
+    } else if (drive == 2) {
+        disk2.eject(&disk2);
+        disk2 = disk_format_load(NULL);
+    }
+
+    return 0;
+}
+
+PeriphDesc disk2card;
+int insert_disk(int drive, const char *path)
+{
+    int err = eject_disk(drive);
+    if (err != 0) return err;
+
+    // Make sure we're inserted to slot 6
+    // XXX should check for error/distinguish if we're already in that slot
+    (void) periph_slot_reg(6, &disk2card);
+
+    if (err) {
+        return -1; // XXX should be a distinguishable err code
+    }
+    if (drive == 1) {
+        disk1 = disk_format_load(path);
+    } else if (drive == 2) {
+        disk2 = disk_format_load(path);
+    }
+
+    return 0;
 }
 
 // NOTE: cog "left" and "right" refers only to the number line,
@@ -87,7 +137,7 @@ static inline int *active_cog(void)
 
 static void adjust_track(void)
 {
-    DiskFormatDesc *disk = active_disk();
+    DiskFormatDesc *disk = active_disk_obj();
     int *cog = active_cog();
     D2DBG("halftrack: ");
     if (cogleft(cog)) {
@@ -121,7 +171,7 @@ static inline byte encode4x4(byte orig)
 static void turn_off_motor(void)
 {
     motor_on = false;
-    DiskFormatDesc *disk = active_disk();
+    DiskFormatDesc *disk = active_disk_obj();
     disk->spin(disk, false);
     event_fire_disk_active(0);
 }
@@ -168,7 +218,7 @@ static byte handler(word loc, int val, int ploc, int psw)
         {
             frame_timer_cancel(turn_off_motor);
             motor_on = true;
-            DiskFormatDesc *disk = active_disk();
+            DiskFormatDesc *disk = active_disk_obj();
             disk->spin(disk, true);
             event_fire_disk_active(drive_two? 2 : 1);
         }
@@ -195,7 +245,7 @@ static byte handler(word loc, int val, int ploc, int psw)
             break;
         case 0x0C:
         {
-            DiskFormatDesc *disk = active_disk();
+            DiskFormatDesc *disk = active_disk_obj();
             if (!motor_on) {
                 // do nothing
             } else if (write_mode) {

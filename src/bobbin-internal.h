@@ -496,6 +496,7 @@ struct PeriphDesc {
 };
 
 extern void periph_init(void);
+extern int periph_slot_reg(unsigned int slotnum, PeriphDesc *card);
 extern byte periph_sw_peek(word loc);
 extern void periph_sw_poke(word loc, byte val);
 extern byte periph_rom_peek(word loc);
@@ -503,6 +504,9 @@ extern void periph_rom_poke(word loc, byte val);
 
 // Disk ][ controller
 extern bool drive_spinning(void);
+extern int active_disk(void);
+extern int eject_disk(int drive);
+extern int insert_disk(int drive, const char *path);
 
 /********** FORMATS  **********/
 
@@ -520,7 +524,7 @@ struct DiskFormatDesc {
     void (*eject)(DiskFormatDesc *);
 };
 
-extern DiskFormatDesc disk_insert(const char *path);
+extern DiskFormatDesc disk_format_load(const char *path);
 
 /********** TRACE **********/
 

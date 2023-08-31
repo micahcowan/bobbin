@@ -24,6 +24,8 @@ m\n\
 ";
 
 static const char SAVE_RAM_STR[] = "save-ram ";
+static const char DISK_STR[] = "disk ";
+static const char LOAD_STR[] = "load ";
 
 bool command_do(const char *line, printer pr)
 {
@@ -88,9 +90,60 @@ bool command_do(const char *line, printer pr)
             goto ramsave_bail;
         }
 
-        pr("Succees: saved RAM to file \"%s\".\n", line);
+        pr("Success: saved RAM to file \"%s\".\n", line);
 ramsave_bail:
         if (ramfile != NULL) fclose(ramfile);
+    } else if (!memcmp(line, DISK_STR, sizeof(DISK_STR)-1)) {
+        line += sizeof(DISK_STR)-1; // skip past command
+        while (*line == ' ') ++line; // skip WS
+
+        // Parse disk number
+        unsigned long drive;
+        char *end;
+        drive = strtoul(line, &end, 10);
+        if (end == line) {
+            pr("ERR: missing drive #\n");
+            goto disk_bail;
+        }
+        if (*end != ' ' && *end != '\0') {
+            pr("ERR: malformed drive #\n");
+            goto disk_bail;
+        }
+        if (drive != 1 && drive != 2) {
+            pr("ERR: disk: drive # must be either 1 or 2.\n");
+            goto disk_bail;
+        }
+
+        // Check disk activity before proceeding
+        if (drive_spinning() && active_disk() == drive) {
+            pr("ERR: can't use \"disk\" command on currently-spinning"
+               " drive.\n");
+            goto disk_bail;
+        }
+
+        // skip more WS
+        line = end;
+        while (*line == ' ') ++line;
+        if (*line == '\0') { // No WS to skip?
+            pr("ERR: disk: missing subcommand\n");
+            goto disk_bail;
+        }
+
+        // Find subcommand
+        if (HAVE("eject")) {
+            (void) eject_disk(drive);
+        } else if (!memcmp(line, LOAD_STR, sizeof(LOAD_STR)-1)) {
+            line += sizeof(LOAD_STR)-1;
+            while (*line == ' ') ++line; // skip WS
+            int err = insert_disk(drive, line);
+            if (err) {
+                pr("ERR: disk: unknown problem inserting disk %s\n", line);
+            }
+        } else {
+            pr("ERR: disk: unknown subcommand %s\n", line);
+        }
+disk_bail:
+        ;
     } else {
         handled = false;
     }

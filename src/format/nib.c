@@ -70,7 +70,11 @@ static void write_byte(DiskFormatDesc *desc, byte val)
 
 static void eject(DiskFormatDesc *desc)
 {
-    // XXX free dat->path and dat, and sync disk image
+    // free dat->path and dat, and unmap disk image
+    struct nibprivdat *dat = desc->privdat;
+    (void) munmap(dat->buf, nib_disksz);
+    free((void*)dat->path);
+    free(dat);
 }
 
 DiskFormatDesc nib_insert(const char *path, byte *buf, size_t sz)
