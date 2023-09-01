@@ -44,7 +44,6 @@ static void refresh_video(bool flash);
 static void clear_overlay(void);
 static void do_overlay_timer(void);
 static void if_tty_start(void);
-static void if_tty_peek_or_poke(word loc);
 static void if_tty_peek(Event *e);
 static void if_tty_poke(Event *e);
 static void if_tty_unhook(void);
@@ -205,6 +204,34 @@ static void do_overlay_timer(void)
     if (--overlay_timer == 0) clear_overlay();
 }
 
+static byte read_char(void) {
+    if ((typed_char & 0x80) != 0)
+        return typed_char;
+
+    if (sigint_received == 1) {
+        sigint_received = 0;
+        typed_char = 0x83; // Ctrl-C
+        return typed_char;
+    }
+
+    int c = getch();
+    if (c == ERR) {
+        // No char read; nothing to do.
+    } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
+        typed_char = 0x88; // Apple's backspace (Ctrl-H)
+    } else if (c == KEY_RIGHT) {
+        typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
+#if 0
+    } else if (c == 0x1A) {// We're in raw mode; this is Ctrl-Z
+        raise(SIGTSTP);
+#endif
+    } else if (c >= 0 && (c & 0x7F) == c) {
+        typed_char = util_fromascii(c & 0x7F);
+    }
+
+    return typed_char;
+}
+
 static void if_tty_start(void)
 {
     if (!cfg.turbo_was_set) {
@@ -217,7 +244,9 @@ static void if_tty_start(void)
     //use_tioctl(true);
     initscr();
     start_color();
-    raw(); //cbreak();
+    raw();
+    cbreak(); // <-- re-enables signal processing after raw() disables
+    intrflush(stdscr, false);
     noecho();
     nonl();
     curs_set(0);
@@ -292,12 +321,12 @@ static void if_tty_peek(Event *e)
     word a = e->loc & 0xFFF0;
 
     if (a == SS_KBD) {
-        e->val = typed_char;
+        e->val = read_char();
     } else if (a == SS_KBDSTROBE) {
-        sigint_received = 0;
-        byte saved_c = typed_char;
-        if (!machine_is_iie()) // Must be a write, for ]]e and up
+        if (!machine_is_iie()) { // Must be a write, for ]]e and up
             typed_char &= 0x7F; // Clear high-bit (key avail)
+            if (sigint_received == 1) sigint_received = 0;
+        }
     }
 }
 
@@ -341,6 +370,7 @@ static void if_tty_poke(Event *e)
         refresh_overlay = true;
     } else if ((loc & 0xFFF0) == 0xC010) {
         typed_char &= 0x7F;
+        if (sigint_received == 1) sigint_received = 0;
     }
 }
 
@@ -373,7 +403,7 @@ static void breakout(void)
     char buf[1024];
 
     sigint_received = 0;
-    typed_char = 0;
+    typed_char = 'A'; // something besides Ctrl-C, NOT ready for consumption.
 
     redraw(true, 2);
 
@@ -386,6 +416,7 @@ static void breakout(void)
     timeout(-1);
     echo();
 
+    flushinp(); // throw out any type-ahead/pasted input
     int err = getnstr(buf, sizeof buf);
     bool handled = command_do(buf, squawk_print);
     if (!handled && buf[0] != '\0') {
@@ -434,27 +465,6 @@ static void if_tty_frame(void)
         do_overlay(0);
         refresh();
     }
-
-    // NOTE: does auto-refresh of screen
-    // put a regular wrefresh in here if getch() goes away
-    int c = getch();
-    if (sigint_received >= 2
-        || ((sigint_received != 0 || c == '\x03') && ((typed_char & 0x7F) == '\x03'))) {
-        breakout();
-        sigint_received = 0;
-    } else if (sigint_received > 0) {
-        typed_char = 0x83; // Ctrl-C
-    } else if (c == ERR) {
-        // No char read; nothing to do.
-    } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
-        typed_char = 0x88; // Apple's backspace (Ctrl-H)
-    } else if (c == KEY_RIGHT) {
-        typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
-    } else if (c == 0x1A) {// We're in raw mode; this is Ctrl-Z
-        raise(SIGTSTP);
-    } else if (c >= 0 && (c & 0x7F) == c) {
-        typed_char = util_fromascii(c & 0x7F);
-    }
 }
 
 static void if_tty_step(void)
@@ -491,6 +501,14 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 
 static void if_tty_event(Event *e)
 {
+    if (sigint_received >= 2
+        || (sigint_received == 1 && (typed_char & 0x7F) == 0x03)) {
+
+        breakout();
+        sigint_received = 0;
+        //typed_char = 'A'; // something besides 0x03, so we don't redetect.
+    }
+
     switch (e->type) {
         case EV_START:
             if_tty_start();
