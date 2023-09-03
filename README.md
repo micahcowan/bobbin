@@ -681,9 +681,37 @@ If **bobbin** is processing non-interactive input while a `SIGINT` is received, 
 
 In the `--simple` interface, if a Ctrl-D is input by the user, then it indicates that **bobbin** should exit (**bobbin** may see a Ctrl-D entered directly, or it may "percieve" it via a return from `read()` that indicated no bytes remained to be read). **Bobbin** does not exit *immediately* upon receipt of a Ctrl-D. Instead, it waits until the program in the Apple \]\[ has caught up with the user input, up to the point when the Ctrl-D was typed, and issues a carriage return character. Only when the Apple \]\[ program indicates "consumption" of that carriage return, does **bobbin** then exit. This is to make the behavior consistent with other programs at a terminal.
 
+### Bobbin's command "breakout" interface
+
+In either the `simple` (line-oriented) or the `tty` (curses screen display) interfaces, typing Control-C twice in succession enters a command-input interface. The emulation is paused while the user is prompted for a command. A single Control-C will be passed through to the emulated Apple \]\[, (including the first of two Control-C's in succession). If you enter the command accident by accident when you really just wanted to send another Control-C (break) character to the emulated Apple, then type the command `^C` (the carat character followed by a capital C) and then the Enter key, and it will send the Control-C and continue emulating. (You can also just type `c` and then Enter to continue emulating, and type another Control-C.)
+
+If you enter command-input mode from the `tty` interface, just a handful of basic commands are currently available to you. If you are in command-input mode from the `simple` interface, additional debugger commands are available (future versions of **bobbin** will provide these commands in the `tty` interface as well&mdash;but for now if you want debugger features you must use the `simple` interface). See [Bobbin's built-in debugger](#bobbins-built-in-debugger), below, for more information about debug commands.
+
+To exit the "breakout" command mode and return to emulation in the `tty` interface, simply enter an empty line. In the `simple` interface, an empty line "steps into" the next instruction; type the **c** command instead to continue emulation.
+
+The following commands are available within the command-input "breakout" mode from both the `simple` and the `tty` interfaces:
+
+**h**, **help**. Lists the commands and a brief description of each.
+
+**q**, **quit**. Quits the emulator.
+
+**r**, **w**. Sends a "soft" reset signal to the CPU.
+
+**rr**. Sends a "hard" reset signal signal to the CPU. This is currently achieved by explicitly invalidating the "powered up" checksum byte (at `$3F4`) for the user "reset vector" in memory (at `$3F2` and `$3F3`), which the firmware will then see as its cue to run a full reboot sequence.
+
+**m**. Simulates a `BRK`, to print register values and enter the monitor (note: for some firmware ROMs, if the user `BRK` vector (at `$3FE` and `$3FF`) is set up to do something other than enter the monitor, then **m** won't actually enter the monitor&mdash;future versions of **bobbin** will take better steps to ensure we actually enter the monitor, regardless of what's in the user `BRK` vector.
+
+**disk *NUM* eject**. Ejects any disk in drive *NUM* (where *NUM* is either 1 or 2). Can only be used if that drive is not currently spinning (which might indicate that changes have not yet been saved to the underlying image file).
+
+**disk *NUM* load *FILE***. Loads the specified *FILE* into drive number *NUM*. **Please note:** this command is very fragile at the moment, and typing the wrong path (one that doesn't exist), or a path to a file that isn't writeable, will currenty cause the emulator to *quit*. This is a known issue that will be fixed in version 0.5 of **bobbin**. As with **disk eject**, this command may not be used when that drive's motor is spinning (there is a visual indicator for this in the `tty` interface, but not in the `simple` interface).
+
+If you fire up **bobbin** without any disks initially, the emulated Apple \]\[ machine will not be configured with a disk-controller card (which causes it to boot up to BASIC instantly, instead of hanging indefinitely waiting for a disk to be inserted). If you then use the breakout **disk load** command to load a disk image file, a disk controller will automagically appear at slot 6, as if it had been there from the start. If you were then to eject that disk, and use the **rr** command (or `PR#6` at the BASIC prompt), then the system will be rebooted with an (empty) disk controller still active, and *then* you will see the familiar hang at the `APPLE ][` message on the top of the screen (send a regular soft reset (**r** or **w** at the command-input interface), to break into BASIC).
+
 ### Bobbin's built-in debugger
 
-The debugger is currently only available from the `simple` interface, though availability in some form is planned for the `tty` interface as well. It is entered from `simple` by typing Ctrl-C twice in succession (**note:** doing this in the `tty` interface gives you a command interface, but not the full debugger interface).
+The debugger commands are currently only available from the `simple` interface. To use them, enter the "breakout" command mode by typing Control-C twice in succession from the `simple` interface. **Note:** doing this in the `tty` interface also gives you a breakout command interface, but without the extra "debugger" commands.
+
+The debugger is still a work-in-progress, and exactly enough of a debugger has been created to meet the author's immediate needs. It may be missing a number of features you expect from a debugger, and in some cases the firmware's built-in system monitor may be a better option for inspecting, modifying, and running code in the emulator.
 
 When you enter the debugger, you'll see a message like the following:
 
