@@ -135,6 +135,7 @@ ramsave_bail:
         if (HAVE("eject")) {
             (void) eject_disk(drive);
         } else if (!memcmp(line, LOAD_STR, sizeof(LOAD_STR)-1)) {
+            // Disable if I ever have a "safe" mode
             line += sizeof(LOAD_STR)-1;
             while (*line == ' ') ++line; // skip WS
             int err = insert_disk(drive, line);
