@@ -720,28 +720,58 @@ When you enter the debugger, you'll see a message like the following:
   SPC = next intr, c = leave debugger (continue execution), m = Apple II monitor
   q = quit bobbin, r or w = warm reset, rr = cold reset
 -----
-ACC: A0  X: 00  Y: 05  SP: F6          [N]   V   [U]   B    D    I    Z    C
-STK: $1F6:  (FE)  3A  F5  84  FF  F8  E6  00  85  E8  |  FF  FF  00  00
+ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]   B    D    I    Z    C
+STK: $1F4:  26  17  FB  (A0)  37  FD  77  FD  D2  E3  D6  E2  |  FF
 0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
 >
 ```
 
 As the introduction states, you can type `c` to get back out of the debugger. You can type `r` or `w` to perform a "warm reset" (same as Ctrl-RESET on a real machine), or type `rr` to perform a "hard reset" (same as Open-Apple Ctrl-RESET on a real machine). Bobbin doesn't currently emulate the Open-Apple key, so it just directly invalidates the "powered-up"/warm-reset verification byte before issuing the reset.
 
-You can also jump to the system monitor by typing `m`. In order to encourage the monitor to print the value of the PC and the other registers on entry, `m` actually simulates the `BRK` signal (which occurs when the 6502 `BRK` instruction (`$00`) is executed).
-
 Taking a closer look at this portion of output from the debugger:
 
 ```
-ACC: A0  X: 00  Y: 05  SP: F6          [N]   V   [U]   B    D    I    Z    C
-STK: $1F6:  (FE)  3A  F5  84  FF  F8  E6  00  85  E8  |  FF  FF  00  00
+ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]   B    D    I    Z    C
+STK: $1F4:  26  17  FB  (A0)  37  FD  77  FD  D2  E3  D6  E2  |  FF
 0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
 ```
 
 You can see that the values of the accumulator (A or ACC), the index registers X and Y, and the Stack Pointer, are printed first. Following that is a breakout of the processor flags register. Any flags enclosed in `[`square braces`]` are "set" (bit value 1); any that aren't are "reset" (or "unset"&mdash;bit value 0).
 
-Next, a slice of the contents of the stack are displayed. The value at the current Stack Pointer (in this example, `$F6`, so this is the value at location `$1F6`) is printed first, in parentheses to indicate that this value doesn't have meaning right now. It is followed by the values at increasing location, the items that have been "pushed" onto the stack, from most- to least-recently-pushed. If you see a `|` bar, it indicates wraparound between the value at `$1FF`, to the value at `$100`.
+Next, a slice of the contents of the stack are displayed. The value at the current Stack Pointer (in this example, `$F4`, so this is the value at location `$1F4`) is printed in parentheses. It is preceded by three bytes of preceding data, which might be garbage, or might be return addresses of recently-exited subroutines. It is followed by the values at increasing location, the items that have been "pushed" onto the stack, from most- to least-recently-pushed. If you see a `|` bar, it indicates wraparound between the value at `$1FF`, to the value at `$100`.
 
 On the third line, we have the Program Counter value, followed by the opcode and any arguments at that location, a disassembly of those, and finally any memory locations of interest. Since the `LDA ($28),y` instruction first looks at the 16-bit word starting at location `$28`, and then adds the value from the Y index register to that before reading a value from the resulting memory location, we first see the two bytes located at `$28`&mdash;`$D0` and `$07`, which (in the Apple \]\['s little-endian environment) represents memory location `$0705`&mdash;followed by the memory contents at `$07D5`&mdash;or, `$07D0` plus the contents of the Y register (5). The first of those values at `$07D5` are what will be stored in the accumulator by this `LDA` instruction.
 
-You can step through successive lines of code by simply hitting return. As the debugger is still in early stages of development (like the rest of **bobbin**, there isn't much else to do in the debugger right now.
+You can step through successive lines of code by simply hitting return. Additional debugger commands are described below; note that there is currently no in-program documentation while running **bobbin** for these commands (will be added later).
+
+#### Execution commands
+
+***Enter*** As previously mentioned, a blank line steps to the next instruction.
+
+**n** "Step over". If the current operation about to be performed is a `JSR`, then emulation is continued, breaking only when the stack is the same size again as it was before the `JSR`, or shorter (value in `SP` register is higher).
+
+**rts** Returns from the current subroutine. Emulation is continued, breaking when the stack is two bytes shorter than it currently is (or shorter). Note that the name of this command is misleading: the break may not happen on an actual `RTS` instruction; it could just as easily break on a `TXS` operation (if that operation shortens the stack enough to trigger the break).
+
+#### Breakpoint commands
+
+**b 300** Sets a breakpoint at memory location `$300`. If the CPU is about to execute an instruction at this location, the breakpoint is triggered.
+
+**w 300** Sets a watchpoint for memory location `$300`. If the value of the byte at `$300` changes from its current value, this watchpoint will be triggered. Note that *writing* a value to this location is not sufficient to trigger the break&mdash;the value must *change*.
+
+Note that a **w** with no argument is a different command altogether (sends a "soft" reset signal to the CPU).
+
+**disable 1** Disable breakpoint number 1. **Bobbin** doesn't currently provide a way to list the breakpoints and find their numbers (future feature), but when a breakpoint (or watchpoint) is reached, **bobbin** will state which breakpoint number has triggered.
+
+**enable 1** Enable breakpoint number 1.
+
+#### Monitor-like commands
+
+The debugger has a few commands that are similar to those of Apple's system monitor. Note that they may not work exactly the same way, and not all commands are implemented. In particular there are no "write values to memory" (system monitor colon (`:`)), or "copy/move memory" (system monitor `M`) commands. Unlike in the system monitor, typing Enter again after a command won't repeat the previous command for the next memory range; it just steps to the next instruction. You must retype the full command to run it again.
+
+**300** Display the byte at memory location `$300`.
+
+**300.30F** Display the value at bytes `$300` through `$30F`.
+
+**300L** Disassemble sixteen instructions, starting with the instruction at `$300`.
+
+**300G** Jump execution to `$300` (and exit the debugger, returning to emulation).
