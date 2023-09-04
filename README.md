@@ -381,10 +381,10 @@ Note that, if the loaded file overlaps ROM space (`$D000` thru `$FFFF`), the RAM
 
 A file's contents are mapped into RAM pretty much as one would expect: if a file is loaded into the start of RAM, at `$0000`, then all the locations in the file will correspond to the same loctions in RAM, *with the following exceptions*:
 
-- Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank. Note that auxilliary RAM is not accessible within the emulation, if the selected machine type is original \]\[, or \]\[+.
-- File locations `$C000` thru `$CFFF`, and `$1C000` thru `$1CFFF`, are *not* mapped into their corrsponding locations in addressable memory as described in the previous bullet point, since RAM is never mapped to those locations (they are reserved for slotted peripheral firmware). They are instead mapped to the "alternate" 4k RAM banks ("main RAM bank 1" and "auxilliary RAM bank 2", respectively), which are accessed at region `$D000` thru `$DFFF` (but *only* when appropriate soft switches have been activated).
+- Anything past position `$FFFF` in the file will be mapped into Auxiliary RAM, wrapping around again at memory location `$0000` of auxiliary RAM. Thus, file position `$1000` corresponds to location `$1000` in the "main" RAM, while file position `$11000` corresponds to location `$1000` in the "auxiliary" RAM bank. Note that auxiliary RAM is not accessible within the emulation, if the selected machine type is original \]\[, or \]\[+.
+- File locations `$C000` thru `$CFFF`, and `$1C000` thru `$1CFFF`, are *not* mapped into their corrsponding locations in addressable memory as described in the previous bullet point, since RAM is never mapped to those locations (they are reserved for slotted peripheral firmware). They are instead mapped to the "alternate" 4k RAM banks ("main RAM bank 1" and "auxiliary RAM bank 1", respectively), which are accessed at region `$D000` thru `$DFFF` (but *only* when appropriate soft switches have been activated).
 
-If the file's contents would exceed the end of even auxilliary memory (128k), **bobbin** will exit with an error.
+If the file's contents would exceed the end of even auxiliary memory (128k), **bobbin** will exit with an error.
 
 ##### --load-at, --load-loc  *arg*
 
