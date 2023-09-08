@@ -221,6 +221,10 @@ static byte read_char(void) {
         typed_char = 0x88; // Apple's backspace (Ctrl-H)
     } else if (c == KEY_RIGHT) {
         typed_char = 0x95; // Apple's right-arrow (Ctrl-U)
+    } else if (c == KEY_UP) {
+        typed_char = 0x8B; // Apple's up-arrow (Ctrl-K)
+    } else if (c == KEY_DOWN) {
+        typed_char = 0x8A; // Apple's down-arrow (newline, Ctrl-J)
 #if 0
     } else if (c == 0x1A) {// We're in raw mode; this is Ctrl-Z
         raise(SIGTSTP);
