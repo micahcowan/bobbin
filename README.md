@@ -321,6 +321,8 @@ Watch the `--load` file for changes; reboot with new version if it does.
 
 If used in combination with `--delay-until-pc` (see below), `--watch` ensures that the machine is rebooted with, once again, a cleared (garbage-filled) RAM, and will wait, once again, for execution to reach the designated location, before reloading the RAM from `--load` (and jumping execution to a new spot, if `--start-loc` was specified (see below).
 
+Future versions of **bobbin** will also allow `--watch` to reboot for disk image changes, in addition to the `--load` argument.
+
 (This feature currently only works via the Linux inotify API. A fallback method is planned, for when inotify is not available.)
 
 ##### --tokenize
