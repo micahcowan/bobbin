@@ -165,7 +165,13 @@ realdir:
     }
     VERBOSE("Looking for ROM named \"%s\" in %s...\n", fname, dir);
     if (dir != buf) {
-        (void) snprintf(buf, sizeof buf, "%s/%s", dir, fname);
+        /* check (and ignore) the return value of snprintf, otherwise, persky
+         * modern gcc complains about:
+         * mem.c:168:48: error: ‘snprintf’ output may be truncated before the
+         *      last format character [-Werror=format-truncation=]
+         */
+        if (snprintf(buf, sizeof buf, "%s/%s", dir, fname) < 0)
+            ;
     } else {
         char *end = strchr(buf, 0);
         (void) snprintf(end, (sizeof buf) - (end - buf), "/%s", fname);
