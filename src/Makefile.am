@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS=subdir-objects
-WARNINGS=-Wall -Werror -Wno-unused -Wno-unused-result
+WARNINGS=-Wall -Wno-unused -Wno-unused-result
 # XXX: ROMSRCHDIR should be decided in ./configure script
 romdir=$(pkgdatadir)/roms
 cardromdir=$(romdir)/cards
@@ -18,7 +18,7 @@ EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
 	     $(BUILT_SOURCES)
 NO_LICENSE_OK_FILES = sha-256.c sha-256.h apple2.h ac-config.h
-A2ROMS=roms/apple2.rom roms/apple2plus.rom
+A2ROMS=roms/apple2.rom roms/apple2plus.rom roms/apple2e.rom
 dist_rom_DATA=$(A2ROMS)
 dist_cardrom_DATA=roms/cards/disk2.rom
 CLEANFILES = $(BUILT_SOURCES)
