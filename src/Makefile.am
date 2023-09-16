@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS=subdir-objects
-WARNINGS=-Wall -Wno-unused -Wno-unused-result
+WARNINGS=-Wall -Wno-unused -Wno-unused-result -Wno-format-truncation
 # XXX: ROMSRCHDIR should be decided in ./configure script
 romdir=$(pkgdatadir)/roms
 cardromdir=$(romdir)/cards
