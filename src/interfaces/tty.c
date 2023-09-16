@@ -355,6 +355,11 @@ static void if_tty_poke(Event *e)
         if (cols == 80) {
             x *= 2;
             if ((e->aloc & LOC_AUX_START) == 0) {
+                if (cfg.amt_ram != 0x20000) {
+                    // This write is going to aux mem, but
+                    //  we don't HAVE aux mem. Ignore it.
+                    return;
+                }
                 x += 1; // main
             }
         } else if ((e->aloc & LOC_AUX_START) != 0) {

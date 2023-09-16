@@ -517,7 +517,10 @@ void mem_init(void)
 
 void mem_reset(void)
 {
+    byte preserve = ss[0];
     memset(ss, 0, (sizeof ss)/(sizeof ss[0]));
+    ss[0] = preserve;
+    swset(ss, ss_text, true);
 }
 
 void mem_reboot(void)
@@ -540,7 +543,11 @@ static bool is_aux_mem(word loc, bool wr)
 {
     bool aux = false;
 
-    if (cfg.amt_ram <= LOC_AUX_START) {
+    // Why the !wr check below? Reading AUX memory when we don't have it
+    // should result in reading MAIN memory, _but writing_ AUX memory
+    // should go to the bit bucket. We need to indicate that this write
+    // would in fact go to aux, so it can be properly thrown away.
+    if (!wr && cfg.amt_ram <= LOC_AUX_START) {
         // Auxilliary memory has been disabled.
         return false;
     }
@@ -854,7 +861,9 @@ void poke_sneaky(word loc, byte val)
     MemAccessType acc;
     mem_get_true_access(loc, true, &bufloc, &aux, &acc);
 
-    if (acc != MA_ROM && acc != MA_SLOTS) {
+    if (acc != MA_ROM && acc != MA_SLOTS
+        && (!aux || cfg.amt_ram > LOC_AUX_START)) {
+
         membuf[bufloc] = val;
     }
 }

@@ -391,7 +391,12 @@ enum EventType {
            Use peek_sneaky() to avoid triggering this. */
     EV_POKE,
         /* Memory is being written to, via the "bus in write-mode.
-           Use poke_sneaky() to avoid triggering this. */
+           Use poke_sneaky() to avoid triggering this.
+
+           WARNING: aux pokes may be going to bit bucket, if
+           no 80col card is configured to be present (RAM == 64k).
+           Explicitly check for RAM == 128k before assuming the
+           write will succeed (especially, in display drivers). */
     EV_SWITCH,
         /* An MMU, language card, or display soft-switch was altered.
            This event is NOT fired for switches that changed
