@@ -35,7 +35,7 @@ void delay_step(Event *e)
     if (e->type == EV_REBOOT) {
         did_delayed_jmp = false;
     }
-    else if (e->type == EV_STEP
+    else if (e->type == EV_PRESTEP
              && PC == cfg.delay_until && !did_delayed_jmp) {
         did_delayed_jmp = true;
         if (cfg.start_loc_set) {
