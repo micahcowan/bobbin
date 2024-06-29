@@ -572,6 +572,7 @@ extern void util_reopen_stdin_tty(int flags);
 /********** WATCH **********/
 
 extern void setup_watches(void);
+extern void add_watch(const char *fname);
 extern bool check_watches(void);
 
 /* TBD */

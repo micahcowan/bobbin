@@ -151,7 +151,7 @@ static void set_interactive(void)
 
     // Not a warning... but we really want the user to see this by
     // default. They can shut it up with --quiet
-    if (WARN_OK && (!cfg.runbasicfile || INFO_OK)) {
+    if (WARN_OK && !cfg.runbasicfile) {
         fprintf(stderr, "\n[Bobbin \"simple\" interactive mode.\n"
                 " Ctrl-D at input to exit.\n"
                 " Ctrl-C *TWICE* to enter debugger.]\n");
@@ -745,6 +745,14 @@ static void iface_simple_rehook(void)
 static void iface_simple_event(Event *e)
 {
     switch (e->type) {
+        case EV_REBOOT:
+            if (interactive) {
+                interactive = false;
+                restore_term();
+            }
+            lbuf_start = lbuf_end = linebuf;
+            handle_run_basic();
+            break;
         case EV_INIT:
             iface_simple_init();
             break;
