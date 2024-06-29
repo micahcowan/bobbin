@@ -27,6 +27,15 @@ static bool suppress_input;
 static bool setup_list_return;
 static bool exit_on_spindown;
 static int tokenfd;
+static int inputfd = 0;
+static enum {
+    RB_NONE = 0, // not using --run-basic
+    RB_MAYBE_COMMENT,
+    RB_COMMENT,
+    RB_LOAD_BASIC,
+    RB_RUN_COMMAND,
+    RB_RUNNING,
+} runbasic_state = RB_NONE;
 static FILE *tokenf;
 static unsigned long line_number = 0;
 
@@ -142,7 +151,7 @@ static void set_interactive(void)
 
     // Not a warning... but we really want the user to see this by
     // default. They can shut it up with --quiet
-    if (WARN_OK) {
+    if (WARN_OK && (!cfg.runbasicfile || INFO_OK)) {
         fprintf(stderr, "\n[Bobbin \"simple\" interactive mode.\n"
                 " Ctrl-D at input to exit.\n"
                 " Ctrl-C *TWICE* to enter debugger.]\n");
@@ -236,6 +245,8 @@ recheck:
             set_interactive();
         } else if (cfg.remain_tty) {
             transition_tty();
+        } else if (cfg.runbasicfile) {
+            // Let BASIC receive it (will BREAK, unless in INPUT or GET)
         } else {
             eof_found = true;
         }
@@ -256,7 +267,7 @@ recheck:
         // Don't try to read any characters
     } else {
         errno = 0;
-        ssize_t nbytes = read(0, &linebuf, sizeof linebuf);
+        ssize_t nbytes = read(inputfd, &linebuf, sizeof linebuf);
         if (nbytes < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
             const char *err = strerror(errno);
             DIE(2,"read input failed: %s\n", err);
@@ -286,6 +297,22 @@ recheck:
             } else if (cfg.tokenize) {
                 eof_found = true;
                 c = 0x8D;
+            } else if (inputfd != 0) {
+                // We've been reading from a BASIC file.
+                // Transition to stdin.
+                (void) close(inputfd);
+                inputfd = 0;
+                runbasic_state = RB_RUN_COMMAND;
+                // Set up the RUN command in the input buffer
+                linebuf[0] = 'R';
+                linebuf[1] = 'U';
+                linebuf[2] = 'N';
+                linebuf[3] = '\n';
+                linebuf[4] = '\0';
+                lbuf_start = linebuf;
+                lbuf_end = linebuf + 4;
+                c = util_fromascii('R');
+                INFO("BASIC Program loaded. Running.\n");
             } else if (cfg.remain_after_pipe) {
                 set_interactive();
             } else if (cfg.remain_tty) {
@@ -300,6 +327,27 @@ recheck:
             lbuf_end = linebuf + nbytes;
             if (*lbuf_start == '\n')
                 set_noncanon(); // may have just finished an (empty?) GETLN
+            if (runbasic_state == RB_MAYBE_COMMENT
+                || runbasic_state == RB_COMMENT) {
+next_comment:
+                if (runbasic_state == RB_MAYBE_COMMENT && *lbuf_start != '#') {
+                    // this is the exit condition for comment parsing
+                    runbasic_state = RB_LOAD_BASIC;
+                } else {
+                    while (lbuf_start != lbuf_end && *lbuf_start != '\n')
+                        ++lbuf_start;
+                    if (lbuf_start == lbuf_end) {
+                        runbasic_state = RB_COMMENT;
+                        goto recheck;
+                    }
+                    else { // end of comment line
+                        runbasic_state = RB_MAYBE_COMMENT;
+                        ++lbuf_start;
+                        if (lbuf_start == lbuf_end) goto recheck;
+                        else goto next_comment;
+                    }
+                }
+            }
             if (interactive && nbytes == 1 && *lbuf_start == 0x04) {
                 // Ctrl-D read from terminal. Treat as EOF.
                 eof_found = true;
@@ -347,6 +395,13 @@ void consume_char(void)
             lbuf_start += 3;
         } else {
             ++lbuf_start;
+
+            if (lbuf_start == lbuf_end && runbasic_state == RB_RUN_COMMAND) {
+                runbasic_state = RB_RUNNING;
+                if (isatty(0)) {
+                    set_interactive();
+                }
+            }
         }
     }
     else {
@@ -360,6 +415,20 @@ void consume_char(void)
     last_char_consumed = last_char_read;
 }
 
+static void handle_run_basic(void)
+{
+    if (cfg.runbasicfile) {
+        errno = 0;
+        inputfd = open(cfg.runbasicfile, O_RDONLY);
+        if (inputfd < 0) {
+            DIE(1, "--run-basic: Couldn't open \"%s\": %s\n", cfg.runbasicfile,
+                strerror(errno));
+        }
+        runbasic_state = RB_MAYBE_COMMENT;
+        INFO("Reading BASIC program from \"%s\"...\n", cfg.runbasicfile);
+    }
+}
+
 static void iface_simple_init(void)
 {
     // Handle input mode
@@ -371,6 +440,8 @@ static void iface_simple_init(void)
     } else {
         DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
     }
+
+    handle_run_basic();
 }
 
 static void iface_simple_start(void)
@@ -402,11 +473,11 @@ static void iface_simple_start(void)
     } else if (cfg.detokenize) {
         output_suppressed = SUPPRESS_ALWAYS;
         suppress_input = true;
-    } else if (isatty(0)) {
+    } else if (isatty(0) && !inputfd) {
         set_interactive();
     }
 
-    if (!interactive && !cfg.remain_after_pipe && !cfg.remain_tty) {
+    if (!interactive && !cfg.remain_after_pipe && !cfg.remain_tty && !cfg.runbasicfile) {
         unhandle_sigint();
     }
 }
@@ -479,7 +550,7 @@ static void suppress_output(void)
 static void prompt(void)
 {
     // Skip printing the line prompt, IF stdin is not a tty.
-    if (!interactive) {
+    if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
         // It's not a tty. Skip to line fetch.
         suppress_output();
     }
@@ -533,7 +604,7 @@ static void iface_simple_prestep(void)
     }
 }
 
-static void tokenize_step(void)
+static void strict_basic_step(void)
 {
     switch (current_pc()) {
         case FP_ERROR2:
@@ -577,8 +648,9 @@ static void tokenize_step(void)
 
 static void iface_simple_step(void)
 {
-    if (cfg.tokenize)
-        tokenize_step();
+    if (cfg.tokenize || (runbasic_state == RB_LOAD_BASIC)) {
+        strict_basic_step();
+    }
     if (setup_list_return) {
         setup_list_return = false;
         stack_push_sneaky(HI(FP_LIST+1));
@@ -591,7 +663,7 @@ static void iface_simple_step(void)
             break;
         case MON_NXTCHR: // common part of GETLN used by
                      //  both AppleSoft and Woz basics
-            if (!interactive) {
+            if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
                 // Don't want to echo the input when it's piped in.
                 suppress_output();
             }
@@ -604,6 +676,12 @@ static void iface_simple_step(void)
             break;
         case FP_RESTART:
             // pre-prompt CR output in AppleSoft
+            if (runbasic_state == RB_RUNNING) {
+                // --run-basic program is done running
+                putchar('\n');
+                INFO("BASIC Program has exited. Done.\n");
+                exit(0);
+            }
             if (!interactive && mem_match(FP_RESTART, 8, 0x20, 0xFB, 0xDA,
                           0xA2, 0xDD, 0x20, 0x2E, 0xD5)) {
                 output_suppressed = SUPPRESS_CR;

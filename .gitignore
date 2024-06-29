@@ -35,4 +35,5 @@ test/pexpect/__pycache__
 test/pexpect/bobbin
 test/noninteract/*/output
 test/noninteract/*/testdisk*
+test/noninteract/run_basic.t/reverse
 *.pyc

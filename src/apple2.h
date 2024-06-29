@@ -80,6 +80,7 @@
 #define FP_STORE_NONTOK     0xD5CF
 #define FP_LOAD_TOK_CHR1    0xD5AB
 #define FP_LOAD_TOK_CHR2    0xD5C1
+#define FP_RUN          0xD912
 #define MON_CAPTST1     0xFD80  /* set carry clear here to avoid
                                    apple ][+ converting upper -> lowercase */
 // End ][+-specific locs

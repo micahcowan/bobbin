@@ -1,5 +1,5 @@
 EXTRA_DIST = run_tests.sh $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/indisk*)
-CLEANFILES = *.t/output *.t/testdisk.*
+CLEANFILES = *.t/output *.t/testdisk.* run_basic.t/reverse
 BTESTS = $(notdir $(wildcard $(srcdir)/*.t) )
 
 check:

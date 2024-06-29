@@ -263,6 +263,15 @@ Input filename. `-` means standard input (and is usually redundant).
 
 Output filename. `-` means standard output (and is usually redundant).
 
+##### --run-basic *arg*
+
+Similar to *-i*, but more suitable for running BASIC progs via #!.
+
+A `RUN` is appended after the file's contents are read. Leading comment
+lines are ignored. All lines must start with a number.
+Standard input can be read by the BASIC program. If the BASIC program
+exits, so does **bobbin**.
+
 #### Essential Options
 
 ##### -m, --machine, --mach *arg*

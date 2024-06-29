@@ -95,6 +95,7 @@ const OptInfo options[] = {
     { VV_OPT_NAMES, T_FUNCTION, &vv },
     { INPUT_OPT_NAMES, T_STRING_ARG, &cfg.inputfile },
     { OUTPUT_OPT_NAMES, T_STRING_ARG, &cfg.outputfile },
+    { RUN_BASIC_OPT_NAMES, T_STRING_ARG, &cfg.runbasicfile },
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine, &cfg.machine_set },
     { DISK_OPT_NAMES, T_STRING_ARG, &cfg.disk },
     { DISK2_OPT_NAMES, T_STRING_ARG, &cfg.disk2 },
@@ -280,6 +281,16 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
         }
         if (eq) *eq = '='; // put it back, in case it was an alias
                            //  and just  housekeeping
+    }
+
+    if (cfg.runbasicfile &&
+        (cfg.remain_after_pipe ||
+         cfg.remain_tty ||
+         cfg.tokenize ||
+         cfg.detokenize)) {
+
+        DIE(2, "Cannot specify --run-basic together with "
+               "--remain, --remain-tty, --tokenize, or --detokenize.");
     }
 
     // After all's done, do some fixup

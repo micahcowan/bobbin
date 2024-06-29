@@ -58,14 +58,14 @@ void interfaces_init(void)
         if (cfg.remain_after_pipe || cfg.remain_tty) {
             DIE(2,"--tokenize conflicts with --remain.\n");
         }
-    } else if (cfg.detokenize) {
+    } else if (cfg.detokenize || cfg.runbasicfile) {
         // Force interface to "simple".
         cfg.interface = "simple";
     } if (cfg.interface == NULL) {
         // No default interface selected?
-        // Pick "simple" if stdin isn't a tty;
+        // Pick "simple" if stdin isn't a tty,
         // otherwise, pick "tty" (not yet implemented).
-        cfg.interface = isatty(0)? "tty" : "simple";
+        cfg.interface = (isatty(0)) ? "tty" : "simple";
     }
 
 #ifndef HAVE_LIBCURSES

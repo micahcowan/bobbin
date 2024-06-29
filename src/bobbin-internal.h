@@ -95,6 +95,7 @@ struct Config {
     int squawk_level;
     const char *    inputfile;
     const char *    outputfile;
+    const char *    runbasicfile;
     const char *    interface;
 
     // machine/emulation config optioons
