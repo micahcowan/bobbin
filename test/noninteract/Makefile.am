@@ -1,5 +1,4 @@
 EXTRA_DIST = run_tests.sh $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/indisk*)
-CLEANFILES = *.t/output *.t/testdisk.* run_basic.t/reverse
 BTESTS = $(notdir $(wildcard $(srcdir)/*.t) )
 
 check:
@@ -8,3 +7,6 @@ check:
 	export BOBBIN_ROMDIR=$(abs_top_srcdir)/src/roms; \
 	export DISKS=$(abs_top_srcdir)/disk; \
 	sh $(srcdir)/run_tests.sh $(BTESTS)
+
+clean-local:
+	-rm -fr testruns

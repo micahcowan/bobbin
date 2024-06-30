@@ -2,21 +2,20 @@
 
 main() {
     status=0
-    for rundir; do
+    for dir; do
         # Set up execution dir
-        test="${TESTDIR}/${rundir}"
+        test="${TESTDIR}/${dir}"
+        rundir="./testruns/${dir}"
+        rm -fr "$rundir"
         mkdir -p "$rundir"
-        if ! test -e "$test"/run; then
-            echo "NO RUN SCRIPT FOUND FOR TEST $test"
-        elif test ! -e "$rundir"/run; then
-            # builddir != srcdir, so copy needed files
-            for file in "$test"/*; do
-                fn=${test##*/}
-                if test "$fn" != "run"; then
-                    ( set -x; cp "$file" "$rundir" )
-                fi
-            done
-        fi
+
+        # builddir != srcdir, so copy needed files
+        for file in "$test"/*; do
+            fn=${file##*/}
+            if test "$fn" != "run"; then
+                ( set -x; cp "$file" "$rundir" )
+            fi
+        done
 
         (
             cd "$rundir"
@@ -33,7 +32,7 @@ main() {
             done
 
             # Run the test
-            sh ./run >output 2>&1
+            sh "$test"/run >output 2>&1
             stat=$?
 
             if test -e "$test/exstat"; then
