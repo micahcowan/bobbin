@@ -12,6 +12,7 @@
 
 volatile sig_atomic_t sigint_received = 0;
 volatile sig_atomic_t sigwinch_received = 0;
+volatile sig_atomic_t sigalrm_received = 0;
 
 void handle_int(int s)
 {
@@ -25,10 +26,17 @@ void handle_winch(int s)
     signal(SIGWINCH, handle_winch);
 }
 
+void handle_alarm(int s)
+{
+    sigalrm_received = true;
+    signal(SIGALRM, handle_alarm);
+}
+
 void signals_init(void)
 {
     signal(SIGINT, handle_int);
     signal(SIGWINCH, handle_winch);
+    signal(SIGALRM, handle_alarm);
 }
 
 void unhandle_sigint(void)

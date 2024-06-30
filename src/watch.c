@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 typedef struct WRec {
     struct WRec *next;
@@ -32,6 +33,8 @@ void setup_watches(void)
     if (cfg.runbasicfile) {
         add_watch(cfg.runbasicfile);
     }
+
+    (void) alarm(1);
 }
 
 void add_watch(const char *fname)
@@ -57,6 +60,8 @@ void add_watch(const char *fname)
 
 bool check_watches(void)
 {
+    if (!sigalrm_received) return false;
+
     WRec *rec;
     const char *changed = NULL;
     struct timespec mtime;
@@ -85,7 +90,12 @@ bool check_watches(void)
     if (changed) {
         WARN("Rewrite event for watched file \"%s\". Restarting...\n", changed);
         event_fire(EV_REBOOT);
-        return true;
     }
-    return false;
+    sigalrm_received = 0;
+    (void) alarm(1);
+    if (changed) {
+        return true;
+    } else {
+        return false;
+    }
 }

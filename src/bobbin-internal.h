@@ -588,6 +588,7 @@ extern bool text_flash;
 static inline void cycle(void) { ++cycle_count; }
 extern volatile sig_atomic_t sigint_received;
 extern volatile sig_atomic_t sigwinch_received;
+extern volatile sig_atomic_t sigalrm_received;
 extern void unhandle_sigint(void);
 
 #endif /* BOBBIN_INTERNAL_H */
