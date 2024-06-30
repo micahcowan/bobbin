@@ -65,6 +65,10 @@ bool check_watches(void)
     WRec *rec;
     const char *changed = NULL;
     struct timespec mtime;
+#if defined(__APPLE__) || defined(__NetBSD__)
+// Darwin and NetBSD don't follow the standard naming from POSIX.1-2008
+#  define st_mtim st_mtimespec
+#endif
     for (rec = wlist; rec != NULL; rec = rec->next) {
         mtime = rec->sbuf.st_mtim;
         errno = 0;
