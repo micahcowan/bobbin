@@ -611,7 +611,9 @@ static void strict_basic_step(void)
             tokenize_err();
             break;
         case FP_NOT_NUMBERED:
-            DIE(1,"Unnumbered line at text line #%llu.\n", line_number);
+            if (runbasic_state < RB_RUN_COMMAND) {
+                DIE(1,"Unnumbered line at text line #%llu.\n", line_number);
+            }
             break;
         case FP_LINE_EXISTS:
             DIE(1,"Text line #%llu: BASIC line #%u already exists.\n",
@@ -648,7 +650,7 @@ static void strict_basic_step(void)
 
 static void iface_simple_step(void)
 {
-    if (cfg.tokenize || (runbasic_state == RB_LOAD_BASIC)) {
+    if (cfg.tokenize || cfg.runbasicfile) {
         strict_basic_step();
     }
     if (setup_list_return) {
