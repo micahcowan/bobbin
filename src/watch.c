@@ -6,21 +6,14 @@
 
 #include "bobbin-internal.h"
 
-#include <stdbool.h>
-
-#ifdef HAVE_SYS_INOTIFY_H
 #include <errno.h>
-#include <stdlib.h>
-
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/inotify.h>
-#endif
+#include <stdbool.h>
+#include <sys/stat.h>
 
 typedef struct WRec {
     struct WRec *next;
-    int fd;
     const char *path;
+    struct stat sbuf;
 } WRec;
 
 WRec *wlist = NULL;
@@ -29,92 +22,70 @@ static int inotify_fd = -1;
 
 void setup_watches(void)
 {
-#ifdef HAVE_SYS_INOTIFY_H
-    if (cfg.watch && (cfg.ram_load_file || cfg.runbasicfile)) {
-        errno = 0;
-        inotify_fd = inotify_init1(O_NONBLOCK);
-        if (inotify_fd < 0) {
-            DIE(1,"Failed to set up watches: %s\n", strerror(errno));
-        }
+    if (!cfg.watch) return; // We're not doing watches.
+    if (wlist) return; // Don't do setup a second time.
 
-        if (cfg.ram_load_file) {
-            add_watch(cfg.ram_load_file);
-        }
+    if (cfg.ram_load_file) {
+        add_watch(cfg.ram_load_file);
+    }
 
-        if (cfg.runbasicfile) {
-            add_watch(cfg.runbasicfile);
-        }
+    if (cfg.runbasicfile) {
+        add_watch(cfg.runbasicfile);
     }
-#else  // HAVE_SYS_INOTIFY_H
-    if (cfg.watch) {
-        DIE(0,"--watch requested, but this build of bobbin is"
-            " not configured\n");
-        DIE(2,"with inotify support (only available on Linux).\n");
-    }
-#endif // HAVE_SYS_INOTIFY_H
 }
 
 void add_watch(const char *fname)
 {
-    errno = 0;
-    int fd  = inotify_add_watch(inotify_fd, fname,
-                                IN_CLOSE_WRITE | IN_DELETE_SELF);
-    if (fd < 0) {
-        DIE(1,"Failed to set up watch for \"%s\": %s\n",
-            fname, strerror(errno));
-    }
-    INFO("Watching \"%s\" for rewrites.\n", fname);
-
-    // Record this watch, as we may have to reinstate it.
     WRec *rec = xalloc(sizeof *rec);
-    rec->next = wlist;
-    rec->fd = fd;
+    errno = 0;
+    int result = stat(fname, &rec->sbuf);
+    if (result < 0) {
+        int err = errno;
+        DIE(1, "Couldn't stat \"%s\" to start watching: %s.\n",
+            fname, strerror(err));
+    }
+
     size_t namelen = strlen(fname);
     char *path = xalloc(namelen + 1);
     memcpy(path, fname, namelen + 1);
     rec->path = path;
+    INFO("Watching \"%s\" for changes.\n", fname);
+
+    rec->next = wlist;
     wlist = rec;
-}
-
-void reinstate_watch(int fd)
-{
-    // Trawl through the list and find our expired watch
-    WRec *rec;
-    for (rec = wlist; rec != NULL && rec->fd != fd; rec = rec->next) {
-    }
-
-    if (rec == NULL) {
-        return;
-        DIE(3,"INTERNAL: Couldn't locate watch fd %d to reinstate.\n", fd);
-    }
-
-    // Close the watch just in case.
-    (void) inotify_rm_watch(inotify_fd, rec->fd);
-    sleep(1);
-    errno = 0;
-    int newfd = inotify_add_watch(inotify_fd, rec->path,
-                                  IN_CLOSE_WRITE | IN_DELETE_SELF);
-    if (newfd <= 0) {
-        DIE(1,"Failed to reinstate watch for \"%s\": %s\n",
-            rec->path, strerror(errno));
-    }
-    INFO("Reinstating \"%s\" for rewrite watches.\n", rec->path);
-    rec->fd = newfd;
 }
 
 bool check_watches(void)
 {
-#ifdef HAVE_SYS_INOTIFY_H
-    struct inotify_event evt;
-    int rb = read(inotify_fd, &evt, sizeof evt);
-    if (rb == sizeof evt) {
-        INFO("Rewrite event for watched file. Rebooting...\n");
-        event_fire(EV_REBOOT);
-        if (evt.mask & IN_IGNORED) {
-            reinstate_watch(evt.wd);
+    WRec *rec;
+    const char *changed = NULL;
+    struct timespec mtime;
+    for (rec = wlist; rec != NULL; rec = rec->next) {
+        mtime = rec->sbuf.st_mtim;
+        errno = 0;
+        int result = stat(rec->path, &rec->sbuf);
+        if (result < 0) {
+            int err = errno;
+            if (err == ENOENT) {
+                DIE(1, "File \"%s\" disappeared while watching.", rec->path);
+            }
+            else {
+                DIE(1, "Couldn't stat \"%s\" while watching: %s.\n",
+                    rec->path, strerror(err));
+            }
         }
+        if (mtime.tv_sec != rec->sbuf.st_mtim.tv_sec
+            || mtime.tv_nsec != rec->sbuf.st_mtim.tv_nsec) {
+            // Note the changed file, keep looking for more (so as not
+            // to retrigger belatedly on another file, after reboot).
+            changed = rec->path;
+        }
+    }
+
+    if (changed) {
+        WARN("Rewrite event for watched file \"%s\". Restarting...\n", changed);
+        event_fire(EV_REBOOT);
         return true;
     }
-#endif
     return false;
 }

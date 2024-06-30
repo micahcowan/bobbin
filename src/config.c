@@ -313,13 +313,7 @@ PACKAGE_URL "\n"
 #else
 "-"
 #endif
-"tty, "
-#ifdef HAVE_SYS_INOTIFY_H
-"+"
-#else
-"-"
-#endif
-"inotify"
+"tty"
 "\n"
         , stdout);
     exit(0);

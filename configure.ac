@@ -30,8 +30,6 @@ AS_IF([test "x$with_curses" != "xno"],
         [AC_MSG_FAILURE([libcurses check failed. Please install the development package for [n]curses on your system, or use --without-curses to configure without it (not recommended); the default interface for bobbin will be disabled.])]
     )])
 
-AC_CHECK_FUNC([inotify_add_watch],[AC_CHECK_HEADERS([sys/inotify.h])])
-
 AM_PATH_PYTHON([3],,[:])
 AS_IF([test "x$PYTHON" != "x" -a "x$PYTHON" != "x:"],
     [AC_MSG_CHECKING([for python pexpect module])

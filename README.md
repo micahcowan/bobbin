@@ -60,8 +60,6 @@ You need to have GNU autoconf and automake installed, to run the `autoreconf` co
 
 In addition, you will need the *development files* for a Unix **curses** or **nurses** implementation. This means header files (`<curses.h>`), and library-file symlinks suitable for development. Your system's packaging system may call it something like **libncurses-dev**, or **ncurses-devel**.
 
-The `--watch` feature currently requires Linux, and its **inotify** facility.
-
 To run the included (as-yet incomplete) tests, you must also have available:
  - the ca65 assembler and ld65 linker, from [the cc65 project](https://cc65.github.io/).
  - Python 3, and the Python **pexpect** module.
@@ -326,13 +324,11 @@ Load the given disk file to drive 2.
 
 ##### --watch
 
-Watch the `--load` file for changes; reboot with new version if it does.
+Watch the `--load` and/or `--run-basic` files for changes; reboot with new version if it does.
 
 If used in combination with `--delay-until-pc` (see below), `--watch` ensures that the machine is rebooted with, once again, a cleared (garbage-filled) RAM, and will wait, once again, for execution to reach the designated location, before reloading the RAM from `--load` (and jumping execution to a new spot, if `--start-loc` was specified (see below).
 
 Future versions of **bobbin** will also allow `--watch` to reboot for disk image changes, in addition to the `--load` argument.
-
-(This feature currently only works via the Linux inotify API. A fallback method is planned, for when inotify is not available.)
 
 ##### --tokenize
 
