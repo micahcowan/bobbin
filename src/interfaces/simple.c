@@ -593,7 +593,7 @@ static void iface_simple_prestep(void)
         byte lo = stack_pop_sneaky();
         byte hi = stack_pop_sneaky();
         go_to(WORD(lo, hi)+1);
-    } else if (cfg.detokenize && current_pc() == MON_NXTCHR) {
+    } else if (cfg.detokenize && current_pc() == (MON_NXTCHR + 3)) {
         // When we get here, the --load-basic-bin mechanism
         // has just loaded the program into memory.
         // Disable suppresson and run the LIST routine
@@ -655,8 +655,8 @@ static void iface_simple_step(void)
     }
     if (setup_list_return) {
         setup_list_return = false;
-        stack_push_sneaky(HI(FP_LIST+1));
-        stack_push_sneaky(LO(FP_LIST+1));
+        stack_push_sneaky(HI(FP_LIST-1));
+        stack_push_sneaky(LO(FP_LIST-1));
     }
     switch (current_pc()) {
         // XXX these should check that firmware is active
