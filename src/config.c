@@ -296,6 +296,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
 
     // After all's done, do some fixup
     if (cfg.detokenize) {
+        cfg.basic_fixup = true;
         do_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
     }
 } // do_config()
