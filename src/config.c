@@ -114,6 +114,7 @@ const OptInfo options[] = {
     { REMAIN_TTY_OPT_NAMES, T_BOOL, &cfg.remain_tty },
     { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
+    { DEBUG_ON_BRK_OPT_NAMES, T_BOOL, &cfg.debug_on_brk },
     { BREAKPOINT_OPT_NAMES, T_FN_ARG, &breakpoint },
     { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
     { TRACE_TO_OPT_NAMES, T_FN_ARG, &trace_to_fn },

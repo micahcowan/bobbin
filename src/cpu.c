@@ -1007,25 +1007,31 @@ void cpu_step(void)
                     util_print_state(stderr, current_pc(), &theCpu.regs);
                     exit(3);
                 }
+                else if (cfg.debug_on_brk) {
+                    WARN("%s (--debug-on-brk)\n",
+                         op == 0? "BRK" : "ILLEGAL OP");
+                    dbg_on();
+                }
+                else {
+                    // XXX cycles and behavior not realistic
+                    //  for non-break unsupported op-codes
+                    PC_ADV;
+                    cycle(); // end 2
 
-                // XXX cycles and behavior not realistic
-                //  for non-break unsupported op-codes
-                PC_ADV;
-                cycle(); // end 2
+                    stack_push(HI(PC));
+                    cycle(); // 3
+                    stack_push(LO(PC));
+                    cycle(); // 4
+                    stack_push_flags_or(PMASK(PBRK));
+                    cycle(); // 5
 
-                stack_push(HI(PC));
-                cycle(); // 3
-                stack_push(LO(PC));
-                cycle(); // 4
-                stack_push_flags_or(PMASK(PBRK));
-                cycle(); // 5
-
-                byte pcL = peek(VEC_BRK);
-                cycle(); // 6
-                byte pcH = peek(VEC_BRK + 1);
-                go_to(WORD(pcL, pcH));
-                PPUT(PINT,1);
-                cycle(); // 7
+                    byte pcL = peek(VEC_BRK);
+                    cycle(); // 6
+                    byte pcH = peek(VEC_BRK + 1);
+                    go_to(WORD(pcL, pcH));
+                    PPUT(PINT,1);
+                    cycle(); // 7
+                }
             }
             break;
     }

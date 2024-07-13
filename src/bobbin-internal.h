@@ -126,6 +126,7 @@ struct Config {
 
     // trace stuff
     bool            die_on_brk;
+    bool            debug_on_brk;
     const char *    trace_file;
     uintmax_t       trace_start;
     uintmax_t       trace_end;

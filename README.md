@@ -453,6 +453,10 @@ This option has no effect while **bobbin** is not reading from a terminal.
 
 Exit emulation with an error, if a BRK or illegal opcode is encountered.
 
+##### --debug-on-brk
+
+Enter Bobbin's debugger if a BRK is encountered (instead of the Monitor's).
+
 ##### --breakpoint, --bp *arg*
 
 Set a debugger breakpoint (`simple` interface only).

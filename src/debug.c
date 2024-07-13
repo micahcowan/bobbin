@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -286,6 +287,8 @@ void debugger(void)
             // Do nothing; execute the instruction and return here
             //  on the next one.
             loop = false;
+        } else if (HAVE("cycles")) {
+            printf("cycles: %" PRIuMAX "\n", cycle_count);
         } else if (linebuf[0] == 'c') {
             if (linebuf[1] == '\0') {
                 fputs("Continuing...\n", stdout);
