@@ -1,0 +1,10 @@
+#!/usr/bin/env -S bobbin --run-basic
+
+10 INPUT "";A$
+20 AL=LEN(A$)
+30 FOR I=AL TO 1 STEP -1
+40 PRINT MID$(A$,I,1);
+50 NEXT
+60 PRINT
+70 GOTO 10
+100 END

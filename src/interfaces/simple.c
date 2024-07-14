@@ -379,7 +379,12 @@ void consume_char(void)
         }
     } else {
         // Exit gracefully.
-        putchar('\n');
+        if (runbasic_state != RB_RUNNING) {
+            // ^ When "running as a Unix command",
+            // we don't want to put any chars out that the
+            // BASIC program didn't put out.
+            putchar('\n');
+        }
         exit(0);
     }
 
