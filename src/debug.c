@@ -160,7 +160,7 @@ static void mlcmd_read(word first, word last)
     word next = first;
     preface_read(next);
     printf(" %02X", peek_sneaky(next));
-    while(++next < last) {
+    while(++next <= last) {
         if (next % 8 == 0) preface_read(next);
         printf(" %02X", peek_sneaky(next));
     }
@@ -177,11 +177,33 @@ static void mlcmd_list(word first, word last)
     }
 }
 
+static void mlcmd_write(word mem, const char *str)
+{
+    unsigned long val;
+    char *end;
+
+    for (;;) {
+        while (*str == ' ') ++str;
+        val = strtoul(str, &end, 16);
+        if (str == end) {
+            if (*str != '\0') {
+                printf("ERR: garbage at end of mon wr: %s\n", str);
+            }
+            break; // done processing writes
+        }
+
+        poke_sneaky(mem, val);
+        ++mem;
+        str = end;
+    }
+}
+
 // returns true if command in linebuf was handled.
 static bool handle_monitor_like_cmd(bool *loop)
 {
     unsigned long first, second = 0;
-    char *str = linebuf, *end;
+    const char *str = linebuf;
+    char *end;
 
     // See if we've got a hex number
     first = strtoul(str, &end, 16);
@@ -205,6 +227,8 @@ static bool handle_monitor_like_cmd(bool *loop)
         debugging_flag = *loop = false;
     } else if (*str == '\0') {
         mlcmd_read(first, second);
+    } else if (*str == ':') {
+        mlcmd_write(first, str+1);
     } else {
         // Garbage at end of line: unrecognized command overall.
         return false;
