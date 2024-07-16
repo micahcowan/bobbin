@@ -580,7 +580,7 @@ extern bool check_watches(void);
 extern word print_disasm(FILE *f, word pos, const Registers *regs);
 
 #define NS_PER_FRAME        16651559
-#define CYCLES_PER_FRAME    17030
+#define CYCLES_PER_FRAME    17045
 
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;

@@ -75,18 +75,21 @@ void bobbin_run(void)
         if (!cfg.turbo) {
             struct timespec postframe;
             clock_gettime(CLOCK_MONOTONIC, &postframe);
-            long elapsed;
+            long long elapsed;
             if (postframe.tv_sec == preframe.tv_sec) {
                 elapsed = postframe.tv_nsec - preframe.tv_nsec;
             } else if (postframe.tv_sec == preframe.tv_sec + 1) {
                 elapsed = postframe.tv_nsec - preframe.tv_nsec + 1000000000;
             } else {
-                elapsed = -1; // we've already surpassed,
-                             // no further waiting to do.
+                elapsed = NS_PER_FRAME; // we've already surpassed,
+                                        // no further waiting to do.
             }
 
-            postframe.tv_sec = 0; postframe.tv_nsec = NS_PER_FRAME - elapsed;
-            (void) nanosleep(&postframe, NULL);
+            if (elapsed < NS_PER_FRAME) {
+                postframe.tv_sec = 0;
+                postframe.tv_nsec = NS_PER_FRAME - elapsed;
+                (void) nanosleep(&postframe, NULL);
+            }
         }
         cycle_count %= CYCLES_PER_FRAME;
     }
