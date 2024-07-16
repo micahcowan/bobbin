@@ -70,7 +70,7 @@ void bobbin_run(void)
             cpu_step();
         } while (cycle_count < CYCLES_PER_FRAME);
         frame_count += cycle_count / CYCLES_PER_FRAME;
-        text_flash = frame_count % 60 >= 30;
+        text_flash = frame_count % 30 >= 15;
         event_fire(EV_FRAME);
         if (!cfg.turbo) {
             struct timespec postframe;
