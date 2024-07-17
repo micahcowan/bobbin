@@ -37,6 +37,20 @@ struct timing_t  *timing_init(void)
     return t;
 }
 
+struct timespec
+timing_subtract(struct timespec a, struct timespec b)
+{
+    if (b.tv_nsec > a.tv_nsec) {
+        a.tv_nsec += ONE_SEC_IN_NS;
+        a.tv_sec -= 1;
+    }
+    a.tv_sec -= b.tv_sec;
+    a.tv_nsec -= b.tv_nsec;
+
+    return a;
+}
+
+
 void timing_adjust(struct timing_t *t)
 {
     struct timespec now;
@@ -52,15 +66,10 @@ void timing_adjust(struct timing_t *t)
         return;
     }
 
-    long elapsed;
-    if (now.tv_sec == t->ts.tv_sec) {
-        elapsed = now.tv_nsec - t->ts.tv_nsec;
-    } else if (now.tv_sec == t->ts.tv_sec + 1) {
-        elapsed = ONE_SEC_IN_NS + now.tv_nsec - t->ts.tv_nsec;
-    } else {
-        elapsed = NS_PER_FRAME; // we've already surpassed,
-                                // no further waiting to do.
-    }
+    struct timespec elapsed_ts = timing_subtract(now, t->ts);
+    long elapsed = elapsed_ts.tv_nsec;
+    if (elapsed_ts.tv_sec > 0)
+        elapsed = NS_PER_FRAME; // No more waiting required.
 
     timdbg("--------------------\n");
     if (elapsed < NS_PER_FRAME) {
@@ -87,10 +96,20 @@ void timing_adjust(struct timing_t *t)
                 t->overslept = 0;
             }
             sltime.tv_nsec = desired;
+            // XXX: We don't handle when nanosleep is too little
+            // (interrupted by signal).
+            // The very occasional too-brief interval is acceptable.
             (void) nanosleep(&sltime, NULL);
             struct timespec actual;
             clock_gettime(CLOCK_MONOTONIC, &actual);
-            long new_addtl = actual.tv_nsec - now.tv_nsec;
+            struct timespec new_addtl_ts = timing_subtract(actual, now);
+            long new_addtl = new_addtl_ts.tv_nsec;
+            if (new_addtl_ts.tv_sec > 0) {
+                new_addtl = NS_PER_FRAME; // If the timer took over a
+                                          // second extra, (maybe we
+                                          // were suspended?),
+                                          // lock it to one second max.
+            }
             if (new_addtl > desired) {
                 t->overslept = new_addtl - desired;
             }
