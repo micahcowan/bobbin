@@ -510,17 +510,17 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 
 static void if_tty_event(Event *e)
 {
-    if (sigint_received >= 2
-        || (sigint_received == 1 && (typed_char & 0x7F) == 0x03)) {
-
-        breakout();
-        sigint_received = 0;
-        //typed_char = 'A'; // something besides 0x03, so we don't redetect.
-    }
-
     switch (e->type) {
         case EV_START:
             if_tty_start();
+            break;
+        case EV_PRESTEP:
+            if (sigint_received >= 2
+                || (sigint_received == 1 && (typed_char & 0x7F) == 0x03)) {
+
+                breakout();
+                sigint_received = 0;
+            }
             break;
         case EV_STEP:
             if_tty_step();
