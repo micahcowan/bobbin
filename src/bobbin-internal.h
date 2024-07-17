@@ -556,6 +556,13 @@ extern void debugger(void);
 extern bool debugging(void);
 extern void breakpoint_set(word loc);
 
+/********** TIMING **********/
+
+struct timing_t;
+
+extern struct timing_t  *timing_init(void);
+extern void             timing_adjust(struct timing_t *);
+
 /********** UTIL **********/
 
 extern void *xalloc(size_t sz);
@@ -579,6 +586,7 @@ extern bool check_watches(void);
 /* TBD */
 extern word print_disasm(FILE *f, word pos, const Registers *regs);
 
+#define ONE_SEC_IN_NS       1000000000
 #define NS_PER_FRAME        16651559
 #define CYCLES_PER_FRAME    17045
 

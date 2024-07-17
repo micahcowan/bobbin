@@ -12,7 +12,6 @@
 #include <stdlib.h>
 
 #include <fcntl.h>
-#include <time.h>
 #include <unistd.h>
 
 extern void machine_init(void);
@@ -42,6 +41,7 @@ void bobbin_run(void)
                 // should be validating options or arguments.
     setup_watches();
     interfaces_start();
+    struct timing_t *timing = timing_init();
 
     event_fire(EV_RESET);
 
@@ -50,11 +50,10 @@ void bobbin_run(void)
     }
 
     for (;;) /* ever */ {
-        if (check_watches()) frame_count = 0;
-        struct timespec preframe;
         if (!cfg.turbo) {
-            clock_gettime(CLOCK_MONOTONIC, &preframe);
+            timing_adjust(timing);
         }
+        if (check_watches()) frame_count = 0;
         cycle_count = 0;
         do {
             // Provide hooks the opportunity to alter the PC, here
@@ -72,25 +71,6 @@ void bobbin_run(void)
         frame_count += cycle_count / CYCLES_PER_FRAME;
         text_flash = frame_count % 30 >= 15;
         event_fire(EV_FRAME);
-        if (!cfg.turbo) {
-            struct timespec postframe;
-            clock_gettime(CLOCK_MONOTONIC, &postframe);
-            long long elapsed;
-            if (postframe.tv_sec == preframe.tv_sec) {
-                elapsed = postframe.tv_nsec - preframe.tv_nsec;
-            } else if (postframe.tv_sec == preframe.tv_sec + 1) {
-                elapsed = postframe.tv_nsec - preframe.tv_nsec + 1000000000;
-            } else {
-                elapsed = NS_PER_FRAME; // we've already surpassed,
-                                        // no further waiting to do.
-            }
-
-            if (elapsed < NS_PER_FRAME) {
-                postframe.tv_sec = 0;
-                postframe.tv_nsec = NS_PER_FRAME - elapsed;
-                (void) nanosleep(&postframe, NULL);
-            }
-        }
         cycle_count %= CYCLES_PER_FRAME;
     }
 }
