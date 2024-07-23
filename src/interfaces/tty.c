@@ -480,7 +480,7 @@ static void if_tty_step(void)
 {
     // XXX more checking s/b done here to make sure we're where we think
     // we are.
-    if (current_pc() == 0xFBD9 && cfg.bell) {
+    if (current_pc() == 0xFBDD && cfg.bell) {
         beep();
     }
 }
