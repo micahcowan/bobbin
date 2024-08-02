@@ -34,20 +34,19 @@ void bobbin_run(void)
     signals_init();
     machine_init();
     handle_io_opts();
-    events_init();
+    hooks_init();
     interfaces_init();
     periph_init();
     mem_init(); // Loads ROM files. Nothing past this point
                 // should be validating options or arguments.
+    dlypc_reboot();
     setup_watches();
     interfaces_start();
     struct timing_t *timing = timing_init();
 
     event_fire(EV_RESET);
 
-    if (cfg.start_loc_set && !cfg.delay_set) {
-        PC = cfg.start_loc;
-    }
+    dlypc_restart();
 
     for (;;) /* ever */ {
         if (!cfg.turbo) {

@@ -105,18 +105,12 @@ struct Config {
     bool            machine_set;
     size_t          amt_ram;
     bool            load_rom;
-    const char *    ram_load_file;
-    unsigned long   ram_load_loc;
     const char *    rom_load_file;
     bool            basic_fixup;
     bool            turbo;
     bool            turbo_was_set;
     bool            lang_card;
     bool            lang_card_set;
-    word            start_loc;
-    bool            start_loc_set;
-    word            delay_until;
-    bool            delay_set;
     bool            bell;
 
     // "simple" interface config:
@@ -358,6 +352,28 @@ static inline void rts(void) {
     go_to(WORD(lo, hi)+1);
 }
 
+/********** DELAY-PC **********/
+
+// fns for --delay-until, --load, --load-at, --jump-to
+extern void dlypc_init(void);
+extern void dlypc_delay_until_s(const char *loc_s);
+extern void dlypc_load(const char *fname);
+extern void dlypc_load_basic(const char *fname);
+extern void dlypc_load_at_s(const char *loc_s);
+extern void dlypc_jump_to_s(const char *loc_s);
+extern void dlypc_delay_until(word loc);
+extern void dlypc_load_at(word loc);
+extern void dlypc_jump_to(word loc);
+extern void dlypc_restart(void);
+extern void dlypc_reboot(void);
+
+// iterator abstraction for traversing the files to be loaded
+struct dlypc_file_iter;
+
+extern struct dlypc_file_iter *dlypc_file_iter_new(void);
+extern const char *dlypc_file_iter_getnext(struct dlypc_file_iter *);
+extern void dlypc_file_iter_destroy(struct dlypc_file_iter *);
+
 /********** EVENT **********/
 
 enum EventType {
@@ -471,6 +487,10 @@ extern void frame_timer(unsigned int time, void (*fn)(void));
 // frame_timer_reset: resets the timer if it exists, ignores if not
 extern void frame_timer_reset(unsigned int time, void (*fn)(void));
 extern void frame_timer_cancel(void (*fn)(void));
+
+/********** HOOKS **********/
+
+extern void hooks_init(void);
 
 /********** INTERFACES **********/
 

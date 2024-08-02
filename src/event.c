@@ -98,8 +98,7 @@ static const Event evinit = {
 
 void events_init(void)
 {
-    extern void hooks_init(void);
-    hooks_init();
+    // No-op for now
 }
 
 void event_reghandler(event_handler fn)
@@ -155,6 +154,10 @@ void event_fire(EventType type)
         {
             mem_reboot();
             event_fire(EV_RESET);
+            dlypc_reboot(); // If we ever queue up events, we'll have to
+                            // adjust, as this must happen after any
+                            // cpu_reset() does, else --jump-to may
+                            // get ignored.
             event_fire(EV_DISPLAY_TOUCH);
         }
             break;

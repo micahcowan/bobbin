@@ -76,16 +76,19 @@ void do_version(void);
 struct fn version = {do_version};
 void do_help(void);
 struct fn help = {do_help};
+
 void do_ram(const char *s);
 struct fnarg ramfn = {do_ram};
 void do_trace_to(const char *s);
 struct fnarg trace_to_fn = {do_trace_to};
-void do_load_basic(const char *s);
-struct fnarg load_basic = {do_load_basic};
-void do_delay_until(const char *s);
-struct fnarg delay_until = {do_delay_until};
+struct fnarg load_basic = {dlypc_load_basic};
 void do_breakpoint(const char *s);
 struct fnarg breakpoint = {do_breakpoint};
+// memory-loading
+struct fnarg load_fn = {dlypc_load};
+struct fnarg load_at_fn = {dlypc_load_at_s};
+struct fnarg jump_to_fn = {dlypc_jump_to_s};
+struct fnarg delay_until = {dlypc_delay_until_s};
 
 const OptInfo options[] = {
     { VERSION_OPT_NAMES, T_FUNCTION, &version },
@@ -105,8 +108,8 @@ const OptInfo options[] = {
     { RAM_OPT_NAMES, T_FN_ARG, &ramfn },
     { ROM_FILE_OPT_NAMES, T_STRING_ARG, &cfg.rom_load_file },
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
-    { LOAD_OPT_NAMES, T_STRING_ARG, &cfg.ram_load_file },
-    { LOAD_AT_OPT_NAMES, T_ULONG_ARG, &cfg.ram_load_loc },
+    { LOAD_OPT_NAMES, T_FN_ARG, &load_fn },
+    { LOAD_AT_OPT_NAMES, T_FN_ARG, &load_at_fn },
     { LOAD_BASIC_BIN_OPT_NAMES, T_FN_ARG, &load_basic, &cfg.basic_fixup },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
@@ -124,8 +127,8 @@ const OptInfo options[] = {
         &cfg.trap_success_on },
     { TRAP_PRINT_OPT_NAMES, T_WORD_ARG, &cfg.trap_print,
         &cfg.trap_print_on },
-    { START_AT_OPT_NAMES, T_WORD_ARG, &cfg.start_loc, &cfg.start_loc_set },
-    { DELAY_UNTIL_PC_OPT_NAMES, T_FN_ARG, &delay_until, &cfg.delay_set },
+    { JUMP_TO_OPT_NAMES, T_FN_ARG, &jump_to_fn },
+    { DELAY_UNTIL_PC_OPT_NAMES, T_FN_ARG, &delay_until },
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
     { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
     { DETOKENIZE_OPT_NAMES, T_BOOL, &cfg.detokenize },
@@ -297,7 +300,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
     // After all's done, do some fixup
     if (cfg.detokenize) {
         cfg.basic_fixup = true;
-        do_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
+        dlypc_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
     }
 } // do_config()
 
@@ -405,26 +408,6 @@ void do_trace_to(const char *arg)
     ++cfg.trace_end;
 
     trace_reg();
-}
-
-void do_load_basic(const char *arg)
-{
-    // For right now, fake out as if user had specified some other options.
-    // The general option handler has also set cfg.basic_fixup, to indicate
-    // that special things should happen after load.
-    cfg.ram_load_file = arg;
-    cfg.ram_load_loc = 0x801;
-    cfg.delay_until = MON_KEYIN;
-    cfg.delay_set = true;
-}
-
-void do_delay_until(const char *arg)
-{
-    if (STREQCASE("input", arg)) {
-        cfg.delay_until = MON_KEYIN;
-    } else {
-        handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &cfg.delay_until, arg);
-    }
 }
 
 void do_breakpoint(const char *arg)

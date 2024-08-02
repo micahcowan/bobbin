@@ -205,7 +205,7 @@ $ hexdump -C hello.bin
 00000000  a2 00 bd 10 03 f0 06 20  ed fd e8 d0 f5 4c 03 e0  |....... .....L..|
 00000010  c2 cf c2 c2 c9 ce a1 8d  00                       |.........|
 00000019
-mcowan$ ./bobbin -m plus --simple --load hello.bin --load-at 300 --start-at 300 --delay-until INPUT
+mcowan$ ./bobbin -m plus --simple --delay-until INPUT --load hello.bin --load-at 300 --jump-to 300
 
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.
@@ -393,6 +393,8 @@ A file's contents are mapped into RAM pretty much as one would expect: if a file
 
 If the file's contents would exceed the end of even auxiliary memory (128k), **bobbin** will exit with an error.
 
+This option may be specified multiple times: later invocations will overwrite memory loaded from earlier ones (in the case of any overlap). You can also use intervening `--delay-until-pc` options, to run the emulator for a while with one file loaded into memory, and then when the program-counter register hits the delay-until point, load the next file.
+
 ##### --load-at, --load-loc  *arg*
 
 RAM location to load file from `--load`.
@@ -403,19 +405,23 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 
 Load tokenized (binary) AppleSoft BASIC file at boot.
 
-This option is effectively the same as `--load `*arg*` --load-at 801 --delay-until INPUT`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
+This option is effectively the same as `--delay-until INPUT --load `*arg*` --load-at 801`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
 
-##### --start-at, --start-loc
+##### --jump-to, --jump, --jmp *arg*
 
-Specify an initial start position in place of what's in the reset vector.
+Jump the program counter to the location specified.
 
-##### --delay-until-pc, --delay-until *arg*
+If a preceding `--delay-until-pc` was specified, waits until the program counter has reached the delay point normally, before jumping to this location.  Otherwise, the emulator will start at this location, instead of at the Apple II formware `RESET` routine.
 
-Delays the effects of `--load` (RAM) and `--start-at`, until PC is *arg*.
+##### --delay-until-pc, --delay-until, --delay-pc *arg*
+
+Delays following `--load`, `--load-at`, or `--jump-to`, until PC is *arg*.
 
 The primary intent of this option is to allow the Apple \]\[ to run through its usual boot-up code, and then load new contents into memory and jump to a new, post-boot-sequence "start". This makes it easy to boot the emulator into your favorite code, without involving a disk-load.
 
 The special mnemonic *arg* value `INPUT` (case-insensitive) is translated to location `FD1B` (the monitor `KEYIN` routine for reading from the keyboard), which is frequently a very convenient value to use.
+
+You can also specify this option multiple times: **bobbin** will wait until the first PC valye is reached, perform any successive `--load`, `--load-at`, or `--jump-to` up until the next `--delay-until`, wait again, rinse and repeat.
 
 ##### --ram *arg*
 

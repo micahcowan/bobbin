@@ -26,13 +26,13 @@ void setup_watches(void)
     if (!cfg.watch) return; // We're not doing watches.
     if (wlist) return; // Don't do setup a second time.
 
-    if (cfg.ram_load_file) {
-        add_watch(cfg.ram_load_file);
+    struct dlypc_file_iter *iter = dlypc_file_iter_new();
+    const char *fname;
+    while ((fname = dlypc_file_iter_getnext(iter)) != NULL)
+    {
+        add_watch(fname);
     }
-
-    if (cfg.runbasicfile) {
-        add_watch(cfg.runbasicfile);
-    }
+    dlypc_file_iter_destroy(iter);
 
     (void) alarm(1);
 }

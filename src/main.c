@@ -14,6 +14,9 @@ const char *program_name;
 
 int main(int argc, char **argv)
 {
+    events_init(); // make sure events are initialized before dlypc
+    dlypc_init();
+
     program_name = *argv;
     do_config(argc, argv);
 
