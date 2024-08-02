@@ -118,13 +118,15 @@ static void do_overlay(int offset)
 
 static void repaint_flash(bool flash)
 {
+    const byte *mem = getram();
+
     saved_flash = flash;
     attrset(A_NORMAL);
     if (flash) attron(A_REVERSE);
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(text_page, y);
         for (int x=0; x != 40; ++x) {
-            byte c = peek_sneaky(base + x);
+            byte c = mem[base + x];
             if (util_isflashing(c)) {
                 byte cd = util_todisplay(c);
                 mvaddch(y, x, cd);
@@ -157,6 +159,8 @@ static void refresh_video80(void)
 
 static void refresh_video(bool flash)
 {
+    const byte *mem = getram();
+
     if (COLS < cols || LINES < 24) {
         clear();
         attron(badterm_attr);
@@ -174,7 +178,7 @@ static void refresh_video(bool flash)
         word base = get_line_base(text_page, y);
         move(y, 0);
         for (int x=0; x != 40; ++x) {
-            byte c = peek_sneaky(base + x);
+            byte c = mem[base + x];
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, flash);
             addch(cd | (cfl? A_REVERSE: 0));
