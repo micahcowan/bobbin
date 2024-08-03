@@ -86,9 +86,12 @@ void do_breakpoint(const char *s);
 struct fnarg breakpoint = {do_breakpoint};
 // memory-loading
 struct fnarg load_fn = {dlypc_load};
-struct fnarg load_at_fn = {dlypc_load_at_s};
-struct fnarg jump_to_fn = {dlypc_jump_to_s};
+void dlypc_delay_until_s(const char *loc_s);
 struct fnarg delay_until = {dlypc_delay_until_s};
+void dlypc_load_at_s(const char *loc_s);
+struct fnarg load_at_fn = {dlypc_load_at_s};
+void dlypc_jump_to_s(const char *loc_s);
+struct fnarg jump_to_fn = {dlypc_jump_to_s};
 
 const OptInfo options[] = {
     { VERSION_OPT_NAMES, T_FUNCTION, &version },
@@ -419,4 +422,22 @@ void do_breakpoint(const char *arg)
         handle_numeric_arg(T_WORD_ARG, "breakpoint", &bploc, arg);
     }
     breakpoint_set(bploc);
+}
+
+void dlypc_delay_until_s(const char *loc_s) {
+    word   loc;
+    handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &loc, loc_s);
+    dlypc_delay_until(loc);
+}
+
+void dlypc_load_at_s(const char *loc_s) {
+    unsigned long loc;
+    handle_numeric_arg(T_ULONG_ARG, "load-at", &loc, loc_s);
+    dlypc_load_at(loc);
+}
+
+void dlypc_jump_to_s(const char *loc_s) {
+    word loc;
+    handle_numeric_arg(T_WORD_ARG, "jump-to", &loc, loc_s);
+    dlypc_load_at(loc);
 }

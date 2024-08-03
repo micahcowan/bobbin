@@ -6,6 +6,8 @@
 
 #include "bobbin-internal.h"
 
+#include <string.h>
+
 #include <fcntl.h>
 #include <sys/mman.h>
 
@@ -20,14 +22,24 @@ struct dlypc_record {
     bool                    basic_fixup;
 };
 
+// Template record for copying to new records.
+struct dlypc_record initrec = {
+    .next = NULL,
+    .delay_pc = INVALID_LOC,
+    .load_fname = NULL,
+    .load_loc = 0,
+    .jump_loc = INVALID_LOC,
+    .basic_fixup = false,
+};
+
 struct dlypc_record *head = NULL;
 struct dlypc_record *tail = NULL;
 struct dlypc_record *cur  = NULL;
 
 /********************/
 
-bool check_asoft_link(const byte *buf, size_t start, size_t sz,
-                      word w, long *chlenp)
+static bool check_asoft_link(const byte *buf, size_t start, size_t sz,
+                             word w, long *chlenp)
 {
     long chlen;
     bool val = true;
@@ -260,56 +272,80 @@ static void load_file_into_mem(const char *fname, word load_loc,
 }
 
 static void process_record(struct dlypc_record *rec) {
-    load_file_into_mem(rec->load_fname, rec->load_loc, rec->basic_fixup);
-    if (rec->jump_loc)
+    if (rec->load_fname != NULL)
+        load_file_into_mem(rec->load_fname, rec->load_loc, rec->basic_fixup);
+    if (rec->jump_loc != INVALID_LOC)
         PC = rec->jump_loc;
 }
 
 static void delay_step(Event *e)
 {
-    // XXX check if we've reached the next "delay until" PC value we're
-    //  awaiting.
     if (e->type == EV_PRESTEP && cur != NULL && cur->delay_pc != INVALID_LOC) {
-        if (PC == cur->delay_pc) {
+        if (cur->delay_pc == INVALID_LOC || PC == cur->delay_pc) {
             process_record(cur);
             cur = cur->next;
         }
     }
 }
 
+static void alloc_rec_at_tail(void)
+{
+    struct dlypc_record *newrec = xalloc(sizeof *newrec);
+    *newrec = initrec;
+
+    if (tail == NULL) {
+        head = tail = newrec;
+    }
+    else {
+        tail->next = newrec;
+        tail = newrec;
+    }
+}
+
+static void ensure_tail_exists(void)
+{
+    if (tail == NULL)
+        alloc_rec_at_tail();
+}
+
+/********** External-Linkage Functions **********/
+
 void dlypc_init(void) {
     event_reghandler(delay_step);
 }
 
-void dlypc_delay_until_s(const char *loc_s) {
-    // XXX
+void dlypc_delay_until(word loc) {
+    alloc_rec_at_tail();
+    tail->delay_pc = loc;
 }
+
 void dlypc_load(const char *fname) {
-    // XXX
+    ensure_tail_exists();
+    if (tail->load_fname != NULL) {
+        alloc_rec_at_tail();
+    }
+    size_t len = strlen(fname) + 1;
+    char *newname = xalloc(len);
+    memcpy(newname, fname, len);
+    tail->load_fname = newname;
 }
 
 void dlypc_load_basic(const char *fname) {
-    // XXX
-}
-
-void dlypc_load_at_s(const char *loc_s) {
-    // XXX
-}
-
-void dlypc_jump_to_s(const char *loc_s) {
-    // XXX
-}
-
-void dlypc_delay_until(word loc) {
-    // XXX
+    dlypc_load(fname);
+    tail->load_loc = 0x801; // Where BASIC programs reside
+    if (tail->delay_pc == INVALID_LOC) {
+        tail->delay_pc == MON_KEYIN;
+    }
 }
 
 void dlypc_load_at(word loc) {
-    // XXX
+    ensure_tail_exists();
+    tail->load_loc = loc;
 }
 
 void dlypc_jump_to(word loc) {
-    // XXX
+    ensure_tail_exists();
+    tail->jump_loc = loc;
 }
 
 void dlypc_restart(void) {

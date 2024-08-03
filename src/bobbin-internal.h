@@ -357,11 +357,8 @@ static inline void rts(void) {
 
 // fns for --delay-until, --load, --load-at, --jump-to
 extern void dlypc_init(void);
-extern void dlypc_delay_until_s(const char *loc_s);
 extern void dlypc_load(const char *fname);
 extern void dlypc_load_basic(const char *fname);
-extern void dlypc_load_at_s(const char *loc_s);
-extern void dlypc_jump_to_s(const char *loc_s);
 extern void dlypc_delay_until(word loc);
 extern void dlypc_load_at(word loc);
 extern void dlypc_jump_to(word loc);
