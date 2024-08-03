@@ -252,6 +252,7 @@ extern void mem_init(void);
 extern void mem_reset(void);
 extern void mem_reboot(void);
 extern const byte *getram(void);
+extern void mem_put(const byte *buf, unsigned long start, size_t sz);
 extern byte peek(word loc);
 extern void poke(word loc, byte val);
 // These versions don't trigger debugger break-on-memory,

@@ -68,6 +68,13 @@ const byte *getram(void)
     return membuf;
 }
 
+void mem_put(const byte *buf, unsigned long start, size_t sz) {
+    if (start + sz > (sizeof membuf)) {
+        sz = (sizeof membuf) - start;
+    }
+    memcpy(&membuf[start], buf, sz);
+}
+
 void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val)
 {
     int bynum = pos / 8;
@@ -221,30 +228,6 @@ static void load_machine_rom(void)
         rombuf = load_rom(default_romfname, expected_rom_size(), false);
         validate_rom(rombuf, expected_rom_size());
     }
-}
-
-bool check_asoft_link(unsigned char *buf, size_t start, size_t sz,
-                      word w, long *chlenp)
-{
-    long chlen;
-    bool val = true;
-    for (chlen = 0; chlen < 65536; ++chlen) {
-        if (w == 0x0000) {
-            val = true;
-            break;
-        } else if (w < start || w > start + sz - sizeof(word)) {
-            val = false;
-            break;
-        } else {
-            // next link
-            w = WORD(buf[w - start], buf[w - start + 1]);
-        }
-    }
-    if (chlen == 65536)
-        chlen = -1;
-    if (val)
-        *chlenp = chlen;
-    return val;
 }
 
 static void fillmem(void)

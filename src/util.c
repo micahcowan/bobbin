@@ -51,6 +51,7 @@ int mmapfile(const char *fname, byte **buf, size_t *sz, int flags)
     errno = 0;
     err = fstat(fd, &st);
     if (err < 0) {
+        err = errno;
         goto bail;
     }
 
