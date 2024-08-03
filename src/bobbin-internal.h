@@ -362,7 +362,6 @@ extern void dlypc_load_basic(const char *fname);
 extern void dlypc_delay_until(word loc);
 extern void dlypc_load_at(word loc);
 extern void dlypc_jump_to(word loc);
-extern void dlypc_restart(void);
 extern void dlypc_reboot(void);
 
 // iterator abstraction for traversing the files to be loaded

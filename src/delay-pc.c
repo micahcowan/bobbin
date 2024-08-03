@@ -6,6 +6,7 @@
 
 #include "bobbin-internal.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <fcntl.h>
@@ -274,17 +275,24 @@ static void load_file_into_mem(const char *fname, word load_loc,
 static void process_record(struct dlypc_record *rec) {
     if (rec->load_fname != NULL)
         load_file_into_mem(rec->load_fname, rec->load_loc, rec->basic_fixup);
-    if (rec->jump_loc != INVALID_LOC)
+    if (rec->jump_loc != INVALID_LOC) {
+        INFO("Jumping PC to $%04X (--jump-to).\n",
+             (unsigned int)rec->jump_loc);
         PC = rec->jump_loc;
+    }
 }
 
 static void delay_step(Event *e)
 {
-    if (e->type == EV_PRESTEP && cur != NULL && cur->delay_pc != INVALID_LOC) {
-        if (cur->delay_pc == INVALID_LOC || PC == cur->delay_pc) {
-            process_record(cur);
-            cur = cur->next;
+    if (e->type == EV_PRESTEP && cur != NULL &&
+        (cur->delay_pc == INVALID_LOC || PC == cur->delay_pc)) {
+
+        if (cur->delay_pc != INVALID_LOC) {
+            INFO("PC reached trigger at %04X (--delay-until-pc).\n",
+                 (unsigned int)cur->delay_pc);
         }
+        process_record(cur);
+        cur = cur->next;
     }
 }
 
@@ -315,6 +323,7 @@ void dlypc_init(void) {
 }
 
 void dlypc_delay_until(word loc) {
+    // --delay-pc-until always starts a new "moment"/record
     alloc_rec_at_tail();
     tail->delay_pc = loc;
 }
@@ -348,27 +357,39 @@ void dlypc_jump_to(word loc) {
     tail->jump_loc = loc;
 }
 
-void dlypc_restart(void) {
-    // XXX
-}
-
 void dlypc_reboot(void) {
-    // XXX
+    cur = head;
 }
-
 
 // iterator abstraction for traversing the files to be loaded
-struct dlypc_file_iter;
+struct dlypc_file_iter {
+    struct dlypc_record *r;
+};
 
 struct dlypc_file_iter *dlypc_file_iter_new(void) {
-    // XXX
+    struct dlypc_file_iter *iter = xalloc(sizeof *iter);
+    iter->r = head;
+    return iter;
 }
 
 const char *dlypc_file_iter_getnext(struct dlypc_file_iter *iter) {
-    // XXX
+    // Does the current record have a file name? Return it.
+    // If not, find next one that does, return it.
+    for (;;) { // ever
+        if (iter->r == NULL) {
+            // List exhausted: no more filenames remain.
+            return NULL;
+        }
+        if (iter->r->load_fname != NULL) {
+            const char *fname = iter->r->load_fname;
+            iter->r = iter->r->next;
+            return fname;
+        }
+        iter->r = iter->r->next; // No filename, try next?
+    }
 }
 
 void dlypc_file_iter_destroy(struct dlypc_file_iter *iter) {
-    // XXX
+    free(iter);
 }
 

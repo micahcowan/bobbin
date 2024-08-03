@@ -26,6 +26,7 @@ void setup_watches(void)
     if (!cfg.watch) return; // We're not doing watches.
     if (wlist) return; // Don't do setup a second time.
 
+    // Add watches for all the --load files
     struct dlypc_file_iter *iter = dlypc_file_iter_new();
     const char *fname;
     while ((fname = dlypc_file_iter_getnext(iter)) != NULL)

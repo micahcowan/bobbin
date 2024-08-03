@@ -46,8 +46,6 @@ void bobbin_run(void)
 
     event_fire(EV_RESET);
 
-    dlypc_restart();
-
     for (;;) /* ever */ {
         if (!cfg.turbo) {
             timing_adjust(timing);
