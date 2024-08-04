@@ -425,7 +425,11 @@ void do_breakpoint(const char *arg)
 
 void dlypc_delay_until_s(const char *loc_s) {
     word   loc;
-    handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &loc, loc_s);
+    if (STREQCASE("input", loc_s)) {
+        loc = MON_KEYIN;
+    } else {
+        handle_numeric_arg(T_WORD_ARG, "delay-until-pc", &loc, loc_s);
+    }
     dlypc_delay_until(loc);
 }
 
