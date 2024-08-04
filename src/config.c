@@ -439,5 +439,5 @@ void dlypc_load_at_s(const char *loc_s) {
 void dlypc_jump_to_s(const char *loc_s) {
     word loc;
     handle_numeric_arg(T_WORD_ARG, "jump-to", &loc, loc_s);
-    dlypc_load_at(loc);
+    dlypc_jump_to(loc);
 }
