@@ -106,7 +106,6 @@ struct Config {
     size_t          amt_ram;
     bool            load_rom;
     const char *    rom_load_file;
-    bool            basic_fixup;
     bool            turbo;
     bool            turbo_was_set;
     bool            lang_card;

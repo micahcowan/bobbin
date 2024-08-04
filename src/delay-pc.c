@@ -230,7 +230,7 @@ static void load_file_into_mem(const char *fname, word load_loc,
     }
 
     usebuf = allocbuf;
-    if (cur->basic_fixup) {
+    if (basic_fixup) {
         adjust_asoft_start(fname, &usebuf, &sz, load_loc);
     }
 
@@ -281,6 +281,9 @@ static void process_record(struct dlypc_record *rec) {
         INFO("Jumping PC to $%04X (--jump-to).\n",
              (unsigned int)rec->jump_loc);
         PC = rec->jump_loc;
+    }
+    else {
+        VERBOSE("    (PC is $%04X)\n", (unsigned int)PC);
     }
 }
 
@@ -347,10 +350,15 @@ void dlypc_load_basic(const char *fname) {
         // Specified first, so add a --delay-until-pc INPUT
         INFO("--load-basic-bin is the first specified action:.\n");
         INFO("Adding --delay-until-pc INPUT before --load-basic-bin.\n");
-        tail->delay_pc == MON_KEYIN;
+        tail->delay_pc = MON_KEYIN;
+    }
+    else {
+        INFO("--load-basic-bin was not the first specified action:.\n");
+        INFO("NOT prepending --delay-until-pc INPUT.\n");
     }
     dlypc_load(fname);
     tail->load_loc = 0x801; // Where BASIC programs reside
+    tail->basic_fixup = true;
 }
 
 void dlypc_load_at(word loc) {

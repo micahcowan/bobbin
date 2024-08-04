@@ -113,7 +113,7 @@ const OptInfo options[] = {
     { ROM_OPT_NAMES, T_BOOL, &cfg.load_rom },
     { LOAD_OPT_NAMES, T_FN_ARG, &load_fn },
     { LOAD_AT_OPT_NAMES, T_FN_ARG, &load_at_fn },
-    { LOAD_BASIC_BIN_OPT_NAMES, T_FN_ARG, &load_basic, &cfg.basic_fixup },
+    { LOAD_BASIC_BIN_OPT_NAMES, T_FN_ARG, &load_basic },
     { IF_OPT_NAMES, T_STRING_ARG, &cfg.interface },
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
@@ -302,7 +302,6 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
 
     // After all's done, do some fixup
     if (cfg.detokenize) {
-        cfg.basic_fixup = true;
         dlypc_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
     }
 } // do_config()
