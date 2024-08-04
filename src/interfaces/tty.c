@@ -492,8 +492,8 @@ static void if_tty_step(void)
 static void if_tty_display_touched(void)
 {
     if (stdscr) {
+        refresh_video(saved_flash);
         refresh();
-        touchwin(stdscr);
     }
 }
 

@@ -73,6 +73,9 @@ void mem_put(const byte *buf, unsigned long start, size_t sz) {
         sz = (sizeof membuf) - start;
     }
     memcpy(&membuf[start], buf, sz);
+    // Trigger screen refresh. We could be smart and only
+    // send this if we know we actually touched the screen, but... meh.
+    event_fire(EV_DISPLAY_TOUCH);
 }
 
 void swset(SoftSwitches ss, SoftSwitchFlagPos pos, bool val)
