@@ -229,14 +229,16 @@ static void load_file_into_mem(const char *fname, word load_loc,
             fname, strerror(err));
     }
 
-    if ((sz + load_loc) > (128 * 1024)) {
-        DIE(1, "--load file \"%s\" would exceed the end of emulated memory!\n",
-            fname);
-    }
-
     usebuf = allocbuf;
     if (cur->basic_fixup) {
         adjust_asoft_start(fname, &usebuf, &sz, load_loc);
+    }
+
+    if ((sz + load_loc) > (128 * 1024)) {
+        WARN("--load file \"%s\" ($%lX + $%04lX) will exceed the end of\n",
+             fname, (unsigned long)load_loc, (unsigned long)sz);
+        WARN("emulated memory ($20000)! Truncating to fit.\n");
+        sz = 0x20000 - load_loc;
     }
 
     mem_put(usebuf, load_loc, sz);
