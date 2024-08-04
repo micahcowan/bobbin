@@ -342,11 +342,15 @@ void dlypc_load(const char *fname) {
 }
 
 void dlypc_load_basic(const char *fname) {
-    dlypc_load(fname);
-    tail->load_loc = 0x801; // Where BASIC programs reside
-    if (tail->delay_pc == INVALID_LOC) {
+    alloc_rec_at_tail();
+    if (head == tail) {
+        // Specified first, so add a --delay-until-pc INPUT
+        INFO("--load-basic-bin is the first specified action:.\n");
+        INFO("Adding --delay-until-pc INPUT before --load-basic-bin.\n");
         tail->delay_pc == MON_KEYIN;
     }
+    dlypc_load(fname);
+    tail->load_loc = 0x801; // Where BASIC programs reside
 }
 
 void dlypc_load_at(word loc) {

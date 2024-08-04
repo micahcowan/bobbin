@@ -405,7 +405,7 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 
 Load tokenized (binary) AppleSoft BASIC file at boot.
 
-This option is effectively the same as `--delay-until INPUT --load `*arg*` --load-at 801`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are).
+This option is effectively the same as `--load `*arg*` --load-at 801`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are). If this option is not preceded by a  `--load`, `--load-at`, `--jump-to`, `--delay-until-pc`, or another `--load-basic-bin`, then it will automatically prefix itself with a `--delay-until-pc INPUT`, to ensure that the firmware finishes initializing before the basic program is loaded. If it *is* preceded by any of these options, then you may need to add the `--delay-until-pc INPUT` option yourself, depending on where execution will have reached before the `--load-basic-bin` option is honored.
 
 ##### --jump-to, --jump, --jmp *arg*
 
