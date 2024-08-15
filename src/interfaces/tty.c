@@ -338,6 +338,17 @@ static void if_tty_peek(Event *e)
             if (sigint_received == 1) sigint_received = 0;
         }
     }
+    else switch (e->loc) {
+        case 0xC061:
+        case 0xC062:
+            // Return open-apple/closed-apple as not-pressed.
+            // XXX eventually we want to do... something else, to allow
+            //  "pressing" it to be possible?
+            e->val = 0;
+            break;
+        default:
+            ;
+    }
 }
 
 static void if_tty_poke(Event *e)
