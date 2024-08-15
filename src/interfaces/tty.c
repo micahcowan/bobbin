@@ -330,8 +330,10 @@ static void if_tty_peek(Event *e)
 
     if (a == SS_KBD) {
         e->val = read_char();
-    } else if (a == SS_KBDSTROBE) {
-        if (!machine_is_iie()) { // Must be a write, for ]]e and up
+    }
+    else if (a == SS_KBDSTROBE) {
+        if (!machine_is_iie() || e->loc == SS_KBDSTROBE) {
+            // Must be a write, for ][e and up, unless it's exactly $C010
             typed_char &= 0x7F; // Clear high-bit (key avail)
             if (sigint_received == 1) sigint_received = 0;
         }
