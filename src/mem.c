@@ -322,6 +322,17 @@ static bool is_aux_mem(word loc, bool wr)
 
 void mem_get_true_access(word loc, bool wr, size_t *bufloc, bool *in_aux, MemAccessType *access)
 {
+    size_t dummy_loc;
+    bool dummy_aux;
+    MemAccessType dummy_access;
+
+    // Allow caller to use NULL for any of the pointers.
+    //  Note that some of these have to exist because they're used
+    //  for state within this function. So we just ensure they all do.
+    if (!bufloc) bufloc = &dummy_loc;
+    if (!in_aux) in_aux = &dummy_aux;
+    if (!access) access = &dummy_access;
+
     if (loc < SS_START) {
         *access = MA_MAIN;
         *bufloc = loc;

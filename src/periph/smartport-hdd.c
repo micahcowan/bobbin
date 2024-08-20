@@ -37,8 +37,8 @@ unsigned int ndev = 0;
 static struct SPDev devices[4];
 
 // Bytes to identify this slot as a SmartPort card.
-static const byte id_bytes[] = { 0xFF, 0x20, 0xFF, 0x00,
-                                 0xFF, 0x03, 0xFF, 0x00 };
+static const byte id_bytes[] = { 0xA9, 0x20, 0xA9, 0x00,
+                                 0xA9, 0x03, 0xA9, 0x00 };
 
 // Entry points
 static const byte smartport_ep  = 0x20;
@@ -208,10 +208,8 @@ static void read_block(byte unit, off_t blkpos, word buffer)
 #endif
 
     size_t newloc;
-    bool aux;
-    MemAccessType acc;
     mem_get_true_access(buffer, true /* writing */,
-                        &newloc, &aux, &acc);
+                        &newloc, NULL, NULL);
 #if 0
     if (newloc != buffer) {
         DEBUG("read_block into buffer $%04X - REAL loc is $%04X\n",
@@ -370,21 +368,29 @@ static void handle_prodos_entry(void)
     }
 }
 
+static void handle_bootdisk(void)
+{
+    XREG = 0x50; // Indicate we're slot 5 to the ProDOS bootloader
+    read_block(1, 0, 0x800);
+    PC = 0x801;
+}
+
 static void handle_event(Event *e)
 {
     if (e->type != EV_PRESTEP)
         return;
 
     // For now, assume slot is always slot 5
-    if (PC == (0xC500 | smartport_ep)) {
+    if (PC == 0xC500) {
+        handle_bootdisk();
+    }
+    else if (PC == (0xC500 | smartport_ep)) {
         handle_smartport_entry();
     }
     else if (PC == (0xC500 | prodos_ep)) {
         handle_prodos_entry();
     }
-    if (e->type != EV_PRESTEP ||
-        (PC != (0xC500 | smartport_ep) && PC != (0xC500 | prodos_ep))) {
-
+    else {
         return;
     }
 }
@@ -431,13 +437,27 @@ static byte handler(word loc, int val, int ploc, int psw)
     // Is it a soft switch? We're not doing those, so we should probably
     // know if ProDOS is trying to access them...
     if (psw != -1) {
-        DEBUG("SmartPort switch tickled at %04X.\n", (unsigned int)loc);
+        DEBUG("SmartPort switch tickled at %04lX. PC=%04lX\n",
+              (unsigned long)loc, (unsigned long)(PC));
         return 0;
     }
 
     // ID bytes?
-    if (ploc < sizeof id_bytes) {
+    if (ploc < (sizeof id_bytes)-1) {
         return id_bytes[ploc];
+    }
+
+    if (ploc == (sizeof id_bytes)-1) {
+        // If autostart firmware is asking, we're a disk controller (bootable).
+        // If ProDOS is asking, we're a SmartPort card.
+        if (PC > 0xF000) {
+            MemAccessType access;
+            mem_get_true_access(PC, false /* reading */,
+                                NULL, NULL, &access);
+            if (access == MA_ROM)
+                return 0x3C; // Bootable disk controller
+        }
+        return 0x00; // SmartPort card
     }
     
     // Entry-point? Or apparently sometimes the exact final byte value
