@@ -12,6 +12,9 @@
 
 #include <sys/stat.h>
 
+#define SP_DO_READ  0
+#define SP_DO_WRITE 1
+
 #define BadCmd  0x01
 #define BadPCnt 0x04
 #define BusErr  0x06
@@ -175,6 +178,42 @@ static void handle_status(word params)
     }
 }
 
+static void write_block(byte unit, off_t blkpos, word buffer)
+{
+    if (unit == 0 || unit > ndev) {
+        WARN("Bad write_black unit number %d\n", (int)unit);
+        RETURN_ERROR(DevDiscon);
+    }
+
+    struct SPDev *d = &devices[unit-1];
+    off_t sekpos = blkpos * 512;
+    DEBUG("write_block, unit=%d, blk=%zu, buf=%04lX\n", (int)unit,
+          (size_t)blkpos, (unsigned long)buffer);
+    errno = 0;
+    DEBUG("fseeko(\"%s\", %zu, SEEK_SET)\n", d->fname, (size_t)sekpos);
+    if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
+        int err = errno;
+        WARN("Bad smartport block requested for \"%s\", offset %zu: %s\n",
+             d->fname, (size_t)sekpos, strerror(err));
+        RETURN_ERROR(BadBlock);
+    }
+
+    size_t newloc;
+    mem_get_true_access(buffer, true /* writing */,
+                        &newloc, NULL, NULL);
+    const byte *buf = getram();
+    errno = 0;
+    if (fwrite(&buf[newloc], 1, 512, d->fh) < 512) {
+        int err = errno;
+        DIE(1, "Couldn't write 512 bytes at offset %zu in hdd \"%s\": %s.\n",
+            (size_t)sekpos, d->fname, strerror(err));
+    }
+
+    mem_put(buf, newloc, 512);
+
+    PPUT(PCARRY, false);
+}
+
 static void read_block(byte unit, off_t blkpos, word buffer)
 {
     if (unit == 0 || unit > ndev) {
@@ -190,8 +229,8 @@ static void read_block(byte unit, off_t blkpos, word buffer)
     DEBUG("fseeko(\"%s\", %zu, SEEK_SET)\n", d->fname, (size_t)sekpos);
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
         int err = errno;
-        WARN("Bad smartport block requested for \"%s\", offset %zu.\n",
-             d->fname, (size_t)sekpos);
+        WARN("Bad smartport block requested for \"%s\", offset %zu: %s.\n",
+             d->fname, (size_t)sekpos, strerror(err));
         RETURN_ERROR(BadBlock);
     }
 
@@ -199,8 +238,8 @@ static void read_block(byte unit, off_t blkpos, word buffer)
     errno = 0;
     if (fread(buf, 1, 512, d->fh) < 512) {
         int err = errno;
-        DIE(1, "Couldn't read 512 bytes at offset %zu in hdd \"%s\".\n",
-            (size_t)sekpos, d->fname);
+        DIE(1, "Couldn't read 512 bytes at offset %zu in hdd \"%s\": %s.\n",
+            (size_t)sekpos, d->fname, strerror(err));
     }
 #if 0
     DEBUG("fread BUFFER: %02X %02X %02X %02X %02X %02X %02X %02X\n",
@@ -221,7 +260,7 @@ static void read_block(byte unit, off_t blkpos, word buffer)
     PPUT(PCARRY, false);
 }
 
-static void handle_sp_read_block(word params)
+static void handle_sp_rw_block(word params, bool rw)
 {
     byte pcount = peek(params++);
     byte unit   = peek(params++);
@@ -232,12 +271,17 @@ static void handle_sp_read_block(word params)
     byte blkhi  = peek(params++);
 
     if (pcount != 3) {
-        WARN("Bad read_block pcount: %d\n", (int)pcount);
+        WARN("Bad %s_block pcount: %d\n",
+             rw == SP_DO_READ? "read" : "write",
+             (int)pcount);
         RETURN_ERROR(BadPCnt);
     }
 
     off_t blkpos = (blkhi << 16) | (blkmd << 8) | blklo;
-    read_block(unit, blkpos, WORD(buflo, bufhi));
+    if (rw == SP_DO_READ)
+        read_block(unit, blkpos, WORD(buflo, bufhi));
+    else
+        write_block(unit, blkpos, WORD(buflo, bufhi));
 }
 
 static void handle_smartport_entry(void)
@@ -271,13 +315,11 @@ static void handle_smartport_entry(void)
             handle_status(params);
             break;
         case 0x01:
-            handle_sp_read_block(params);
+            handle_sp_rw_block(params, SP_DO_READ);
             break;
-/*
         case 0x02:
-            handle_sp_write_block(params);
+            handle_sp_rw_block(params, SP_DO_WRITE);
             break;
-*/
 /*
         case 0x03:
             handle_format(params);
@@ -359,7 +401,9 @@ static void handle_prodos_entry(void)
             read_block(drive, blknum, buffer);
             break;
         case 2:
-            //break;
+            DEBUG("ProDOS WRITE cmd\n");
+            write_block(drive, blknum, buffer);
+            break;
         default:
             DEBUG("Unsupported ProDOS block command.\n");
             DEBUG_CONT("cmd=%02X, unit=%02X\n");
