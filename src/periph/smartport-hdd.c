@@ -59,6 +59,7 @@ static byte get_status_byte(struct SPDev *d)
 
 static void handle_status_device(byte unit, word stlist)
 {
+    VERBOSE("SP status device, unit=%d\n", (int)unit);
     if (unit == 0) {
         YREG = 0;
         XREG = 8; // Writing "8 bytes" (but really only two, rest are
@@ -116,6 +117,7 @@ static void put_id_string(unsigned int *x, word basep, const char *fname)
 
 static void handle_status_dib(byte unit, word stlist)
 {
+    VERBOSE("SP status DIB, unit=%d\n", (int)unit);
     if (unit == 0 || unit > ndev) {
         RETURN_ERROR(BusErr); // Inappropriate?
     }
@@ -185,11 +187,15 @@ static void handle_read_block(word params)
     }
 
     if (unit == 0 || unit > ndev) {
+        WARN("Bad read_black unit number %d\n", (int)unit);
         RETURN_ERROR(BusErr); // Inappropriate?
     }
 
+
     struct SPDev *d = &devices[unit-1];
-    off_t sekpos = (blkhi << 16) | (blkmd << 8) | blklo;
+    off_t blkpos = (blkhi << 16) | (blkmd << 8) | blklo;
+    off_t sekpos = blkpos * 512;
+    VERBOSE("SP read_block, unit=%d, blk=%zu\n", (int)unit, (size_t)blkpos);
     errno = 0;
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
         int err = errno;
@@ -284,7 +290,7 @@ static void init(void)
     if (!cfg.hdd_set)
         return;
 
-    for (struct SPDev *d = devices; d != devices + MAX_NDEV; ++d) {
+    for (struct SPDev *d = devices; d != devices + ndev; ++d) {
         errno = 0;
         d->fh = fopen(d->fname, "rb+");
         int err = errno;
@@ -320,7 +326,7 @@ static byte handler(word loc, int val, int ploc, int psw)
 {
     // Is it a soft switch? We're not doing those, so we should probably
     // know if ProDOS is trying to access them...
-    if (psw == -1) {
+    if (psw != -1) {
         VERBOSE("SmartPort switch tickled at %04X.\n", (unsigned int)loc);
         return 0;
     }
