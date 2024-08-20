@@ -40,7 +40,7 @@ static const byte id_bytes[] = { 0xFF, 0x20, 0xFF, 0x00,
 static const byte entry_point = 0x20;
 
 
-static byte get_status_byte(byte unit)
+static byte get_status_byte(struct SPDev *d)
 {
     /*
       bit
@@ -94,7 +94,7 @@ static void put_id_string(unsigned int *x, word basep, const char *fname)
 
     int len = 0;
     // NOTE: assumes ASCII-ish names. Otherwise will be (harmless) garbage.
-    for (int i=0; i!=16; ++i); {
+    for (int i=0; i!=16; ++i) {
         if (name[len] != '\0') {
             char c = name[len] & 0x7F;
             if (c < 0x20) {
@@ -114,7 +114,7 @@ static void put_id_string(unsigned int *x, word basep, const char *fname)
     *x += 17; // char-count + 16 bytes
 }
 
-static void handle_status_dib(unit, stlist)
+static void handle_status_dib(byte unit, word stlist)
 {
     if (unit == 0 || unit > ndev) {
         RETURN_ERROR(BusErr); // Inappropriate?
@@ -145,8 +145,11 @@ static void handle_status(word params)
     params += 1;
     byte unit = peek(params);
     params += 1;
-    word stlist = peek_word(params);
-    params += 2;
+    byte stllo = peek(params);
+    params += 1;
+    byte stlhi = peek(params);
+    params += 1;
+    word stlist = WORD(stllo, stlhi);
     byte code = peek(params);
     
     if (pcount != 3) {
@@ -185,7 +188,7 @@ static void handle_read_block(word params)
         RETURN_ERROR(BusErr); // Inappropriate?
     }
 
-    struct SPDev *d = devices[unit-1];
+    struct SPDev *d = &devices[unit-1];
     off_t sekpos = (blkhi << 16) | (blkmd << 8) | blklo;
     errno = 0;
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
@@ -207,11 +210,11 @@ static void handle_read_block(word params)
     PPUT(PCARRY, false);
 }
 
-static void handler(Event *e)
+static void handle_event(Event *e)
 {
     // For now, assume slot is always slot 5
     if (e->type != EV_PRESTEP ||
-        PC != (0xC500 | entry_point) && PC != (0xC500 | (entry_point - 3))) {
+        (PC != (0xC500 | entry_point) && PC != (0xC500 | (entry_point - 3)))) {
 
         return;
     }
@@ -220,7 +223,7 @@ static void handler(Event *e)
     byte lo = stack_pop();
     byte hi = stack_pop();
     word rts = WORD(lo, hi);
-    word prams = rts;
+    word params = rts;
 
     // Push back on, the original return + 3 for the parameters after
     // the call
@@ -270,14 +273,15 @@ static void handler(Event *e)
 */
         default:
             VERBOSE("Unsupported SmartPort call: %#0X\n", (unsigned int)fn);
-            handle_unknown(fn, params);
+            //handle_unknown(fn, params);
+            RETURN_ERROR(BadCmd);
             break;
     }
 }
 
 static void init(void)
 {
-    if (hdd_set != NULL)
+    if (!cfg.hdd_set)
         return;
 
     for (struct SPDev *d = devices; d != devices + MAX_NDEV; ++d) {
@@ -309,7 +313,7 @@ static void init(void)
         }
     }
 
-    event_reghandler(handler);
+    event_reghandler(handle_event);
 }
 
 static byte handler(word loc, int val, int ploc, int psw)
@@ -317,7 +321,7 @@ static byte handler(word loc, int val, int ploc, int psw)
     // Is it a soft switch? We're not doing those, so we should probably
     // know if ProDOS is trying to access them...
     if (psw == -1) {
-        VERBOSE("SmartPort switch tickled at %04X.\n", (unsigned unt)loc);
+        VERBOSE("SmartPort switch tickled at %04X.\n", (unsigned int)loc);
         return 0;
     }
 
