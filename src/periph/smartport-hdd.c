@@ -187,6 +187,7 @@ static void read_block(byte unit, off_t blkpos, word buffer)
     DEBUG("read_block, unit=%d, blk=%zu, buf=%04lX\n", (int)unit,
           (size_t)blkpos, (unsigned long)buffer);
     errno = 0;
+    DEBUG("fseeko(\"%s\", %zu, SEEK_SET)\n", d->fname, (size_t)sekpos);
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
         int err = errno;
         WARN("Bad smartport block requested for \"%s\", offset %zu.\n",
@@ -194,14 +195,30 @@ static void read_block(byte unit, off_t blkpos, word buffer)
         RETURN_ERROR(BadBlock);
     }
 
-    unsigned char buf[512];
+    byte buf[512];
     errno = 0;
     if (fread(buf, 1, 512, d->fh) < 512) {
         int err = errno;
         DIE(1, "Couldn't read 512 bytes at offset %zu in hdd \"%s\".\n",
             (size_t)sekpos, d->fname);
     }
-    mem_put(buf, buffer, 512);
+#if 0
+    DEBUG("fread BUFFER: %02X %02X %02X %02X %02X %02X %02X %02X\n",
+          buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+#endif
+
+    size_t newloc;
+    bool aux;
+    MemAccessType acc;
+    mem_get_true_access(buffer, true /* writing */,
+                        &newloc, &aux, &acc);
+#if 0
+    if (newloc != buffer) {
+        DEBUG("read_block into buffer $%04X - REAL loc is $%04X\n",
+              (size_t)buffer, newloc);
+    }
+#endif
+    mem_put(buf, newloc, 512);
 
     PPUT(PCARRY, false);
 }

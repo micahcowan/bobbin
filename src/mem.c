@@ -70,7 +70,10 @@ const byte *getram(void)
 
 void mem_put(const byte *buf, unsigned long start, size_t sz) {
     if (start + sz > (sizeof membuf)) {
+        size_t oldsz = sz;
         sz = (sizeof membuf) - start;
+        DEBUG("mem_put: truncated PUT sz from %zu to %zu.\n",
+              oldsz, sz);
     }
     memcpy(&membuf[start], buf, sz);
     // Trigger screen refresh. We could be smart and only
