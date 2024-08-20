@@ -245,9 +245,9 @@ Display basic information on how to use **bobbin**, and exit.
 
 ##### -v, --verbose
 
-Increase **bobbin**'s informational output. Use again for even more.
+Increase **bobbin**'s informational output. Can specify multiple times.
 
-Normally **bobbin** only produces information about program-ending errors, or warnings about configuration or situations that might lead to unexpected operation.
+Normally **bobbin** only produces information about program-ending errors, or warnings about configuration or situations that might lead to unexpected operation. Specifying -v once increases the number of informational messages, and a second -v makes things quite verbose. A third -v causes low-level debug information to be included.
 
 ##### -q, --quiet
 

@@ -59,7 +59,8 @@ typedef const char * const AryOfStr;
 
     ...etc. referenced below.
 */
-static AryOfStr VV_OPT_NAMES[] = {"vv",NULL};
+static AryOfStr VV_OPT_NAMES[]  = {"vv",NULL};
+static AryOfStr VVV_OPT_NAMES[] = {"vvv",NULL};
 // ^ not a documented option, so we rolled this by hand. But
 
 typedef char Alias[];
@@ -72,6 +73,8 @@ struct fnarg { void (*fn)(const char *s); };
 
 void do_vv(void) { cfg.squawk_level += 2; }
 struct fn vv = {do_vv};
+void do_vvv(void) { cfg.squawk_level += 3; }
+struct fn vvv = {do_vv};
 void do_version(void);
 struct fn version = {do_version};
 void do_help(void);
@@ -100,6 +103,7 @@ const OptInfo options[] = {
     { QUIET_OPT_NAMES, T_INT_RESET, &cfg.squawk_level },
     { VERBOSE_OPT_NAMES, T_INCREMENT, &cfg.squawk_level },
     { VV_OPT_NAMES, T_FUNCTION, &vv },
+    { VVV_OPT_NAMES, T_FUNCTION, &vvv },
     { INPUT_OPT_NAMES, T_STRING_ARG, &cfg.inputfile },
     { OUTPUT_OPT_NAMES, T_STRING_ARG, &cfg.outputfile },
     { RUN_BASIC_OPT_NAMES, T_STRING_ARG, &cfg.runbasicfile },

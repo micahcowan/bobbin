@@ -45,6 +45,7 @@ extern word current_pc(void);
 #define WARN_LEVEL     1
 #define INFO_LEVEL     2
 #define VERBOSE_LEVEL  3
+#define DEBUG_LEVEL  3
 
 #define DEFAULT_LEVEL   WARN_LEVEL
 
@@ -52,6 +53,7 @@ extern word current_pc(void);
 #define WARN_OK         SQUAWK_OK(WARN_LEVEL)
 #define INFO_OK         SQUAWK_OK(INFO_LEVEL)
 #define VERBOSE_OK      SQUAWK_OK(VERBOSE_LEVEL)
+#define DEBUG_OK      SQUAWK_OK(DEBUG_LEVEL)
 
 #define SQUAWK_CONT(level, ...) \
     do { \
@@ -72,6 +74,8 @@ extern word current_pc(void);
 #define INFO_CONT(...)      SQUAWK_CONT(INFO_LEVEL, __VA_ARGS__)
 #define VERBOSE(...)        SQUAWK(VERBOSE_LEVEL, __VA_ARGS__)
 #define VERBOSE_CONT(...)   SQUAWK_CONT(VERBOSE_LEVEL, __VA_ARGS__)
+#define DEBUG(...)          SQUAWK(DEBUG_LEVEL, __VA_ARGS__)
+#define DEBUG_CONT(...)     SQUAWK_CONT(DEBUG_LEVEL, __VA_ARGS__)
 
 #define DIE_FINAL(st) do { \
         SQUAWK(DIE_LEVEL, "Exiting (%d).\n", (int)st); \

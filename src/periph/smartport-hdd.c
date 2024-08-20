@@ -16,6 +16,8 @@
 #define BadPCnt 0x04
 #define BusErr  0x06
 #define BadCtl  0x21
+#define IOError 0x27
+#define DevDiscon 0x28
 #define BadBlock 0x2D
 
 #define RETURN_ERROR(err)    do { \
@@ -37,7 +39,10 @@ static struct SPDev devices[4];
 // Bytes to identify this slot as a SmartPort card.
 static const byte id_bytes[] = { 0xFF, 0x20, 0xFF, 0x00,
                                  0xFF, 0x03, 0xFF, 0x00 };
-static const byte entry_point = 0x20;
+
+// Entry points
+static const byte smartport_ep  = 0x20;
+static const byte prodos_ep     = smartport_ep - 3;
 
 
 static byte get_status_byte(struct SPDev *d)
@@ -59,7 +64,7 @@ static byte get_status_byte(struct SPDev *d)
 
 static void handle_status_device(byte unit, word stlist)
 {
-    VERBOSE("SP status device, unit=%d\n", (int)unit);
+    DEBUG("SP status device, unit=%d\n", (int)unit);
     if (unit == 0) {
         YREG = 0;
         XREG = 8; // Writing "8 bytes" (but really only two, rest are
@@ -81,8 +86,7 @@ static void handle_status_device(byte unit, word stlist)
         }
     }
     else {
-        RETURN_ERROR(BusErr); // Inappropriate error code? Unsure what a
-                              //  better one is.
+        RETURN_ERROR(DevDiscon);
     }
 }
 
@@ -117,9 +121,9 @@ static void put_id_string(unsigned int *x, word basep, const char *fname)
 
 static void handle_status_dib(byte unit, word stlist)
 {
-    VERBOSE("SP status DIB, unit=%d\n", (int)unit);
+    DEBUG("SP status DIB, unit=%d\n", (int)unit);
     if (unit == 0 || unit > ndev) {
-        RETURN_ERROR(BusErr); // Inappropriate?
+        RETURN_ERROR(DevDiscon);
     }
 
     struct SPDev *d = &devices[unit-1];
@@ -166,36 +170,22 @@ static void handle_status(word params)
             handle_status_dib(unit, stlist);
             break;
         default:
-            VERBOSE("Unsupported SP STATUS call %02X.\n", (unsigned int)code);
+            DEBUG("Unsupported SP STATUS call %02X.\n", (unsigned int)code);
             RETURN_ERROR(BadCtl);
     }
 }
 
-static void handle_read_block(word params)
+static void read_block(byte unit, off_t blkpos, word buffer)
 {
-    byte pcount = peek(params++);
-    byte unit   = peek(params++);
-    byte buflo  = peek(params++);
-    byte bufhi  = peek(params++);
-    byte blklo  = peek(params++);
-    byte blkmd  = peek(params++);
-    byte blkhi  = peek(params++);
-
-    if (pcount != 3) {
-        WARN("Bad read_block pcount: %d\n", (int)pcount);
-        RETURN_ERROR(BadPCnt);
-    }
-
     if (unit == 0 || unit > ndev) {
         WARN("Bad read_black unit number %d\n", (int)unit);
-        RETURN_ERROR(BusErr); // Inappropriate?
+        RETURN_ERROR(DevDiscon);
     }
 
-
     struct SPDev *d = &devices[unit-1];
-    off_t blkpos = (blkhi << 16) | (blkmd << 8) | blklo;
     off_t sekpos = blkpos * 512;
-    VERBOSE("SP read_block, unit=%d, blk=%zu\n", (int)unit, (size_t)blkpos);
+    DEBUG("read_block, unit=%d, blk=%zu, buf=%04lX\n", (int)unit,
+          (size_t)blkpos, (unsigned long)buffer);
     errno = 0;
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
         int err = errno;
@@ -211,20 +201,32 @@ static void handle_read_block(word params)
         DIE(1, "Couldn't read 512 bytes at offset %zu in hdd \"%s\".\n",
             (size_t)sekpos, d->fname);
     }
-    mem_put(buf, WORD(buflo, bufhi), 512);
+    mem_put(buf, buffer, 512);
 
     PPUT(PCARRY, false);
 }
 
-static void handle_event(Event *e)
+static void handle_sp_read_block(word params)
 {
-    // For now, assume slot is always slot 5
-    if (e->type != EV_PRESTEP ||
-        (PC != (0xC500 | entry_point) && PC != (0xC500 | (entry_point - 3)))) {
+    byte pcount = peek(params++);
+    byte unit   = peek(params++);
+    byte buflo  = peek(params++);
+    byte bufhi  = peek(params++);
+    byte blklo  = peek(params++);
+    byte blkmd  = peek(params++);
+    byte blkhi  = peek(params++);
 
-        return;
+    if (pcount != 3) {
+        WARN("Bad read_block pcount: %d\n", (int)pcount);
+        RETURN_ERROR(BadPCnt);
     }
 
+    off_t blkpos = (blkhi << 16) | (blkmd << 8) | blklo;
+    read_block(unit, blkpos, WORD(buflo, bufhi));
+}
+
+static void handle_smartport_entry(void)
+{
     // Get the return value off the stack
     byte lo = stack_pop();
     byte hi = stack_pop();
@@ -247,17 +249,18 @@ static void handle_event(Event *e)
     PPUT(PDEC, false);
     // Unused proc flag is guaranteed to be set.
     PPUT(PUNUSED, true);
+    ACC = 0;
 
     switch (fn) {
         case 0x00:
             handle_status(params);
             break;
         case 0x01:
-            handle_read_block(params);
+            handle_sp_read_block(params);
             break;
 /*
         case 0x02:
-            handle_write_block(params);
+            handle_sp_write_block(params);
             break;
 */
 /*
@@ -278,10 +281,94 @@ static void handle_event(Event *e)
             break;
 */
         default:
-            VERBOSE("Unsupported SmartPort call: %#0X\n", (unsigned int)fn);
+            DEBUG("Unsupported SmartPort call: 0x%0X\n", (unsigned int)fn);
             //handle_unknown(fn, params);
             RETURN_ERROR(BadCmd);
             break;
+    }
+}
+
+
+static void handle_prodos_status(byte unit)
+{
+    if (unit != 0 && unit <= ndev) {
+        DEBUG("ProDOS block entry STATUS cmd, unit %d\n", (int)unit);
+        struct SPDev *d = &devices[unit-1];
+        XREG = d->bsz[0];
+        YREG = d->bsz[1];
+        PPUT(PCARRY, false); // No error.
+    }
+    else {
+        DEBUG("*BAD* ProDOS block entry STATUS unit number: %d\n", (int)unit);
+        ACC = DevDiscon;
+    }
+}
+
+static void handle_prodos_entry(void)
+{
+    byte cmd  = peek(0x42);
+    byte unit = peek(0x43);
+
+    /*
+     Decode the ProDOS "unit number":
+
+       7  6  5  4  3  2  1  0
+      +--+--+--+--+--+--+--+--+
+      |DR|  SLOT  | NOT USED  |
+      +--+--+--+--+--+--+--+--+
+    */
+    byte drive = (unit & 0x80)? 2 : 1; // 1-indexed
+    byte slot = (unit & 0x70) >> 4;
+
+    // Assumes we're at slot 5
+    if (slot != 5) {
+        drive += 2;
+    }
+
+    word buffer = WORD(peek(0x44), peek(0x45));
+    word blknum = WORD(peek(0x46), peek(0x47));
+
+    // BCD is guaranteed to be unset when SmartPort call exits.
+    PPUT(PDEC, false);
+    // Unused proc flag is guaranteed to be set.
+    PPUT(PUNUSED, true);
+
+    ACC = 0; // No error code
+
+    switch (cmd) {
+        case 0:
+            handle_prodos_status(drive);
+            break;
+        case 1:
+            DEBUG("ProDOS READ cmd\n");
+            read_block(drive, blknum, buffer);
+            break;
+        case 2:
+            //break;
+        default:
+            DEBUG("Unsupported ProDOS block command.\n");
+            DEBUG_CONT("cmd=%02X, unit=%02X\n");
+            PPUT(PCARRY, true);
+            ACC = BadCmd;
+    }
+}
+
+static void handle_event(Event *e)
+{
+    if (e->type != EV_PRESTEP)
+        return;
+
+    // For now, assume slot is always slot 5
+    if (PC == (0xC500 | smartport_ep)) {
+        handle_smartport_entry();
+    }
+    else if (PC == (0xC500 | prodos_ep)) {
+        handle_prodos_entry();
+    }
+    if (e->type != EV_PRESTEP ||
+        (PC != (0xC500 | smartport_ep) && PC != (0xC500 | prodos_ep))) {
+
+        return;
     }
 }
 
@@ -327,13 +414,37 @@ static byte handler(word loc, int val, int ploc, int psw)
     // Is it a soft switch? We're not doing those, so we should probably
     // know if ProDOS is trying to access them...
     if (psw != -1) {
-        VERBOSE("SmartPort switch tickled at %04X.\n", (unsigned int)loc);
+        DEBUG("SmartPort switch tickled at %04X.\n", (unsigned int)loc);
         return 0;
     }
 
     // ID bytes?
     if (ploc < sizeof id_bytes) {
         return id_bytes[ploc];
+    }
+    
+    // Entry-point? Or apparently sometimes the exact final byte value
+    if (ploc == prodos_ep || ploc == smartport_ep) {
+        return 0x60; // RTS
+    }
+
+    // Undocumented, and not seen from other emulators, but ProDOS 8
+    //  code appears to treat $FB as a sort of identifier byte.
+    //  ID_Byte & $02 == set? SCSI card.
+    if (ploc == 0xFB) {
+        // Yes, SCSI card
+        // return 0x02;
+
+        // Returning $02 set just results in a spurious smartport STATUS call
+        // to "unit 2", which apparently is "the SCSI unit". Maybe
+        // we don't want that.
+        return 0x00;
+    }
+
+    // Lo/hi bytes of number-of-blocks?
+    if (ploc == 0xFC || ploc == 0xFD) {
+        // Must do STATUS to find out, so $0000.
+        return 0x00;
     }
 
     // Status byte?
@@ -351,12 +462,7 @@ static byte handler(word loc, int val, int ploc, int psw)
 
     // Final byte? (identify entry point)
     if (ploc == 0xFF) {
-        return entry_point - 3;
-    }
-    
-    // Entry-point? Or apparently sometimes the exact final byte value
-    if (ploc == entry_point || ploc == entry_point - 3) {
-        return 0x60; // RTS
+        return prodos_ep;
     }
 
     // Anything else, return BRK.
