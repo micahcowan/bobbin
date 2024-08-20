@@ -320,6 +320,15 @@ Any changes written to disk are synced to the underlying file when the disk-driv
 
 Load the given disk file to drive 2.
 
+##### --hdd *arg*
+
+Load the given file as a SmartPort hard disk drive image.
+
+May be specified up to four times.
+
+The image must be a multiple of 512 bytes in size. The `--watch` option is not
+honored for hard disk images.
+
 #### Special options
 
 ##### --watch

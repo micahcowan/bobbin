@@ -1,6 +1,6 @@
 //  periph.c
 //
-//  Copyright (c) 2023 Micah John Cowan.
+//  Copyright (c) 2023-2024 Micah John Cowan.
 //  This code is licensed under the MIT license.
 //  See the accompanying LICENSE file for details.
 
@@ -11,6 +11,7 @@
 static PeriphDesc *slot[8];
 
 extern PeriphDesc disk2card;
+extern PeriphDesc smartport;
 
 PeriphDesc *get_sw_slot(word loc)
 {
@@ -72,6 +73,10 @@ void periph_init(void)
 {
     if (cfg.disk || cfg.disk2) {
         slot[6] = &disk2card;
+    }
+
+    if (cfg.hdd_set) {
+        slot[5] = &smartport;
     }
     
     const int slots_end = (sizeof slot)/(sizeof slot[0]);

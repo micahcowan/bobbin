@@ -330,24 +330,11 @@ static void if_tty_peek(Event *e)
 
     if (a == SS_KBD) {
         e->val = read_char();
-    }
-    else if (a == SS_KBDSTROBE) {
-        if (!machine_is_iie() || e->loc == SS_KBDSTROBE) {
-            // Must be a write, for ][e and up, unless it's exactly $C010
+    } else if (a == SS_KBDSTROBE) {
+        if (!machine_is_iie()) { // Must be a write, for ]]e and up
             typed_char &= 0x7F; // Clear high-bit (key avail)
             if (sigint_received == 1) sigint_received = 0;
         }
-    }
-    else switch (e->loc) {
-        case 0xC061:
-        case 0xC062:
-            // Return open-apple/closed-apple as not-pressed.
-            // XXX eventually we want to do... something else, to allow
-            //  "pressing" it to be possible?
-            e->val = 0;
-            break;
-        default:
-            ;
     }
 }
 

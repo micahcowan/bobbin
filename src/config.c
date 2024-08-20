@@ -84,6 +84,7 @@ struct fnarg trace_to_fn = {do_trace_to};
 struct fnarg load_basic = {dlypc_load_basic};
 void do_breakpoint(const char *s);
 struct fnarg breakpoint = {do_breakpoint};
+struct fnarg hdd = {smartport_add_image};
 // memory-loading
 struct fnarg load_fn = {dlypc_load};
 void dlypc_delay_until_s(const char *loc_s);
@@ -105,6 +106,7 @@ const OptInfo options[] = {
     { MACHINE_OPT_NAMES, T_STRING_ARG, &cfg.machine, &cfg.machine_set },
     { DISK_OPT_NAMES, T_STRING_ARG, &cfg.disk },
     { DISK2_OPT_NAMES, T_STRING_ARG, &cfg.disk2 },
+    { HDD_OPT_NAMES, T_STRING_ARG, &hdd, &cfg.hdd_set },
     { LANG_CARD_OPT_NAMES, T_BOOL, &cfg.lang_card, &cfg.lang_card_set },
     { BELL_OPT_NAMES, T_BOOL, &cfg.bell },
     { TURBO_OPT_NAMES, T_BOOL, &cfg.turbo, &cfg.turbo_was_set },

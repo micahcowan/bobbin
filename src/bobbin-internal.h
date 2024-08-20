@@ -102,6 +102,7 @@ struct Config {
     const char *    machine;
     const char *    disk;
     const char *    disk2;
+    bool            hdd_set;
     bool            machine_set;
     size_t          amt_ram;
     bool            load_rom;
@@ -530,6 +531,9 @@ extern bool drive_spinning(void);
 extern int active_disk(void);
 extern int eject_disk(int drive);
 extern int insert_disk(int drive, const char *path);
+
+// Smartport controller
+extern void smartport_add_image(const char *fname);
 
 /********** FORMATS  **********/
 
