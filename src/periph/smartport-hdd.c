@@ -22,6 +22,7 @@
 #define IOError 0x27
 #define DevDiscon 0x28
 #define BadBlock 0x2D
+#define BadBuf 0x56
 
 #define RETURN_ERROR(err)    do { \
         ACC = err; \
@@ -185,10 +186,19 @@ static void write_block(byte unit, off_t blkpos, word buffer)
         RETURN_ERROR(DevDiscon);
     }
 
+    if (buffer > 0x10000 - 512) {
+        WARN("Bad buffer $%04lX provided to write_block\n",
+             (unsigned long)buffer);
+        RETURN_ERROR(BadBuf);
+    }
+
     struct SPDev *d = &devices[unit-1];
     off_t sekpos = blkpos * 512;
-    DEBUG("write_block, unit=%d, blk=%zu, buf=%04lX\n", (int)unit,
-          (size_t)blkpos, (unsigned long)buffer);
+    size_t newloc;
+    mem_get_true_access(buffer, false /* reading */,
+                        &newloc, NULL, NULL);
+    DEBUG("write_block, unit=%d, blk=%zu, buf=%04lX, REALbuf=%04zX\n", (int)unit,
+          (size_t)blkpos, (unsigned long)buffer, newloc);
     errno = 0;
     DEBUG("fseeko(\"%s\", %zu, SEEK_SET)\n", d->fname, (size_t)sekpos);
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
@@ -198,9 +208,6 @@ static void write_block(byte unit, off_t blkpos, word buffer)
         RETURN_ERROR(BadBlock);
     }
 
-    size_t newloc;
-    mem_get_true_access(buffer, true /* writing */,
-                        &newloc, NULL, NULL);
     const byte *buf = getram();
     errno = 0;
     if (fwrite(&buf[newloc], 1, 512, d->fh) < 512) {
@@ -208,8 +215,6 @@ static void write_block(byte unit, off_t blkpos, word buffer)
         DIE(1, "Couldn't write 512 bytes at offset %zu in hdd \"%s\": %s.\n",
             (size_t)sekpos, d->fname, strerror(err));
     }
-
-    mem_put(buf, newloc, 512);
 
     PPUT(PCARRY, false);
 }
@@ -221,10 +226,19 @@ static void read_block(byte unit, off_t blkpos, word buffer)
         RETURN_ERROR(DevDiscon);
     }
 
+    if (buffer > 0x10000 - 512) {
+        WARN("Bad buffer $%04lX provided to read_block\n",
+             (unsigned long)buffer);
+        RETURN_ERROR(BadBuf);
+    }
+
     struct SPDev *d = &devices[unit-1];
     off_t sekpos = blkpos * 512;
-    DEBUG("read_block, unit=%d, blk=%zu, buf=%04lX\n", (int)unit,
-          (size_t)blkpos, (unsigned long)buffer);
+    size_t newloc;
+    mem_get_true_access(buffer, true /* writing */,
+                        &newloc, NULL, NULL);
+    DEBUG("read_block, unit=%d, blk=%zu, buf=%04lX, REALbuf=%04zX\n", (int)unit,
+          (size_t)blkpos, (unsigned long)buffer, newloc);
     errno = 0;
     DEBUG("fseeko(\"%s\", %zu, SEEK_SET)\n", d->fname, (size_t)sekpos);
     if (fseeko(d->fh, sekpos, SEEK_SET) < 0) {
@@ -244,16 +258,6 @@ static void read_block(byte unit, off_t blkpos, word buffer)
 #if 0
     DEBUG("fread BUFFER: %02X %02X %02X %02X %02X %02X %02X %02X\n",
           buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
-#endif
-
-    size_t newloc;
-    mem_get_true_access(buffer, true /* writing */,
-                        &newloc, NULL, NULL);
-#if 0
-    if (newloc != buffer) {
-        DEBUG("read_block into buffer $%04X - REAL loc is $%04X\n",
-              (size_t)buffer, newloc);
-    }
 #endif
     mem_put(buf, newloc, 512);
 
@@ -391,17 +395,20 @@ static void handle_prodos_entry(void)
     PPUT(PUNUSED, true);
 
     ACC = 0; // No error code
+    
+    unsigned long caller;
+    caller = WORD(peek_sneaky(STACK+1), peek_sneaky(STACK+2));
 
     switch (cmd) {
         case 0:
             handle_prodos_status(drive);
             break;
         case 1:
-            DEBUG("ProDOS READ cmd\n");
+            DEBUG("ProDOS READ cmd, called from $%04lX\n", caller);
             read_block(drive, blknum, buffer);
             break;
         case 2:
-            DEBUG("ProDOS WRITE cmd\n");
+            DEBUG("ProDOS WRITE cmd, called from $%04lX\n", caller);
             write_block(drive, blknum, buffer);
             break;
         default:
@@ -419,10 +426,50 @@ static void handle_bootdisk(void)
     PC = 0x801;
 }
 
+#define DPC DEBUG("$%04lX ", PC)
+static void log_ripple(void)
+{
+    switch (PC) {
+        case 0xE4E5:
+            DEBUG("--------------\n");
+            DPC;
+            DEBUG_CONT("Read $DC04, $%02X.\n", (int)ACC);
+            break;
+        case 0xE4E7:
+            DPC;
+            DEBUG_CONT("& #$F0 -> $%02X.\n", (int)ACC);
+            break;
+        case 0xE4E9: {
+            DPC;
+            bool pz = PTEST(PZERO);
+            DEBUG_CONT("%s #$F0; is %sroot.\n", pz? "==" : "!=",
+                       pz? "" : "not ");
+            break; }
+        case 0xE4EE:
+            DPC;
+            DEBUG_CONT("entry num ($DC29) is $%02X.\n", (int)ACC);
+            break;
+        case 0xE4F4:
+            DPC;
+            DEBUG_CONT("entries len ($DC2A) is $%02X.\n", (int)ACC);
+            break;
+        case 0xE4FD: {
+            DPC;
+            byte parentlo = ACC;
+            byte parenthi = XREG;
+            DEBUG_CONT("...off to read parent entry's dir block ($%04lX):\n",
+                       (unsigned long)WORD(parentlo, parenthi));
+            DEBUG("    from $DC27.DC28\n");
+            break; }
+    }
+}
+
 static void handle_event(Event *e)
 {
     if (e->type != EV_PRESTEP)
         return;
+
+    //log_ripple();
 
     // For now, assume slot is always slot 5
     if (PC == 0xC500) {
