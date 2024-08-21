@@ -1,5 +1,8 @@
 # BOBBIN (for Apples!)
 
+[Follow me at mastodon.social](https://mastodon.social/@micahcowan) for new feature announcements. Posts related to **bobbin** will begin with the tag "`BOBBIN: `".
+<hr/>
+
 **Bobbin** is a "highly hackable" Apple \]\[ emulator, aimed especially at improving productivity for devs of Apple \]\[ software by offering convenient terminal-based interface options, redirectable "standard input and output"-oriented options, and custom-scripted, on-the-fly adjustments to the emulated machine.
 
 [Click below](https://youtu.be/zMlG5CRfRDA) to watch a demonstration of an early version (roughly two days into development) of the pipe-able, standard I/O emulator interface (dubbed the "simple" interface):
