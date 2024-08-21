@@ -29,7 +29,6 @@ And here's another video (clickable) that showcases additional features in a mor
 ### Planned features
 
 - `.woz` disk format, and 13-sector support
-- Hard-drive image support for ProDOS
 - Full graphics (not to the terminal) and sound emulation, of course
 - Emulate an enhanced Apple //e by default
 - Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
