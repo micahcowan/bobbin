@@ -208,9 +208,19 @@ static void write_block(byte unit, off_t blkpos, word buffer)
         RETURN_ERROR(BadBlock);
     }
 
-    const byte *buf = getram();
+    byte buf[512];
+    //const byte *buf = getram();
+
+    // We do an inefficient loop bc it's an easy way
+    // to ensure everything comes from where it actually ought to, in the case
+    // of crossing mapping boundaries (up to 3 different regions of
+    // memory are possible)
+    for (word i=0; i != 512; ++i) {
+        buf[i] = peek(buffer+i);
+    }
+
     errno = 0;
-    if (fwrite(&buf[newloc], 1, 512, d->fh) < 512) {
+    if (fwrite(buf, 1, 512, d->fh) < 512) {
         int err = errno;
         DIE(1, "Couldn't write 512 bytes at offset %zu in hdd \"%s\": %s.\n",
             (size_t)sekpos, d->fname, strerror(err));
@@ -259,7 +269,14 @@ static void read_block(byte unit, off_t blkpos, word buffer)
     DEBUG("fread BUFFER: %02X %02X %02X %02X %02X %02X %02X %02X\n",
           buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
 #endif
-    mem_put(buf, newloc, 512);
+    // We do an inefficient loop bc it's an easy way
+    // to ensure everything goes where it actually ought to, in the case
+    // of crossing mapping boundaries (up to 3 different regions of
+    // memory are possible)
+    for (word i=0; i != 512; ++i) {
+        poke(buffer+i, buf[i]);
+    }
+    //mem_put(buf, newloc, 512);
 
     PPUT(PCARRY, false);
 }
