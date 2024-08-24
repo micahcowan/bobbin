@@ -581,6 +581,16 @@ extern void debugger(void);
 extern bool debugging(void);
 extern void breakpoint_set(word loc);
 
+/********** TIME-TRAVEL **********/
+
+extern bool get_timetravel(void);
+extern void timetravel_record_on(void);
+extern void timetravel_record_off(void);
+extern void timetravel_new_step(void);
+extern void timetravel_mem_change(unsigned long aloc, byte oldval);
+extern void timetravel_mem_change_blk(unsigned long aloc, const byte *buf, size_t sz);
+extern void timetravel_sswitch_change(SoftSwitches ss);
+
 /********** TIMING **********/
 
 struct timing_t;
