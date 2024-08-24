@@ -379,6 +379,10 @@ void debugger(void)
             go_until_rts = true;
             stack_min = LO(SP+2);
             loop = debugging_flag = false;
+        } else if (HAVE("tron")) {
+            trace_on("Trace started from debugger");
+        } else if (HAVE("troff")) {
+            trace_off();
         } else if (handle_monitor_like_cmd(&loop)) {
             // Handled.
         } else {
