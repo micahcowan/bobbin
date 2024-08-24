@@ -67,6 +67,26 @@ void trace_step(Event *e)
     }
 }
 
+void trace_write(word loc, byte val)
+{
+    if (traceon) {
+        size_t aloc;
+        MemAccessType acc;
+        mem_get_true_access(loc, true /* writing */, &aloc, NULL, &acc);
+        fprintf(trfile, "w@%05zX$%04X:%02X %s\n", aloc, loc, val, mem_get_acctype_name(acc));
+    }
+}
+
+void trace_read(word loc, byte val)
+{
+    if (traceon) {
+        size_t aloc;
+        MemAccessType acc;
+        mem_get_true_access(loc, false /* reading */, &aloc, NULL, &acc);
+        fprintf(trfile, "r@%05zX$%04X:%02X %s\n", aloc, loc, val, mem_get_acctype_name(acc));
+    }
+}
+
 void trace_reg(void)
 {
     if (!handler_registered) {

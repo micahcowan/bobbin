@@ -568,12 +568,13 @@ extern void trace_on(char *format, ...);
 extern void trace_off(void);
 extern int  tracing(void);
 
+extern void trace_read(word loc, byte val);
+extern void trace_write(word loc, byte val);
+
 /********** DEBUG **********/
 
 typedef int (*printer)(const char * fmt, ...);
 bool command_do(const char *line, printer pr);
-
-/********** DEBUG **********/
 
 extern void dbg_on(void);
 extern void debugger(void);

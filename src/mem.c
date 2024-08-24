@@ -561,11 +561,12 @@ byte peek(word loc)
     int t = event_fire_peek(loc);
     if (t < 0) maybe_language_card(loc, false);
     if (t < 0) t = slot_access_switches(loc, -1);
-    if (t >= 0) {
-        return (byte) t;
+    if (t < 0) {
+        t = peek_sneaky(loc);
     }
 
-    return peek_sneaky(loc);
+    trace_read(loc, t);
+    return (byte) t;
 }
 
 byte peek_sneaky(word loc)
@@ -607,6 +608,7 @@ void poke(word loc, byte val)
 {
     if (event_fire_poke(loc, val))
         return;
+    trace_write(loc, val);
     if (maybe_language_card(loc, true) >= 0)
         return;
     if (loc >= 0xC000 && loc < 0xC100) {
