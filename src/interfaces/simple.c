@@ -218,10 +218,10 @@ static void tokenize_err(void)
 
 int read_char(void)
 {
-    int c = -1;
+    int c = 0;
 
 recheck:
-    c = -1;
+    c = 0;
     if (suppress_input) {
         // no input
     } else if (exit_on_spindown) {
@@ -715,7 +715,8 @@ static void iface_simple_peek(Event *e)
 
     if (a == SS_KBD) {
         e->val = read_char();
-    } else if (!machine_is_iie() && a == SS_KBDSTROBE) {
+    } else if ((!machine_is_iie() && a == SS_KBDSTROBE)
+               || e->loc == SS_KBDSTROBE) {
         consume_char();
     }
 }
