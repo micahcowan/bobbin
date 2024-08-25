@@ -88,12 +88,14 @@ static bool bp_reached(void)
     byte op = peek_sneaky(current_pc());
     if (go_until_rts && SP >= stack_min) {
         go_until_rts = false;
+        event_fire(EV_UNHOOK); // Early, so the below message is visible
         printf("Returned.\n");
         return true;
     }
 
     if (cont_dest_flag && current_pc() == cont_dest) {
         cont_dest_flag = false;
+        event_fire(EV_UNHOOK); // Early, so the below message is visible
         printf("Arrived at $%04X.\n", (unsigned int)cont_dest);
         return true;
     }
@@ -106,6 +108,7 @@ static bool bp_reached(void)
         if (!bp->enabled) {
             // skip this one
         } else if (bp->is_watchpoint && val != bp->val) {
+            event_fire(EV_UNHOOK); // Early, so the below message is visible
             printf("Watchpoint %d fired:\n", i);
             printf("Value changed at $%04X ($%02X -> $%02X).\n",
                    (unsigned int)(bp->loc), (unsigned int)bp->val,
@@ -113,6 +116,7 @@ static bool bp_reached(void)
             bp->val = val;
             return true;
         } else if (!bp->is_watchpoint && pc == bp->loc) {
+            event_fire(EV_UNHOOK); // Early, so the below message is visible
             printf("Breakpoint %d at $%04X.\n", i, current_pc());
             return true;
         }
