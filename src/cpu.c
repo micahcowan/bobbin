@@ -16,7 +16,7 @@ uintmax_t instr_count = 0;
 
 void cpu_reset(void)
 {
-    PFLAGS |= PMASK(PUNUSED);
+    PFLAGS |= PMASK(PUNUSED) | PMASK(PBRK);
     /* Cycle details taken from https://www.pagetable.com/?p=410 */
     /* Cycles here are counted from 0 to match the source (for
        comparison purposes), but elsewhere counted from 1. */
@@ -530,8 +530,9 @@ void cpu_step(void)
                 stack_inc();
                 cycle();
                 byte p = peek(STACK);
-                // Leave BRK flag alone; always set UNUSED
-                PFLAGS = (p & 0xCF) | PMASK(PUNUSED);
+                // BRK and UNUSED must always be set; they're not real
+                //  flags (no associated flip flops)
+                PFLAGS = p | PMASK(PUNUSED) | PMASK(PBRK);
                 cycle();
             }
             break;
