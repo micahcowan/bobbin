@@ -219,7 +219,8 @@ static byte read_char(void) {
         return typed_char;
     }
 
-    int c = getch();
+    int c = 0;
+    if (!unhooked) c = getch();
     if (c == ERR) {
         // No char read; nothing to do.
     } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
@@ -358,7 +359,7 @@ static void if_tty_poke(Event *e)
     byte val = e->val;
     byte x = loc & 0x7F;
     word pg = WORD(0, text_page);
-    if ((loc >= pg  && loc < (pg + text_size) && x < 120)
+    if (!unhooked && (loc >= pg  && loc < (pg + text_size) && x < 120)
        && !(COLS < cols || LINES < 24)) {
         x %= 40;
         byte y = get_line_for_addr(loc);
@@ -403,8 +404,8 @@ static void if_tty_poke(Event *e)
 
 static void if_tty_unhook(void)
 {
+    if (!unhooked) (void) endwin();
     unhooked = true;
-    (void) endwin();
 }
 
 static void redraw(bool force, int overlay_offset)
@@ -508,7 +509,7 @@ static void if_tty_step(void)
 {
     // XXX more checking s/b done here to make sure we're where we think
     // we are.
-    if (current_pc() == 0xFBDD && cfg.bell) {
+    if (!unhooked && current_pc() == 0xFBDD && cfg.bell) {
         beep();
     }
 }
@@ -524,7 +525,7 @@ static void if_tty_display_touched(void)
 static void if_tty_disk_active(int val)
 {
     disk_active = val;
-    draw_border();
+    if (!unhooked) draw_border();
 }
 
 static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
@@ -538,9 +539,6 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 
 static void if_tty_event(Event *e)
 {
-    if (unhooked && e->type != EV_REHOOK)
-        return;
-
     switch (e->type) {
         case EV_START:
             if_tty_start();
@@ -568,7 +566,7 @@ static void if_tty_event(Event *e)
             if_tty_switch();
             break;
         case EV_FRAME:
-            if_tty_frame();
+            if (!unhooked) if_tty_frame();
             break;
         case EV_UNHOOK:
             if_tty_unhook();
@@ -577,7 +575,7 @@ static void if_tty_event(Event *e)
             if_tty_rehook();
             break;
         case EV_DISPLAY_TOUCH:
-            if_tty_display_touched();
+            if (!unhooked) if_tty_display_touched();
             break;
         case EV_DISK_ACTIVE:
             if_tty_disk_active(e->val);
