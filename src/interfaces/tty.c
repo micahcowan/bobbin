@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <stdlib.h>
 
 #include <unistd.h>
@@ -79,6 +80,13 @@ static byte get_line_for_addr(word loc)
     y |= lo < 0x28? 0
         : (lo < 0x50? 0x8 : 0x10);
     return y;
+}
+
+static sig_atomic_t stop_received = false;
+static void signal_handler(int s)
+{
+    stop_received = true;
+    signal(SIGTSTP, SIG_DFL);
 }
 
 static void draw_border(void)
@@ -250,6 +258,13 @@ static void if_tty_start(void)
     if (!isatty(STDIN_FILENO)) {
         util_reopen_stdin_tty(O_RDONLY);
     }
+
+    // Do our own SIGTSTP (Control-Z suspend) handling.
+    // Ncurses has it builtin, but always restores its windows
+    // when it comes back, even if endwin() was in effect (e.g., debugger).
+    // Also appears to use non-signal-safe functions and objects.
+    signal(SIGTSTP, signal_handler);
+
     // Init curses
     //use_tioctl(true);
     initscr();
@@ -404,7 +419,8 @@ static void if_tty_poke(Event *e)
 
 static void if_tty_unhook(void)
 {
-    if (!unhooked) (void) endwin();
+    (void) endwin();
+    signal(SIGTSTP, SIG_DFL); // Let the OS handle ^Z suspends.
     unhooked = true;
 }
 
@@ -420,6 +436,7 @@ static void redraw(bool force, int overlay_offset)
 static void if_tty_rehook(void)
 {
     unhooked = false;
+    signal(SIGTSTP, signal_handler); // Restore ncurses-safe ^Z suspends.
     redraw(false, 0);
 }
 
@@ -539,6 +556,17 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 
 static void if_tty_event(Event *e)
 {
+    // Process terminal "suspend" eventm, if we got one
+    if (stop_received && !unhooked) {
+        // We need to exit ncurses/terminal "application mode" first
+        (void) endwin();
+        raise(SIGTSTP);
+        refresh(); // Restore ncurses mode
+
+        stop_received = false;
+        signal(SIGTSTP, signal_handler);
+    }
+
     switch (e->type) {
         case EV_START:
             if_tty_start();

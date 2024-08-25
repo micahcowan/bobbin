@@ -285,7 +285,7 @@ void debugger(void)
             if (feof(stdin)) {
                 DIE(1,"\nEOF.\n");
             } else if (err == EINTR) {
-                fputs("(Interrupt received. \"q\" to exit.)\n", stdout);
+                fputs("(Interrupted by signal; re-prompting...)\n", stdout);
                 sigint_received = 0;
                 continue; // loop back around
             } else {
