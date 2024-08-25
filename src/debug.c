@@ -244,19 +244,16 @@ static bool handle_monitor_like_cmd(bool *loop)
 
 void debugger(void)
 {
-    if (debugging_flag) {
-        // Do nothing.
-    } else {
-        if (sigint_received >= 2) {
-            fputs("Debug entered via ^C^C.\n", stdout);
-        } else if (bp_reached()) {
-            // Handled
-        } else {
-            return;
-        }
-        event_fire(EV_UNHOOK);
-        debugging_flag = true;
+    if (sigint_received >= 2) {
+        fputs("Debug entered via ^C^C.\n", stdout);
+        sigint_received = 0;
+    } else if (bp_reached()) {
+        // Handled
+    } else if (!debugging_flag) {
+        return;
     }
+    event_fire(EV_UNHOOK);
+    debugging_flag = true;
 
     go_until_rts = false;
     cont_dest_flag = false;
