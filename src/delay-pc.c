@@ -287,9 +287,24 @@ static void process_record(struct dlypc_record *rec) {
     }
 }
 
+static void process_invalids(void)
+{
+    // Called by reboot. Process ONLY invalid PC counters, because PC
+    // is undefined at this point. Allows us to load memory before
+    // CPU runs its RESET. Necessary if running with --no-rom.
+
+    while (cur != NULL && cur->delay_pc == INVALID_LOC) {
+        process_record(cur);
+        cur = cur->next;
+    }
+}
+
 static void delay_step(Event *e)
 {
-    if (e->type == EV_PRESTEP && cur != NULL &&
+    if (e && e->type != EV_PRESTEP)
+        return;
+
+    while (cur != NULL &&
         (cur->delay_pc == INVALID_LOC || PC == cur->delay_pc)) {
 
         if (cur->delay_pc != INVALID_LOC) {
@@ -373,6 +388,7 @@ void dlypc_jump_to(word loc) {
 
 void dlypc_reboot(void) {
     cur = head;
+    process_invalids();
 }
 
 // iterator abstraction for traversing the files to be loaded
