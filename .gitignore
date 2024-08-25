@@ -33,7 +33,5 @@ src/machine-names.h
 src/stamp-h1
 test/pexpect/__pycache__
 test/pexpect/bobbin
-test/noninteract/*/output
-test/noninteract/*/testdisk*
-test/noninteract/run_basic.t/reverse
+test/noninteract/testruns
 *.pyc
