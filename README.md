@@ -709,17 +709,19 @@ If **bobbin** is processing non-interactive input while a `SIGINT` is received, 
 
 In the `--simple` interface, if a Ctrl-D is input by the user, then it indicates that **bobbin** should exit (**bobbin** may see a Ctrl-D entered directly, or it may "percieve" it via a return from `read()` that indicated no bytes remained to be read). **Bobbin** does not exit *immediately* upon receipt of a Ctrl-D. Instead, it waits until the program in the Apple \]\[ has caught up with the user input, up to the point when the Ctrl-D was typed, and issues a carriage return character. Only when the Apple \]\[ program indicates "consumption" of that carriage return, does **bobbin** then exit. This is to make the behavior consistent with other programs at a terminal.
 
-### Bobbin's command "breakout" interface
+### Bobbin's built-in debugger
 
-In either the `simple` (line-oriented) or the `tty` (curses screen display) interfaces, typing Control-C twice in succession enters a command-input interface. The emulation is paused while the user is prompted for a command. A single Control-C will be passed through to the emulated Apple \]\[, (including the first of two Control-C's in succession). If you enter the command accident by accident when you really just wanted to send another Control-C (break) character to the emulated Apple, then type the command `^C` (the carat character followed by a capital C) and then the Enter key, and it will send the Control-C and continue emulating. (You can also just type `c` and then Enter to continue emulating, and type another Control-C.)
+Typing Control-C twice in succession enters a command-input interface. The emulation is paused while the user is prompted for a command. A single Control-C will be passed through to the emulated Apple \]\[, (including the first of two Control-C's in succession). If you enter the command accident by accident when you really just wanted to send another Control-C (break) character to the emulated Apple, then type the command `^C` (the carat character followed by a capital C) and then the Enter key, and it will send the Control-C and continue emulation.
 
-If you enter command-input mode from the `tty` interface, just a handful of basic commands are currently available to you. If you are in command-input mode from the `simple` interface, additional debugger commands are available (future versions of **bobbin** will provide these commands in the `tty` interface as well&mdash;but for now if you want debugger features you must use the `simple` interface). See [Bobbin's built-in debugger](#bobbins-built-in-debugger), below, for more information about debug commands.
+If you are using **bobbin**'s `tty` interface, the video display will vanish when you enter the debugger, and content that was visible before you launched **bobbin** may become visible again. When the debugger is exited (except by `q`, the "quit bobbin" command), the video display will be restored once again.
 
-To exit the "breakout" command mode and return to emulation in the `tty` interface, simply enter an empty line. In the `simple` interface, an empty line "steps into" the next instruction; type the **c** command instead to continue emulation.
+To exit the debugger interface and return to emulation, type `c` followed by the Enter key.
 
-The following commands are available within the command-input "breakout" mode from both the `simple` and the `tty` interfaces:
+#### Essential commands
 
-**h**, **help**. Lists the commands and a brief description of each.
+The following non-debugging-oriented commands are available:
+
+**h**, **help**. Lists the essential commands and a brief description of each. Currently does not list the actual debugging commands.
 
 **q**, **quit**. Quits the emulator.
 
@@ -737,11 +739,9 @@ If you fire up **bobbin** without any disks initially, the emulated Apple \]\[ m
 
 **save-ram *FILE*** (*not* documented in-program!). Use this command to dump current RAM contents into the named file (overwriting it, if it exists). The file size will be 128k (even if the emulated machine doesn't support that much RAM, or if RAM was foreshortened via the `--ram` option). "Language card" bank one (`$D000` when bank one is switched in) will be at file offset 0xC000 thru 0xCFFF, and auxiliary memory bank one (`$D000` when the **ALTZP** soft switch is on and bank one is switched in) will be at file offset 0x1C000.
 
-### Bobbin's built-in debugger
+#### Understanding the debugger display
 
-The debugger commands are currently only available from the `simple` interface. To use them, enter the "breakout" command mode by typing Control-C twice in succession from the `simple` interface. **Note:** doing this in the `tty` interface also gives you a breakout command interface, but without the extra "debugger" commands.
-
-The debugger is still a work-in-progress, and exactly enough of a debugger has been created to meet the author's immediate needs. It may be missing a number of features you expect from a debugger, and in some cases the firmware's built-in system monitor may be a better option for inspecting, modifying, and running code in the emulator.
+The following debug-oriented commands are also available.
 
 When you enter the debugger, you'll see a message like the following:
 
@@ -750,7 +750,7 @@ When you enter the debugger, you'll see a message like the following:
   SPC = next intr, c = leave debugger (continue execution), m = Apple II monitor
   q = quit bobbin, r or w = warm reset, rr = cold reset
 -----
-ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]   B    D    I    Z    C
+ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]  [B]   D    I    Z    C
 STK: $1F4:  26  17  FB  (A0)  37  FD  77  FD  D2  E3  D6  E2  |  FF
 0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
 >
@@ -761,7 +761,7 @@ As the introduction states, you can type `c` to get back out of the debugger. Yo
 Taking a closer look at this portion of output from the debugger:
 
 ```
-ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]   B    D    I    Z    C
+ACC: A0  X: 00  Y: 05  SP: F4          [N]   V   [U]  [B]   D    I    Z    C
 STK: $1F4:  26  17  FB  (A0)  37  FD  77  FD  D2  E3  D6  E2  |  FF
 0300:   B1 28       LDA ($28),y      28: D0 07   07D5:  A0 A0 A0 A0 A0
 ```
