@@ -565,7 +565,7 @@ byte peek(word loc)
         t = peek_sneaky(loc);
     }
 
-    trace_read(loc, t);
+    //trace_read(loc, t);
     return (byte) t;
 }
 

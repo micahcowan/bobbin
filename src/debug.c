@@ -381,8 +381,10 @@ void debugger(void)
             loop = debugging_flag = false;
         } else if (HAVE("tron")) {
             trace_on("Trace started from debugger");
+            printf("Trace log started to file \"%s\".\n", cfg.trace_file);
         } else if (HAVE("troff")) {
             trace_off();
+            printf("Trace log \"%s\" closed.\n", cfg.trace_file);
         } else if (handle_monitor_like_cmd(&loop)) {
             // Handled.
         } else {
