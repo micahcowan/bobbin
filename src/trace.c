@@ -72,8 +72,10 @@ void trace_write(word loc, byte val)
     if (traceon) {
         size_t aloc;
         MemAccessType acc;
-        mem_get_true_access(loc, true /* writing */, &aloc, NULL, &acc);
-        fprintf(trfile, "w @%05zX $%04X :%02X %s\n", aloc, loc, val, mem_get_acctype_name(acc));
+        bool aux;
+        mem_get_true_access(loc, true /* writing */, &aloc, &aux, &acc);
+        fprintf(trfile, "w @%05zX $%04X :%02X %s%s\n", aloc, loc, val,
+                mem_get_acctype_name(acc), aux? " (AUX)" : "");
     }
 }
 

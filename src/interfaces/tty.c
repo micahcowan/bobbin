@@ -23,6 +23,7 @@ static byte text_page = 0x4;
 static int disk_active = 0;
 
 static WINDOW *msgwin;
+static bool unhooked;
 static bool saved_flash;
 static bool refresh_overlay = false;
 static bool refresh_all = false;
@@ -402,6 +403,7 @@ static void if_tty_poke(Event *e)
 
 static void if_tty_unhook(void)
 {
+    unhooked = true;
     (void) endwin();
 }
 
@@ -412,6 +414,12 @@ static void redraw(bool force, int overlay_offset)
     refresh_video(saved_flash);
     do_overlay(overlay_offset);
     refresh();
+}
+
+static void if_tty_rehook(void)
+{
+    unhooked = false;
+    redraw(false, 0);
 }
 
 int squawk_print(const char *fmt, ...)
@@ -426,10 +434,13 @@ int squawk_print(const char *fmt, ...)
 
 static void breakout(void)
 {
-    char buf[1024];
-
     sigint_received = 0;
     typed_char = 'A'; // something besides Ctrl-C, NOT ready for consumption.
+    flushinp(); // throw out any type-ahead/pasted input
+
+    dbg_on();
+#if 0
+    char buf[1024];
 
     redraw(true, 2);
 
@@ -442,7 +453,6 @@ static void breakout(void)
     timeout(-1);
     echo();
 
-    flushinp(); // throw out any type-ahead/pasted input
     int err = getnstr(buf, sizeof buf);
     bool handled = command_do(buf, squawk_print);
     if (!handled && buf[0] != '\0') {
@@ -453,8 +463,9 @@ static void breakout(void)
     nodelay(stdscr, true);
     attroff(msg_attr);
 
-    redraw(false, 0);
+    if (!unhooked) redraw(false, 0);
     overlay_timer = overlay_long_wait;
+#endif
 }
 
 static void handle_winch(void)
@@ -527,6 +538,9 @@ static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 
 static void if_tty_event(Event *e)
 {
+    if (unhooked && e->type != EV_REHOOK)
+        return;
+
     switch (e->type) {
         case EV_START:
             if_tty_start();
@@ -558,6 +572,9 @@ static void if_tty_event(Event *e)
             break;
         case EV_UNHOOK:
             if_tty_unhook();
+            break;
+        case EV_REHOOK:
+            if_tty_rehook();
             break;
         case EV_DISPLAY_TOUCH:
             if_tty_display_touched();

@@ -39,6 +39,7 @@ bool debugging(void)
 
 void dbg_on(void)
 {
+    event_fire(EV_UNHOOK);
     debugging_flag = true;
     print_message = true;
 }
@@ -239,8 +240,6 @@ static bool handle_monitor_like_cmd(bool *loop)
 
 void debugger(void)
 {
-    if (STREQ(cfg.interface, "tty")) return; // for now
-
     if (debugging_flag) {
         // Do nothing.
     } else {
