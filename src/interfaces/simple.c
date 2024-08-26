@@ -39,12 +39,6 @@ static enum {
 static FILE *tokenf;
 static unsigned long line_number = 0;
 
-static enum {
-    IM_APPLE = 0,
-    IM_CANON,
-    // IM_GETLINE, // future GNU getline() feature??
-} input_mode;
-
 enum mon_rom_check_status {
     MON_ROM_NOT_CHECKED,
     MON_ROM_IS_WOZ,
@@ -436,16 +430,6 @@ static void handle_run_basic(void)
 
 static void iface_simple_init(void)
 {
-    // Handle input mode
-    const char *s = cfg.simple_input_mode;
-    if (STREQ(s, "apple")) {
-        input_mode = IM_APPLE;
-    } else if (STREQ(s, "canonical") || STREQ(s, "fgets")) {
-        input_mode = IM_CANON;
-    } else {
-        DIE(2,"Unrecognized --simple-input value \"%s\".\n", s);
-    }
-
     handle_run_basic();
 }
 
@@ -673,12 +657,6 @@ static void iface_simple_step(void)
             if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
                 // Don't want to echo the input when it's piped in.
                 suppress_output();
-            }
-            else if (input_mode == IM_CANON) {
-                // Use the terminal's "canonical mode" input handling,
-                //  instead of the Apple ]['s built-in handling
-                suppress_output();
-                set_canon();
             }
             break;
         case FP_RESTART:

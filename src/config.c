@@ -23,7 +23,6 @@ Config cfg = {
     .lang_card = true,
     .bell = true,
     .turbo = true,
-    .simple_input_mode = "apple",
     .trace_file = "trace.log",
 };
 
@@ -124,7 +123,6 @@ const OptInfo options[] = {
     { SIMPLE_OPT_NAMES, T_ALIAS, (char *)ALIAS_SIMPLE },
     { REMAIN_OPT_NAMES, T_BOOL, &cfg.remain_after_pipe },
     { REMAIN_TTY_OPT_NAMES, T_BOOL, &cfg.remain_tty },
-    { SIMPLE_INPUT_OPT_NAMES, T_STRING_ARG, &cfg.simple_input_mode },
     { DIE_ON_BRK_OPT_NAMES, T_BOOL, &cfg.die_on_brk },
     { DEBUG_ON_BRK_OPT_NAMES, T_BOOL, &cfg.debug_on_brk },
     { BREAKPOINT_OPT_NAMES, T_FN_ARG, &breakpoint },
