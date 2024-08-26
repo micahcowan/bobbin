@@ -28,6 +28,7 @@ And here's another video (clickable) that showcases additional features in a mor
 - Can automatically watch a binary file for changes, and reload itself instantly when it's updated
 - Can delay loading/running a binary file until the system has completed the basic boot-up
 - Can be used to tokenize or detokenize AppleSoft BASIC programs
+- Supports running AppleSoft programs as standalone Unix programs, via `#!/path/to/bobbin --run-basic`
 
 ### Planned features
 
