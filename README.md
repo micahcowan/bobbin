@@ -7,8 +7,7 @@
 
 [Click below](https://youtu.be/zMlG5CRfRDA) to watch an out-dated demonstration of an early version (roughly two days into development) of the pipe-able, standard I/O emulator interface (dubbed the "simple" interface):
 
-**Please note:** The invocation and operation of **bobbin** has changed significantly since this video was created.
-
+**Please note:** the video shows the use of command-line option `-m ][`. In the latest version of the **bobbin**, you must use `-m plus` (or `-m ][+`, but some shells don't allow those characters to appear unquoted), to obtain approximately the same results as shown in the video. If you use `-m ][` as shown in the video (and if your shell even allows that), instead of the correct `-m plus`, then **bobbin** will drop you directly into *Integer* (Woz) BASIC, instead of AppleSoft BASIC (and the examples from the video would no longer work).
 <br />
 
 [![bobbin showcase video](https://img.youtube.com/vi/zMlG5CRfRDA/0.jpg)](https://youtu.be/zMlG5CRfRDA)
