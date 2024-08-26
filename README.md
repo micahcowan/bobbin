@@ -540,8 +540,6 @@ The `tty` is a few steps closer to "realistic" than the strictly line-oriented `
 
 The `simple` interface is accessed via the `--iface simple` (or just `--simple`) option, and also is the default when standard input is not from the terminal (e.g., file or pipe). It provides a line-oriented interface, and is largely similar to the experience of using an Apple \]\[ over a serial connection: cursor position is ignored, and characters are printed sequentially. The cursor may be backed up if the user, or the emulated program, types a backspace character, but the cursor will never travel upwards on the screen.
 
-There are two "input modes" for the `simple` interface (`apple` and `fgets`), which select how input behaves when **bobbin** detects that the emulated program desires a full line of input. See below for more detail.
-
 #### Interactive "simple" interface
 
 The most straightforward way to use the `simple` interface is interactively. If you run **bobbin** like:
@@ -624,21 +622,9 @@ This mode is handy for trying out/experimenting with your Apple programs.
 
 There is also the `--remain-tty` option, which does the same thing as `--remain`, except after reading your BASIC program or commands at input, it switches to the full "screen emulation" provided by the `tty` interface (instead of remaining at the line-oriented `simple` interface).
 
-##### Non-interactive line input
+##### Non-interactive input
 
-When **bobbin** detects that a line of input is being fetched, it suppresses output while that line is being read (just as described at the end of [the `--simple-input fgets` section](#--simple-input-fgets) just above. This is to support a familiar interface similar to other standard I/O tools: input comes into a program, output comes out. If output weren't suppressed during line input, the Apple would echo it back in the output. If you pipe a thousand-line BASIC program into **bobbin**, you'll probably be annoyed if you have to wade through those thousand lines you already had, just to get to the "good part" (the BASIC program's output).
-
-For the same reasons, during non-terminal input, the `simple` interface also suppresses prompt characters and preceding newlines, that come just before line input is requested. Just as you don't want to see a thousand lines of BASIC code you just sent get thrown back at your face, you also don't want to see the thousand prompt characters that were issued, either. This "prompt suppression" is not performed during the other (selectable) input modes.
-
-There is no option to control the input-mode used for non-interactive input. The developer's in-my-head name for it is "pipe" mode.
-
-##### How the `--simple` interface distinguishes line-input from keypresses
-
-**Bobbin** watches the Apple \]\['s 6502 CPU register called the PC (program counter) register, which tracks the location in memory where the Apple is currently executing code. If it reaches a place in the firmware that **bobbin** knows corresponds to a particular place in the Apple \]\[ firmware "monitor" program known as `GETLN`, then the specialized "line input" behavior is triggered. The locations used to match against the PC to determine if `GETLN` is running, are `$FD75` (`NXTCHAR`), `$FD67` (`GETLNZ`), and `$FD6A` (`GETLN`). The latter two locations are only used in non-interactive ("pipe") mode, to suppress prompt-printing, while the first location is used both to suppress output in non-interactive mode. If the non-autostart, Integer BASIC firmware is loaded, an additional location is used for prompt-detection on the program counter: `$E006`.
-
-Character output is detected when the program counter reaches `$FDF0` (`COUT1`). When output is not being suppressed, this triggers the character found in the accumulator register to be printed to **bobbin**'s output stream (after suitable transformation, from Apple \]\['s character encoding scheme to ASCII). Output suppression *in no way* affects whether, or in what way, a character is printed *interanlly* to the Apple \]\['s video memory.
-
-While one might be tempted to think that character input probably mirrors how character output is done&mdash;matching the program counter against a memory location like `$FD1B` (`KEYIN`), it is actually detected in a completely different way: by trapping memory reads from special memory locations `$C00x` and `$C01x` (where `x` here represents any hexadecimal nybble value). The former location is used by an Apple \]\[ program to read whether a character is available to be read, and what its value is, while the `$C01x` memory is used just to tell the Apple \]\[ key-handling hardware that we've accepted the keypress, and that it shouldn't set the "key-is-ready" bit at `$c00x` until the user presses another key. **Bobbin** needs to use this method for providing user input, rather than checking for entry into a subroutine, because many, many programs use that method directly to read keypresses, and if **bobbin** didn't handle them, those programs might loop forever, always waiting for a keypress that **bobbin** would never know to deliver.
+When **bobbin** detects that input is being fed to it from a file or a program (that is, not from a direct user at the terminal), the `--simple` interface suppresses locally-echoed characters and command-prompt characters  that the emulated Apple prints to the screen while input is being read. This is to support a familiar interface similar to other standard I/O tools: input comes into a program, output comes out. If output weren't suppressed during line input, the Apple would echo it back in the output. If you pipe a thousand-line BASIC program into **bobbin**, you'd probably be annoyed if you have to wade through those thousand lines you already had, just to get to the "good part" (the BASIC program's output).
 
 ##### Additional details of bobbin's I/O processing
 
@@ -649,6 +635,29 @@ If **bobbin** receives a second `SIGINT` signal before the emulated Apple has ha
 If **bobbin** is processing non-interactive input while a `SIGINT` is received, and the `--remain` option is active, it will do three things in succession: (1) it will send a Ctrl-C to the program on the Apple \]\[ (in BASIC, this usually has the effect of causing a program `BREAK`); (2) it will discard any pipe or redirected input that was still waiting to be processed by the Apple \]\['s program, and (3) it will immediately enter "interactive" mode.
 
 In the `--simple` interface, if a Ctrl-D is input by the user, then it indicates that **bobbin** should exit (**bobbin** may see a Ctrl-D entered directly, or it may "percieve" it via a return from `read()` that indicated no bytes remained to be read). **Bobbin** does not exit *immediately* upon receipt of a Ctrl-D. Instead, it waits until the program in the Apple \]\[ has caught up with the user input, up to the point when the Ctrl-D was typed, and issues a carriage return character. Only when the Apple \]\[ program indicates "consumption" of that carriage return, does **bobbin** then exit. This is to make the behavior consistent with other programs at a terminal.
+
+On some terminals, the left-and-right arrow keys may not work (this happens when the actual terminal being used does not match the value of the `TERM` environment variable; or if the `termcap` or `terminfo` databases have incorrect escape sequences in the definition for that terminal). In such cases, Ctrl-U may be used as *right-arrow* instead. Ctrl-H is *left-arrow* (and is what Apple used as backspace). If you want to toggle between moving left and right while editing a line, Ctrl-H/Ctrl-U are conveniently close to one another; but if you just want to backspace over some characters, your keyboard's Backspace key is the better option. Note that Ctrl-U has an *entirely different* meaning under `--simple-input fgets`, on most Unix-style terminals (erases the current input line).
+
+The `apple` input mode does *not* grant you access to moving the cursor arround the screen using the Escape key in combination with other keys... or rather, it *does*, but you won't *see* it, because that requires full screen emulation (like the `--tty` interface will do). So, if you type something like:
+
+```
+]PRINT "HEY THERE"
+HEY THERE
+
+]
+```
+
+And if you then type Esc D Esc D and then type Ctrl-U a few times, you won't see the cursor move at all (unlike on an Apple screen), but you *will* see the letters from a couple lines above start to echo at the current cursor position:
+
+```
+]PRINT "HEY THERE"
+HEY THERE
+
+]EY THE
+```
+
+Our advice is to refrain from using the Esc key at line inputs. If you want to copy/re-enter a line, it's usually easier just to use your terminal's copy/paste feature! ...Or you can use the (default) `tty` interface instead of `--simple`, so that you can actually see where the text cursor has moved to.
+
 
 ### Bobbin's built-in debugger
 
