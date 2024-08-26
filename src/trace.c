@@ -64,6 +64,7 @@ void trace_step(Event *e)
     if (traceon) {
         fprintf(trfile, "%79ju\n", instr_count);
         util_print_state(trfile, current_pc(), &theCpu.regs);
+        trace_prodos();
     }
 }
 

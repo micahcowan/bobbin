@@ -33,9 +33,9 @@ struct dlypc_record initrec = {
     .basic_fixup = false,
 };
 
-struct dlypc_record *head = NULL;
-struct dlypc_record *tail = NULL;
-struct dlypc_record *cur  = NULL;
+static struct dlypc_record *head = NULL;
+static struct dlypc_record *tail = NULL;
+static struct dlypc_record *cur  = NULL;
 
 /********************/
 

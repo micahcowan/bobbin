@@ -127,6 +127,7 @@ const OptInfo options[] = {
     { DEBUG_ON_BRK_OPT_NAMES, T_BOOL, &cfg.debug_on_brk },
     { BREAKPOINT_OPT_NAMES, T_FN_ARG, &breakpoint },
     { TRACE_FILE_OPT_NAMES, T_STRING_ARG, &cfg.trace_file },
+    { TRACE_PRODOS_MLI_OPT_NAMES, T_BOOL, &cfg.trace_prodos },
     { TRACE_TO_OPT_NAMES, T_FN_ARG, &trace_to_fn },
     { TRAP_FAILURE_OPT_NAMES, T_WORD_ARG, &cfg.trap_failure,
         &cfg.trap_failure_on },

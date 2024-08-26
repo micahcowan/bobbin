@@ -21,7 +21,7 @@ struct Breakpoint {
     Breakpoint *next;
 };
 
-Breakpoint *bp_head = NULL;
+static Breakpoint *bp_head = NULL;
 
 static char linebuf[256];
 

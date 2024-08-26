@@ -127,6 +127,7 @@ struct Config {
     const char *    trace_file;
     uintmax_t       trace_start;
     uintmax_t       trace_end;
+    bool            trace_prodos;
     bool            trap_success_on;
     word            trap_success;
     bool            trap_failure_on;
@@ -569,6 +570,8 @@ extern int  tracing(void);
 
 extern void trace_read(word loc, byte val);
 extern void trace_write(word loc, byte val);
+
+extern void trace_prodos(void); // in trace-prodos.c
 
 /********** DEBUG **********/
 

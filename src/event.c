@@ -14,8 +14,8 @@ struct timedfn {
     unsigned int frames_left;
     struct timedfn *next;
 };
-struct timedfn *tmhead = NULL;
-bool timer_access = false;
+static struct timedfn *tmhead = NULL;
+static bool timer_access = false;
 
 void frame_timer_cancel(void (*fn)(void))
 {

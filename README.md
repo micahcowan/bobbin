@@ -478,6 +478,14 @@ This feature is intended for use with the `--trap-failure` feature. If the failu
 
 This feature is used by **bobbin**'s build system to debug the emulator's correctness. It could also be used for Apple developers to examine unexpected behavior in their software via automated tests.
 
+Tracing can also be switched on and off, directly in the debugger, using the debugger's `tron` and `troff` commands. Tracing can fill up your disk space *very* rapidly, so it's best to use these commands surgically, and begin and end your traces to include just the bits that are relevant to your debugging session.
+
+##### --trace-prodos-mli
+
+Add additional information to the trace log for ProDOS MLI calls.
+
+Note: this option is likely to be removed/replaced in the future. Whenever the instruction `JSR $BF00` is encountered, information is printed about the command being issued, and for some commands, the parameters given.
+
 ##### --trace-file *arg*
 
 Trace log file to use instead of `trace.log`.
