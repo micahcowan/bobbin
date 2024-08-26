@@ -5,9 +5,10 @@
 
 **Bobbin** is a "highly hackable" Apple \]\[ emulator, aimed especially at improving productivity for devs of Apple \]\[ software by offering convenient terminal-based interface options, redirectable "standard input and output"-oriented options, and custom-scripted, on-the-fly adjustments to the emulated machine.
 
-[Click below](https://youtu.be/zMlG5CRfRDA) to watch a demonstration of an early version (roughly two days into development) of the pipe-able, standard I/O emulator interface (dubbed the "simple" interface):
+[Click below](https://youtu.be/zMlG5CRfRDA) to watch an out-dated demonstration of an early version (roughly two days into development) of the pipe-able, standard I/O emulator interface (dubbed the "simple" interface):
 
-**Please note:** the video shows the use of command-line options `--simple` and `-m ][`. In the latest version of the **bobbin**, you must use `-m ][+` (or `-m plus`), and also add `--simple-input fgets`, to obtain approximately the same results as shown in the video. If you use `-m ][` as shown in the video (and if your shell even allows that), instead of the correct `-m ][+`, then **bobbin** will drop you directly into *Integer* (Woz) BASIC, instead of AppleSoft.
+**Please note:** The invocation and operation of **bobbin** has changed significantly since this video was created.
+
 <br />
 
 [![bobbin showcase video](https://img.youtube.com/vi/zMlG5CRfRDA/0.jpg)](https://youtu.be/zMlG5CRfRDA)
@@ -455,14 +456,6 @@ This option applies when **bobbin**'s input has been redirected, say from a file
 Go interactive after input is exhausted, *and* switch to `tty` interface.
 
 Same as `--remain`, except that after input has been exhausted, the display is switched to the full Apple \]\[ display emulation (the `tty` interface).
-
-##### --simple-input *arg*
-
-`apple` (default), or `fgets`.
-
-See [](#choosing-your-flavor-of-input-mode-with---simple-input) below, for copious details about this option. The TL;DR of it is that `fgets` uses your terminal's (primitive) line-input processing when **bobbin** detects that the Apple \]\[ wants to read a line of input (as opposed to a single character), and `apple` (the default) defers to the emulated Apple computer's (equally primitive, yet distinctly different) line-input processing. 
-
-This option has no effect while **bobbin** is not reading from a terminal.
 
 #### Diagnostics, Debugging, and Testing Options
 
