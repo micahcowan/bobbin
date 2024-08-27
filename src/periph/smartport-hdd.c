@@ -414,7 +414,7 @@ static void handle_prodos_entry(void)
     ACC = 0; // No error code
     
     unsigned long caller;
-    caller = WORD(peek_sneaky(STACK+1), peek_sneaky(STACK+2));
+    caller = WORD(peek_sneaky(STACK+1), peek_sneaky(STACK+2))-2;
 
     switch (cmd) {
         case 0:
