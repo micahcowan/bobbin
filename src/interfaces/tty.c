@@ -32,6 +32,7 @@ static bool altcharset = false;
 static const unsigned long overlay_wait = 120; // 2 seconds
 static const unsigned long overlay_long_wait = 600; // 10 seconds
 static unsigned long overlay_timer = 0;
+static bool can_clear_messages = false;
 static int msg_attr;
 static int cmd_attr;
 static int disk_attr;
@@ -214,7 +215,7 @@ static void clear_overlay(void)
 static void do_overlay_timer(void)
 {
     if (!overlay_timer) return;
-    if (--overlay_timer == 0) clear_overlay();
+    if (--overlay_timer == 0) can_clear_messages = true;
 }
 
 static byte read_char(void) {
@@ -224,11 +225,19 @@ static byte read_char(void) {
     if (sigint_received == 1) {
         sigint_received = 0;
         typed_char = 0x83; // Ctrl-C
+        if (can_clear_messages) {
+            can_clear_messages = false;
+            clear_overlay();
+        }
         return typed_char;
     }
 
     int c = 0;
     if (!unhooked) c = getch();
+    if (c != ERR && can_clear_messages) {
+        can_clear_messages = false;
+        clear_overlay();
+    }
     if (c == ERR) {
         // No char read; nothing to do.
     } else if (c == KEY_BACKSPACE || c == KEY_LEFT) {
