@@ -547,9 +547,10 @@ static void if_tty_disk_active(int val)
 
 static bool if_tty_squawk(int level, bool cont, const char *fmt, va_list args)
 {
-    if (!msgwin) return false;
+    if (unhooked || !msgwin) return false;
     vw_printw(msgwin, fmt, args);
     overlay_timer = overlay_wait;
+    can_clear_messages = false;
     refresh_overlay = true;
     return true; // suppress normal (stderr) squawking
 }
