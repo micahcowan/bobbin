@@ -610,9 +610,18 @@ extern bool check_watches(void);
 /* TBD */
 extern word print_disasm(FILE *f, word pos, const Registers *regs);
 
+// Although the Apple II processor is run at 1,022,727.143 Hz most of
+// the time, every 65th cycle is elongated, run at an effective
+// 894,886.25 Hz. Together, they average out to
+// 1,020,484.32 Hz. Source: Sathers, "Understanding the Apple IIe".
+//
+// There are 65 cycles (counting the elongated one) per horizontal scan,
+// and 262 horizontal scans for each ~60Hz vertical scan.
 #define ONE_SEC_IN_NS       1000000000
-#define NS_PER_FRAME        16651559
-#define CYCLES_PER_FRAME    17045
+#define NS_PER_FRAME        16688155 // _4.502952...
+#define CYCLES_PER_LINE     65
+#define LINES_PER_FRAME     262
+#define CYCLES_PER_FRAME    (CYCLES_PER_LINE * LINES_PER_FRAME)
 
 extern uintmax_t cycle_count;
 extern uintmax_t instr_count;
