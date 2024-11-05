@@ -292,8 +292,8 @@ static void if_tty_start(void)
     nodelay(stdscr, true);
 
 #ifdef NCURSES_VERSION
-    ESCDELAY=17; // Wait 1/60th of a second to see if an escape char
-                 // is the start of a terminal control sequence/function key
+    set_escdelay(17); // Wait 1/60th of a second to see if an escape char
+                      // is the start of a terminal control sequence/function key
     // ^ This solution is not portable. But there doesn't seem to be a
     // portable way to reduce/eliminate the wait time for an escape
     // sequence. If we have to choose between zero delay, and half a
