@@ -41,6 +41,11 @@ static const Sha256Sum TWOEY_SUM_A
       0x16, 0xb7, 0x7b, 0x20, 0x91, 0x59, 0x86, 0xed,
       0x11, 0x78, 0xd1, 0xe6, 0xfc, 0x07, 0xa6, 0x47,
       0xf7, 0xee, 0x8d, 0x4e, 0x6a, 0xb9, 0xd4, 0x0b };
+static const Sha256Sum ENHANCED_SUM_A
+ = {  0xaa, 0xb3, 0x8a, 0x03, 0xca, 0x8d, 0xea, 0xbb,
+      0xb2, 0xf8, 0x68, 0x73, 0x31, 0x48, 0xc2, 0xef,
+      0xd6, 0xf6, 0x55, 0xa5, 0x9c, 0xd9, 0xc5, 0xd0,
+      0x58, 0xef, 0x3e, 0x0b, 0x7a, 0xa8, 0x6a, 0x1a };
 static const Sha256Sum ZERO_SUM
   = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -63,6 +68,11 @@ static const Sha256SumPtrAry TWOEY_SUMS = {
     NULL,
 };
 
+static const Sha256SumPtrAry ENHANCED_SUMS = {
+    ENHANCED_SUM_A,
+    NULL,
+};
+
 static const Sha256SumPtrAry PLACEHOLDER_SUMS = {
     ZERO_SUM,
     NULL,
@@ -80,7 +90,7 @@ static const Alias aliases[] = {
     { ORIGINAL_SUMS, ORIGINAL_ALIASES },
     { PLUS_SUMS, PLUS_ALIASES },
     { TWOEY_SUMS, TWOEY_ALIASES },
-    { PLACEHOLDER_SUMS, ENHANCED_ALIASES },
+    { ENHANCED_SUMS, ENHANCED_ALIASES },
 };
 
 static Sha256SumPtrPtr   acceptable_sums = NULL;
@@ -166,6 +176,7 @@ bool validate_rom(unsigned char *buf, size_t sz)
 
 const char *default_romfname;
 static bool is_iie = false;
+static bool is_enhanced_iie = false;
 
 void machine_init(void)
 {
@@ -204,16 +215,16 @@ void machine_init(void)
     }
     // Can compare == (instead of STREQ), because we have
     //  the original's pointer.
-    if (orig == ENHANCED_TAG && cfg.load_rom) {
-        WARN("Default machine type is \"%s\", but that type is not actually\n",
-             cfg.machine);
-        WARN("supported in this development version.\n");
-        DIE(2,"Try invoking with -m ][+ or -m plus\n");
-    }
     if (orig == TWOEY_TAG) {
         default_romfname = "apple2e.rom";
         expected_size = 16 * 1024;
         is_iie = true;
+    }
+    if (orig == ENHANCED_TAG) {
+        default_romfname = "Apple2e_Enhanced.rom";
+        expected_size = 16 * 1024;
+        is_iie = true;
+        is_enhanced_iie = true;
     }
     if (orig == ORIGINAL_TAG) {
         default_romfname = "apple2.rom";
@@ -235,7 +246,12 @@ bool machine_is_iie(void)
     return is_iie;
 }
 
+bool machine_is_enhanced_iie(void)
+{
+    return is_enhanced_iie;
+}
+
 bool machine_has_mousetext(void)
 {
-    return false;
+    return is_enhanced_iie;
 }

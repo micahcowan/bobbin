@@ -203,6 +203,7 @@ size_t expected_rom_size(void);
 extern const char *default_romfname;
 extern bool validate_rom(unsigned char *buf, size_t sz);
 extern bool machine_is_iie(void);
+extern bool machine_is_enhanced_iie(void);
 extern bool machine_has_mousetext(void);
 
 /********** MEMORY **********/
