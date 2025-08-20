@@ -645,6 +645,15 @@ void cpu_step(void)
         case 0x58: // CLI
             OP_RMW_IMPL(PPUT(PINT, 0));
             break;
+        case 0x5A: // PHY (Push Y) - MOS 65C02 only
+            if (machine_is_enhanced_iie()) {
+                cycle();
+                stack_push(YREG);
+                cycle();
+                break;
+            }
+            // On 6502, this is an unimplemented opcode - fall through to default
+            /* FALLTHROUGH */
         case 0x59: // EOR, MEM,y
             OP_READ_ABS_IDX(YREG, ff(ACC ^= val));
             break;
@@ -732,6 +741,18 @@ void cpu_step(void)
         case 0x78: // SEI
             OP_RMW_IMPL(PPUT(PINT, 1));
             break;
+        case 0x7A: // PLY (Pull Y) - MOS 65C02 only
+            if (machine_is_enhanced_iie()) {
+                cycle();
+                stack_inc();
+                cycle();
+                YREG = peek(STACK);
+                ff(YREG);
+                cycle();
+                break;
+            }
+            // On 6502, this is an unimplemented opcode - fall through to default
+            /* FALLTHROUGH */
         case 0x79: // ADC MEM,y
             OP_READ_ABS_IDX(YREG, do_adc(val));
             break;
@@ -742,6 +763,14 @@ void cpu_step(void)
             OP_RMW_ABS_IDX(XREG, val = do_ror(val));
             break;
 
+        // MOS 65C02 instructions (Enhanced Apple IIe)
+        case 0x80: // BRA (Branch Always) - MOS 65C02 only
+            if (machine_is_enhanced_iie()) {
+                OP_BRANCH(true);
+                break;
+            }
+            // On 6502, this is an unimplemented opcode - fall through to default
+            /* FALLTHROUGH */
 
         case 0x81: // STA, (MEM,x)
             OP_WRITE_INDX(ACC);
@@ -923,6 +952,15 @@ void cpu_step(void)
         case 0xD8: // CLD
             OP_RMW_IMPL(PPUT(PDEC, 0));
             break;
+        case 0xDA: // PHX (Push X) - MOS 65C02 only
+            if (machine_is_enhanced_iie()) {
+                cycle();
+                stack_push(XREG);
+                cycle();
+                break;
+            }
+            // On 6502, this is an unimplemented opcode - fall through to default
+            /* FALLTHROUGH */
         case 0xD9: // CMP, MEM,y
             OP_READ_ABS_IDX(YREG, do_cmp(ACC, val));
             break;
@@ -985,6 +1023,18 @@ void cpu_step(void)
         case 0xF8: // SED
             OP_RMW_IMPL(PPUT(PDEC, 1));
             break;
+        case 0xFA: // PLX (Pull X) - MOS 65C02 only
+            if (machine_is_enhanced_iie()) {
+                cycle();
+                stack_inc();
+                cycle();
+                XREG = peek(STACK);
+                ff(XREG);
+                cycle();
+                break;
+            }
+            // On 6502, this is an unimplemented opcode - fall through to default
+            /* FALLTHROUGH */
         case 0xF9: // SBC, MEM,y
             OP_READ_ABS_IDX(YREG, do_sbc(val));
             break;

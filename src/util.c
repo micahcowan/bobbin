@@ -112,8 +112,44 @@ int util_todisplay(int c)
     } else if (c >= 0x40) {
         if (machine_has_mousetext() && (swget(ss, ss_altcharset)
                                         || swget(ss, ss_eightycol))) {
-            // mousetext. All @@ for now?
-            c = '@';
+            // Apple IIe MouseText characters ($40-$5F) from Wikipedia table
+            // Using single-width Unicode characters where possible
+            static const char mousetext_chars[32] = {
+                '@',     // $40 - Apple logo (open) - use @ as fallback
+                'A',     // $41 - Apple logo (solid) - use A as fallback  
+                'H',     // $42 - Hourglass - use H as fallback
+                'T',     // $43 - Timer/clock - use T as fallback
+                'Y',     // $44 - Checkmark - use Y as fallback
+                'N',     // $45 - X mark - use N as fallback
+                '<',     // $46 - Running man left - use < as fallback
+                '>',     // $47 - Running man right - use > as fallback
+                '#',     // $48 - Solid rectangle
+                '[',     // $49 - Left half block
+                ']',     // $4A - Right half block
+                '-',     // $4B - Upper half block
+                '_',     // $4C - Lower half block
+                '/',     // $4D - Lower right triangle
+                '\\',    // $4E - Lower left triangle  
+                '\\',    // $4F - Upper left triangle
+                '/',     // $50 - Upper right triangle
+                '.',     // $51 - Ellipsis - use . as fallback
+                'v',     // $52 - Down arrow
+                '^',     // $53 - Up arrow
+                '>',     // $54 - Right arrow
+                '<',     // $55 - Left arrow
+                'R',     // $56 - Return symbol - use R as fallback
+                '=',     // $57 - Horizontal line
+                '%',     // $58 - Pattern/texture
+                '*',     // $59 - Pattern/texture
+                '+',     // $5A - Plus/cross
+                'o',     // $5B - Circle/bullet
+                '|',     // $5C - Vertical bar
+                '!',     // $5D - Exclamation
+                'X',     // $5E - X mark
+                '_'      // $5F - Underscore
+            };
+            // Return the MouseText character
+            return (int)(unsigned char)mousetext_chars[c - 0x40];
         } else {
             // Uppercase. Good as it is
         }
