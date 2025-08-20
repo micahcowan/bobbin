@@ -480,7 +480,9 @@ void vidout(void)
         // (emit, don't emit), we must stop suppressing.
         output_suppressed = SUPPRESS_NONE;
     }
-    int c = util_toascii(ACC);
+    
+    // Use util_todisplay to handle MouseText characters and other Apple II display conversions
+    int c = util_todisplay(ACC);
     if (c < 0) return;
 
     if (suppress == SUPPRESS_ALWAYS)
