@@ -1,6 +1,7 @@
 from debug import *
 from basics import *
 from asoft import *
+from apple_iie import *
 import pexpect
 import os
 import re
