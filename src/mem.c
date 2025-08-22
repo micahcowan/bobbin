@@ -344,7 +344,9 @@ void mem_get_true_access(word loc, bool wr, size_t *bufloc, bool *in_aux, MemAcc
                          : !swget(ss, ss_lc_read_bsr)))) {
         *access = MA_ROM;
         size_t romsz = expected_rom_size();
-        *bufloc = loc - (LOC_ADDRESSABLE_END - romsz);
+        // For Enhanced Apple IIe (16KB ROM), use offset to map ROM starting at 0xD000
+        size_t rom_offset = (romsz == 16 * 1024) ? 0x1000 : 0;
+        *bufloc = loc - LOC_ROM_START + rom_offset;
     } else if (cfg.lang_card && swget(ss, ss_lc_bank_one)
                && loc < LOC_BSR_END) {
         *access = MA_LC_BANK1;

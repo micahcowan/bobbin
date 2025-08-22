@@ -1,0 +1,103 @@
+;
+; Enhanced Apple IIe specific test suite
+; Tests 65C02 instructions and Enhanced IIe features
+;
+; This test validates that our Enhanced Apple IIe implementation
+; correctly supports 65C02 instructions while maintaining 6502 compatibility
+
+.segment "ZEROPAGE"
+test_num: .res 1        ; Current test number
+acc_save: .res 1        ; Accumulator save area
+x_save:   .res 1        ; X register save area  
+y_save:   .res 1        ; Y register save area
+
+.segment "DATA"
+error_code: .res 1      ; Error code for failures
+
+.segment "CODE"
+
+; Test entry point
+start:
+    lda #0
+    sta test_num
+    sta error_code
+    
+    ; Test 1: INC A instruction (0x1A)
+    inc test_num
+    lda #$42
+    .byte $1A               ; INC A on 65C02, NOP on 6502
+    cmp #$43                ; Should be $43 on Enhanced IIe
+    bne test_fail
+    
+    ; Test 2: DEC A instruction (0x3A)  
+    inc test_num
+    lda #$42
+    .byte $3A               ; DEC A on 65C02, NOP on 6502
+    cmp #$41                ; Should be $41 on Enhanced IIe
+    bne test_fail
+    
+    ; Test 3: BRA instruction (0x80)
+    inc test_num
+    .byte $80, $04          ; BRA +4 - skip next instruction
+    jmp test_fail           ; Should not execute this
+    nop                     ; Landing point
+    
+    ; Test 4: STZ zero page (0x64)
+    inc test_num
+    lda #$FF
+    sta $50                 ; Set memory location to $FF
+    .byte $64, $50          ; STZ $50
+    lda $50
+    cmp #$00                ; Should be zero
+    bne test_fail
+    
+    ; Test 5: PHX instruction (0xDA)
+    inc test_num
+    ldx #$55
+    tsx
+    stx x_save              ; Save original stack pointer
+    .byte $DA               ; PHX
+    pla                     ; Pull the pushed value
+    cmp #$55                ; Should match X register
+    bne test_fail
+    ldx x_save              ; Restore stack pointer
+    txs
+    
+    ; Test 6: PLY instruction (0x7A)
+    inc test_num
+    ldy #$AA
+    pha                     ; Push test value
+    ldy #$00                ; Clear Y
+    .byte $7A               ; PLY
+    cpy #$AA                ; Should have restored $AA to Y
+    bne test_fail
+    
+    ; Test 7: BIT immediate (0x89)
+    inc test_num
+    lda #$55                ; 01010101
+    .byte $89, $AA          ; BIT #$AA (10101010)
+    bne test_fail           ; Z flag should be set (no common bits)
+    
+    ; Test 8: Zero flag test for BIT immediate
+    inc test_num
+    lda #$FF                ; 11111111
+    .byte $89, $01          ; BIT #$01 
+    beq test_fail           ; Z flag should be clear (common bits exist)
+    
+    ; All tests passed
+    jmp test_success
+
+test_fail:
+    ; Store test number in error code and signal failure
+    lda test_num
+    sta error_code
+    jmp $0001               ; Trap failure address
+
+test_success:
+    ; Signal success
+    jmp $0002               ; Trap success address
+
+.segment "VECTORS"
+.word start     ; NMI vector  
+.word start     ; Reset vector
+.word start     ; IRQ/BRK vector

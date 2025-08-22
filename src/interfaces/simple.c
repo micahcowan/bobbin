@@ -481,7 +481,7 @@ void vidout(void)
         output_suppressed = SUPPRESS_NONE;
     }
     
-    // Use util_todisplay to handle MouseText characters and other Apple II display conversions
+    // Always use util_todisplay, but it should handle control chars properly
     int c = util_todisplay(ACC);
     if (c < 0) return;
 

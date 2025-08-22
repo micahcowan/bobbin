@@ -94,7 +94,7 @@ static void draw_border(void)
 {
     int y, x;
     getmaxyx(stdscr, y, x);
-    if (x > cols) {
+    if (x > cols + 2) {  // Need at least 2 extra columns for border + safety margin
         move(0,cols);
         vline('|', y >= 25? 25: y);
     }
@@ -102,7 +102,7 @@ static void draw_border(void)
         move(24,0);
         hline('-', x >= (cols)? (cols): x);
     }
-    if (x > cols && y > 24) {
+    if (x > cols && y > 24 && cols < x) {
         move(24, cols);
         addch('+');
     }
@@ -154,13 +154,33 @@ static void refresh_video80(void)
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(0x4, y);
         move(y, 0);
-        for (byte x=0; x != 80; ++x) {
-            bool even = have_aux && (x % 2 == 0);
+        // Account for border and cursor advancement - if we're drawing a border, leave space for it
+        // Also, avoid writing to the last column to prevent cursor advancement issues
+        int max_x = 80;
+        if (COLS > cols + 1) {
+            max_x = cols; // Border will be at 'cols', so content stops before that
+        } else {
+            max_x = COLS - 1; // Leave last column to prevent cursor advancement past screen
+        }
+        for (byte x=0; x < max_x && x < 80; ++x) {
             byte mx = x >> 1;
-            byte c = membuf[(base | (even? LOC_AUX_START : 0)) + mx];
+            byte c;
+            
+            if (have_aux && x < 80) {
+                // True 80-column mode with auxiliary memory
+                bool even = (x % 2 == 0);
+                c = membuf[(base | (even? LOC_AUX_START : 0)) + mx];
+            } else {
+                // 40-column mode or fallback - use main memory only
+                mx = x < 40 ? x : 39;  // Prevent reading past buffer
+                c = membuf[base + mx];
+            }
+            
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, false);
-            addch(cd | (cfl? A_REVERSE: 0));
+            
+            // Use mvaddch to explicitly position the character and avoid cursor advancement issues
+            mvaddch(y, x, cd | (cfl? A_REVERSE: 0));
         }
     }
 
@@ -191,6 +211,14 @@ static void refresh_video(bool flash)
             byte c = mem[base + x];
             byte cd = util_todisplay(c);
             bool cfl = util_isreversed(c, flash);
+            
+            // Handle null characters and other control characters for terminal display
+            if (cd == 0x00) {
+                cd = ' '; // Convert null to space for terminal display
+            } else if (cd < 0x20 || cd > 0x7E) {
+                cd = ' '; // Convert other non-printable characters to space
+            }
+            
             addch(cd | (cfl? A_REVERSE: 0));
         }
     }
@@ -348,6 +376,12 @@ static void if_tty_switch(void)
 
     refresh_all = refresh_all || (prev_page != text_page || prevcols != cols
         || oldcharset != altcharset);
+    
+    // If switching column modes, immediately clear screen to remove garbage
+    if (prevcols != cols) {
+        clear();
+        refresh_all = true;
+    }
 }
 
 static void if_tty_peek(Event *e)
@@ -413,11 +447,24 @@ static void if_tty_poke(Event *e)
         bool flash = (cols == 80)
             || swget(ss, ss_altcharset)? false : saved_flash;
         if (util_isreversed(val, flash)) c |= A_REVERSE;
-        mvaddch(y, x, c);
+        
+        // Don't write characters that would overlap with the border
+        // In 80-column mode, absolutely prevent any writes at column 80 or beyond
+        int max_x;
+        if (cols == 80) {
+            max_x = 80; // Hard limit: never write at column 80 or beyond
+        } else {
+            max_x = (COLS > cols + 1) ? cols : COLS;
+        }
+        if (x < max_x && x < 80) {
+            mvaddch(y, x, c);
+        }
         if (cols == 80 && cfg.amt_ram <= LOC_AUX_START) {
             // We're in 80-column mode, but don't have an 80-column
             // card! ...Mirror the character to both cells.
-            mvaddch(y, x-1, c);
+            if (x-1 >= 0 && x-1 < 80) {
+                mvaddch(y, x-1, c);
+            }
         }
         refresh_overlay = true;
     } else if ((loc & 0xFFF0) == 0xC010) {

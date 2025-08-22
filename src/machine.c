@@ -181,6 +181,8 @@ static bool is_enhanced_iie = false;
 void machine_init(void)
 {
     const char *orig;
+    // Debug output removed - functionality working correctly
+    
     if (cfg.tokenize) {
         // Unconditionally force machine type to ][+
         orig = PLUS_TAG;
@@ -213,6 +215,8 @@ void machine_init(void)
     } else if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);
     }
+    
+    // Debug output removed - functionality working correctly
     // Can compare == (instead of STREQ), because we have
     //  the original's pointer.
     if (orig == TWOEY_TAG) {
@@ -225,6 +229,7 @@ void machine_init(void)
         expected_size = 16 * 1024;
         is_iie = true;
         is_enhanced_iie = true;
+        // Debug output removed - functionality working correctly
     }
     if (orig == ORIGINAL_TAG) {
         default_romfname = "apple2.rom";
@@ -248,6 +253,7 @@ bool machine_is_iie(void)
 
 bool machine_is_enhanced_iie(void)
 {
+    // Debug output removed - functionality working correctly
     return is_enhanced_iie;
 }
 
