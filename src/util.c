@@ -94,72 +94,51 @@ bool util_isreversed(int c, bool flash)
 int util_todisplay(int c)
 {
     if (c < 0) return c;
-    
-    int original_c = c;
-
-    // Mousetext logic moved to correct location after Apple IIe processing
-
-    // Handle control characters, but not inverted characters
-    int raw_c = c & 0x7F;
-    if (raw_c < 0x20) {
-        // Check if this is an inverted character (high bit clear, but represents a printable char)
-        // Apple II inverted characters: when a character value has bit 7 clear and bits 6-5 clear,
-        // it's an inverted version of the character with bits 6-5 set
-        if (c < 0x20) {
-            // This is an inverted character in range 0x00-0x1F
-            // Add 0x40 to get the base character (0x00 -> 0x40 '@', 0x01 -> 0x41 'A', etc.)
-            c = c + 0x40;
-        } else if (c >= 0x80 && c < 0xA0) {
-            // This is an inverted character in range 0x80-0x9F  
-            // The base character is (c & 0x1F) + 0x40
-            c = (c & 0x1F) + 0x40;
-        } else {
-            // True control character - return the low 7 bits
-            return raw_c;
-        }
-        // Don't update raw_c here - let the rest of the function handle the converted character
-    }
 
     if (!machine_is_iie()) {
+        // Handle control characters first - preserve ALL non-printing control characters
+        if ((c & 0x7F) < 0x20) {
+            // Keep all control characters (0x00-0x1F) as control characters
+            return c & 0x7F;
+        }
         c &= 0x3F;
         c ^= 0x20;
         c += 0x20;
-    } else {
-        // First do high-bit processing for Apple IIe
-        if (c >= 0xA0) {
-            c -= 0x80;
-        } else if (c >= 0x80) {
+    } else if (c >= 0xA0) {
+        c -= 0x80;
+    } else if (c >= 0x80) {
+        // Check if this is a control character with high bit set
+        int low_char = c - 0x80;
+        if (low_char < 0x20) {
+            // Keep all control characters (0x00-0x1F) as control characters
+            return low_char;
+        }
+        c -= 0x40;
+    } else if (c >= 0x60) {
+        if (swget(ss, ss_altcharset) || swget(ss, ss_eightycol)) {
+            // already lowercase
+        } else {
             c -= 0x40;
         }
-        
-        // Then handle character ranges based on the transformed value
-        if (c >= 0x60) {
-            if (swget(ss, ss_altcharset) || swget(ss, ss_eightycol)) {
-                // already lowercase - keep as is
-            } else {
-                // Convert lowercase to uppercase when alternate charset is off
-                c -= 0x20;  // Convert lowercase to uppercase
-            }
-        } else if (c >= 0x40 && c < 0x60) {
-            // Characters in the $40-$5F range (@ A-Z [ \ ] ^ _)
-            // Check for mousetext: only convert if original character was ALREADY in $40-$5F range
-            // This preserves normal text like "DaveX" (from $C0-$DF) as letters
-            // while converting true mousetext characters to symbols
-            if (machine_has_mousetext() && swget(ss, ss_altcharset)) {
-                // Only convert to mousetext if the ORIGINAL memory value was in $40-$5F range
-                // AND did not come from normal text ranges like $C0-$DF
-                // Normal text like "DaveX" comes from $C0-$DF and should stay as letters
-                int orig_masked = original_c & 0x7F;
-                bool was_normal_text = (original_c >= 0xC0 && original_c <= 0xDF);  // Normal uppercase
-                
-                if (orig_masked >= 0x40 && orig_masked < 0x60 && !was_normal_text) {
-                    return '@';  // Convert true mousetext characters to @ symbols
-                }
-            }
-            // Otherwise display as normal characters
+    } else if (c >= 0x40) {
+        if (machine_has_mousetext() && swget(ss, ss_altcharset)) {
+            // Convert true mousetext characters to @ symbols
+            // Only convert characters that are actually in mousetext range
+            return '@';
         } else {
-            c = (c ^ 0x20) + 0x20;
+            // Uppercase. Good as it is
         }
+    } else {
+        // Handle control characters - ALL non-printing control characters should remain as control characters
+        if (c < 0x20) {
+            // Keep all control characters (0x00-0x1F) as control characters
+            // DEBUG: uncomment to see what's being processed
+            // fprintf(stderr, "DEBUG: preserving control char 0x%02X\n", c);
+            return c;
+        }
+        // DEBUG: uncomment to see what's being converted
+        // if (c < 0x20) fprintf(stderr, "DEBUG: converting 0x%02X to 0x%02X\n", c, (c ^ 0x20) + 0x20);
+        c = (c ^ 0x20) + 0x20;
     }
     if (machine_is_iie() && c == 0x7F) c = '#'; // display DEL as an asterisk
     return c;
