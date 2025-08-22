@@ -1,11 +1,7 @@
 from debug import *
 from basics import *
 from asoft import *
-from cpu65c02 import *
-from cpu_verification import *
-from charset import *
-from mousetext import *
-from tty_tests import *
+from apple_iie import *
 import pexpect
 import os
 import re

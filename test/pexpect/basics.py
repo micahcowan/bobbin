@@ -4,15 +4,13 @@ from common import *
 
 @bobbin()
 def no_args(p):
-    p.expect(EOF)
-    global BOBBIN
-    return want_got(
-"""\
-%(bobbin)s: Default machine type is "//e", but that type is not actually\r
-%(bobbin)s: supported in this development version.\r
-%(bobbin)s: Try invoking with -m ][+ or -m plus\r
-%(bobbin)s: Exiting (2).\r
-""" % {"bobbin": BOBBIN}, p.before)
+    # With Enhanced Apple IIe support, bobbin now defaults to working //e mode
+    # and shows the Apple //e boot screen with ] prompt
+    got = p.expect([EOF, TIMEOUT])
+    if got != 1:
+        fail("Expected timeout (bobbin should be running and waiting for input)")
+    # Check that we get the Apple //e screen and prompt
+    return "Apple //e" in p.before and "]" in p.before
 
 @bobbin('-m plus --simple')
 def m_plus_simple(p):
