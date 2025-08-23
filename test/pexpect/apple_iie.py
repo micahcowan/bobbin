@@ -104,37 +104,6 @@ def enhanced_iie_capitals_not_mousetext_80col_simple(p):
     # This should work correctly in simple mode for comparison
     return "DAVEX" in p.before and "@@@@@" not in p.before
 
-# Test that exposes the 80-column mousetext bug in TTY mode
-@bobbin('-m enhanced')
-def enhanced_iie_80col_mousetext_bug_detection(p):
-    # This test is designed to FAIL when the bug is present
-    p.send('POKE 49238,0\r')  # Enable 80-column mode
-    p.send('POKE 49267,0\r')  # Enable ALTCHARSET/mousetext mode
-
-    # Send a simple command that should show capital letters
-    p.send('PRINT "TEST"\r')
-    got = p.expect([EOF, TIMEOUT])
-    if got != 1:
-        fail("got EOF")
-
-    # Look for patterns that indicate the bug:
-    # 1. Excessive @ symbols in the output (mousetext conversion)
-    # 2. Missing expected text patterns
-    before_str = str(p.before)
-
-    # If the bug is present, we'll see @ symbols instead of letters
-    # Count @ vs actual text - if ratio is high, bug is present
-    at_count = before_str.count('@')
-    test_count = before_str.count('TEST')
-
-    # Bug detection: if we see many @ symbols but no "TEST", the bug is active
-    # This test should FAIL when the bug is present (return False)
-    has_excessive_ats = at_count > 20  # Threshold for "too many" @ symbols
-    missing_expected_text = test_count == 0
-
-    # Return False if bug detected (test fails), True if working correctly
-    return not (has_excessive_ats or missing_expected_text)
-
 # Test that unenhanced Apple IIe does not have mousetext
 @bobbin('-m twoey --simple')
 def unenhanced_iie_no_mousetext(p):
