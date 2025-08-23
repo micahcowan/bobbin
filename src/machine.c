@@ -206,10 +206,10 @@ void machine_init(void)
         orig = find_alias(orig);     // We have to run this
                                      // to set up `acceptable_sums`
     } else if (!cfg.machine_set && cfg.runbasicfile) {
-        // If --run-basic was specified we default to a machine type we
-        // actually support, because a #! line may not be able to accept
-        // multiple arguments (so, no way to specify -m)
-        orig = find_alias(TWOEY_TAG);
+        // If --run-basic was specified we default to enhanced Apple IIe
+        // because a #! line may not be able to accept multiple arguments (so, no way to specify -m)
+        // Enhanced Apple IIe supports lowercase and is more compatible
+        orig = find_alias(ENHANCED_TAG);
     } else if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);
     }
