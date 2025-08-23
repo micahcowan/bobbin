@@ -1,0 +1,10 @@
+#!../../../src/bobbin --run-basic
+#
+# Extra comment lines
+
+10 INPUT "";A$
+20 AL=LEN(A$)
+30 FOR I=1 TO AL
+40 PRINT MID$(A$,AL-(I-1),1);
+50 NEXT
+60 END

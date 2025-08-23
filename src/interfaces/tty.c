@@ -41,6 +41,7 @@ static int cols = 40;
 static byte typed_char = '\0';
 
 static void draw_border(void);
+static byte tty_char_display(byte c);
 static void do_overlay(int offset);
 static void repaint_flash(bool flash);
 static void refresh_video(bool flash);
@@ -126,6 +127,7 @@ static void do_overlay(int offset)
     int err = copywin(msgwin, stdscr, 0, 0, maxy - 1 - y + (x? 0: 1) - offset, 0, maxy-1, maxx-1, false);
 }
 
+
 static void repaint_flash(bool flash)
 {
     const byte *mem = getram();
@@ -138,7 +140,7 @@ static void repaint_flash(bool flash)
         for (int x=0; x != 40; ++x) {
             byte c = mem[base + x];
             if (util_isflashing(c)) {
-                byte cd = util_todisplay(c);
+                byte cd = tty_char_display(c);
                 mvaddch(y, x, cd);
             }
         }
@@ -146,11 +148,14 @@ static void repaint_flash(bool flash)
     attrset(A_NORMAL);
 }
 
+
 static void refresh_video80(void)
 {
     attrset(A_NORMAL);
     const byte *membuf = getram();
     bool have_aux = cfg.amt_ram > LOC_AUX_START;
+    bool flash = (cols == 80 || swget(ss, ss_altcharset))? false : saved_flash;
+    
     for (int y=0; y != 24; ++y) {
         word base = get_line_base(0x4, y);
         move(y, 0);
@@ -176,8 +181,16 @@ static void refresh_video80(void)
                 c = membuf[base + mx];
             }
             
-            byte cd = util_todisplay(c);
-            bool cfl = util_isreversed(c, false);
+            byte cd = tty_char_display(c);
+            
+            bool cfl = util_isreversed(c, flash);
+            
+            // Handle null characters and other control characters for terminal display
+            if (cd == 0x00) {
+                cd = ' '; // Convert null to space for terminal display
+            } else if (cd < 0x20 || cd > 0x7E) {
+                cd = ' '; // Convert other non-printable characters to space
+            }
             
             // Use mvaddch to explicitly position the character and avoid cursor advancement issues
             mvaddch(y, x, cd | (cfl? A_REVERSE: 0));
@@ -209,7 +222,9 @@ static void refresh_video(bool flash)
         move(y, 0);
         for (int x=0; x != 40; ++x) {
             byte c = mem[base + x];
-            byte cd = util_todisplay(c);
+            
+            byte cd = tty_char_display(c);
+            
             bool cfl = util_isreversed(c, flash);
             
             // Handle null characters and other control characters for terminal display
@@ -443,7 +458,8 @@ static void if_tty_poke(Event *e)
             return; // Don't process; it's going somewhere
                     // we aren't displaying.
         }
-        int c = util_todisplay(val);
+        int c = tty_char_display(val);
+        
         bool flash = (cols == 80)
             || swget(ss, ss_altcharset)? false : saved_flash;
         if (util_isreversed(val, flash)) c |= A_REVERSE;
@@ -679,6 +695,78 @@ static void if_tty_event(Event *e)
         default:
             ; // Nothing
     }
+}
+
+// TTY-specific character display based on proper Apple IIe technical documentation
+static byte tty_char_display(byte c)
+{
+    if (c < 0) return c;
+
+    if (!machine_is_iie()) {
+        // Apple II/II+ character processing - exact copy of util_todisplay logic
+        c &= 0x3F;
+        c ^= 0x20;
+        c += 0x20;
+        return c;
+    }
+    
+    // Apple IIe character processing based on technical documentation:
+    // $00-$3F: INVERSE, $40-$7F: FLASHING, $80-$FF: NORMAL
+    
+    int original_c = c;  // Preserve original for util_isreversed compatibility
+    
+    // Switch based on the original character range (before any bit stripping)
+    if (c >= 0x00 && c <= 0x3F) {
+        // INVERSE characters ($00-$3F)
+        if (c < 0x20) {
+            // ALL control chars in inverse range map to displayable chars
+            // $00=@, $01=A, $02=B, ..., $08=H, $09=I, ..., $0D=M, etc.
+            return c + 0x40;  // Map $00-$1F to @A-Z[\]^_ range  
+        } else {
+            return c;  // Space, punctuation, numbers $20-$3F display as-is
+        }
+        
+    } else if (c >= 0x40 && c <= 0x7F) {  
+        // FLASHING characters ($40-$7F) - includes potential mousetext
+        if (c >= 0x40 && c <= 0x5F) {
+            // Uppercase range $40-$5F - check for mousetext
+            if (machine_has_mousetext() && swget(ss, ss_altcharset)) {
+                return '@';  // MouseText characters display as @
+            }
+            return c;  // Normal uppercase @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+        } else {
+            // Lowercase range $60-$7F
+            if (c == 0x7F) return '#';  // DEL
+            return c;  // Display lowercase `abcdefghijklmnopqrstuvwxyz{|}~
+        }
+        
+    } else if (c >= 0x80 && c <= 0xBF) {
+        // NORMAL characters ($80-$BF) - maps to $00-$3F
+        byte mapped = c - 0x80;  // Map to $00-$3F range
+        if (mapped < 0x20) {
+            // ALL control chars in normal range map to displayable chars
+            // $80=@, $81=A, $82=B, ..., $88=H, $89=I, ..., $8D=M, etc.
+            return mapped + 0x40;  // Map to @A-Z[\]^_ range
+        } else {
+            return mapped;  // Space, punctuation, numbers
+        }
+        
+    } else if (c >= 0xC0 && c <= 0xFF) {
+        // NORMAL characters ($C0-$FF) - maps to $40-$7F  
+        byte mapped = c - 0x80;  // Map to $40-$7F range
+        if (mapped >= 0x40 && mapped <= 0x5F) {
+            // Uppercase range - DON'T check for mousetext here in normal mode!
+            // Normal mode characters should not become mousetext
+            return mapped;  // Normal uppercase
+        } else {
+            // Lowercase range
+            if (mapped == 0x7F) return '#';  // DEL
+            return mapped;  // Display lowercase
+        }
+    }
+    
+    // Fallback
+    return c;
 }
 
 IfaceDesc ttyInterface = {

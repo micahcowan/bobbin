@@ -481,7 +481,8 @@ void vidout(void)
         output_suppressed = SUPPRESS_NONE;
     }
     
-    // Always use util_todisplay, but it should handle control chars properly
+    // Control character filtering temporarily disabled for debugging
+    
     int c = util_todisplay(ACC);
     if (c < 0) return;
 
