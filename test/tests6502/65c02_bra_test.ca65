@@ -1,0 +1,234 @@
+;#options -m enhanced --no-rom
+;
+; 65C02 Branch Always (BRA) Test 
+; Split from 65C02_extended_opcodes_test.ca65 by Klaus Dormann
+; Modified to use trap addresses and split into smaller tests
+;
+
+.include "65c02_test_common.inc"
+
+; Macros for flag handling based on I_flag setting
+        .if I_flag = 0
+            .macro  load_flag   p1
+            lda #p1&m8i          ;force enable interrupts (mask I)
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fao)&m8i   ;I_flag is always enabled + always on bits
+            .endmacro
+        .endif
+        .if I_flag = 1
+            .macro  load_flag   p1
+            lda #p1|intdis      ;force disable interrupts
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fai)&m8    ;I_flag is always disabled + always on bits
+            .endmacro
+        .endif
+        .if I_flag = 2
+            .macro  load_flag   p1
+            lda #p1
+            ora flag_I_on       ;restore I-flag
+            and flag_I_off
+            .endmacro
+            .macro  cmp_flag    p1
+            eor flag_I_on       ;I_flag is never changed
+            cmp #(p1|fao)&m8i   ;expected flags + always on bits, mask I
+            .endmacro
+        .endif
+        .if I_flag = 3
+            .macro  load_flag   p1
+            lda #p1             ;allow test to change I-flag (no mask)
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fao)&m8    ;expected flags + always on bits
+            .endmacro
+        .endif
+
+; Macros for setting and testing accumulator with status
+            .macro      set_a       p1,p2       ;precharging accu & status
+            load_flag p2
+            pha         ;use stack to load status
+            lda #p1     ;precharge accu
+            plp
+            .endmacro
+
+            .macro      tst_a       p1,p2        ;testing result in accu & flags
+            php         ;save flags
+            cmp #p1     ;test result
+            trap_ne
+            pla         ;load status
+            pha
+            cmp_flag p2
+            trap_ne
+            plp         ;restore status
+            .endmacro
+
+            .macro  next_test   ;make sure, tests don't jump the fence
+            lda test_case   ;previous test
+            cmp #test_num
+            trap_ne         ;test is out of sequence
+test_num .set test_num + 1
+            lda #test_num   ;*** next tests' number
+            sta test_case
+            .endmacro
+
+; Zero page variables  
+    .if I_flag = 2
+flag_I_on:  .res  1           ;or mask to load flags
+flag_I_off: .res  1           ;and mask to load flags
+    .endif
+test_case:  .res  1           ;current test number
+
+        .DATA
+        .org data_segment
+data_bss:
+
+        .CODE
+        .PC02
+        .org code_segment
+start:  cld
+        ldx #$ff
+        txs
+        lda #0          ;*** test 0 = initialize
+        sta test_case
+test_num .set 0
+
+;stop interrupts before initializing BSS
+    .if I_flag = 1
+        sei
+    .endif
+
+;retain status of interrupt flag
+    .if I_flag = 2
+        php
+        pla
+        and #4          ;isolate flag
+        sta flag_I_on   ;or mask
+        eor #<(~4)      ;reverse
+        sta flag_I_off  ;and mask
+    .endif
+
+        next_test            
+
+; testing unconditional branch BRA
+
+        ldx #$81        ;protect unused registers
+        ldy #$7e
+        set_a 0,$ff
+        bra br1         ;branch should always be taken
+        trap 
+br1:
+        tst_a 0,$ff
+        set_a $ff,0
+        bra br2         ;branch should always be taken
+        trap 
+br2:
+        tst_a $ff,0
+        cpx #$81
+        trap_ne
+        cpy #$7e
+        trap_ne
+        next_test            
+        
+        ldy #0          ;branch range test  
+        bra bra0
+        
+bra1:   cpy #1
+        trap_ne         ;long range backward
+        iny        
+        bra bra2
+                
+bra3:   cpy #3
+        trap_ne         ;long range backward
+        iny        
+        bra bra4
+                
+bra5:   cpy #5
+        trap_ne         ;long range backward
+        iny        
+        ldy #0
+        bra brf0
+        
+        iny
+        iny
+        iny
+        iny        
+brf0:   bra brf1
+
+        iny
+        iny
+        iny
+brf1:   iny
+        bra brf2
+        
+        iny
+        iny
+brf2:   iny
+        iny        
+        bra brf3
+        
+        iny
+brf3:   iny
+        iny
+        iny        
+        bra brf4
+        
+brf4:   iny
+        iny
+        iny
+        iny
+        cpy #10
+        trap_ne     ;short range forward
+        bra brb0
+
+brb4:   dey
+        dey
+        dey
+        dey
+        bra brb5        
+
+brb3:   dey
+        dey
+        dey
+        bra brb4        
+
+brb2:   dey
+        dey
+        bra brb3        
+
+brb1:   dey
+        bra brb2        
+
+brb0:   bra brb1
+
+brb5:   cpy #0
+        trap_ne     ;short range backward
+        bra bra6
+
+bra4:   cpy #4
+        trap_ne     ;long range forward
+        iny        
+        bra bra5
+                
+bra2:   cpy #2
+        trap_ne     ;long range forward
+        iny        
+        bra bra3
+                
+bra0:   cpy #0
+        trap_ne     ;long range forward
+        iny        
+        bra bra1
+                
+bra6:
+        next_test
+
+; All BRA tests completed successfully
+        success
+
+        .if ROM_vectors = 1
+        .segment "VECTORS"
+        .word   start     ; NMI vector  
+        .word   start     ; Reset vector
+        .word   start     ; IRQ/BRK vector
+        .endif
