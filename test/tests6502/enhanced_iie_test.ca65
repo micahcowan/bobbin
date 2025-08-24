@@ -1,3 +1,4 @@
+;#options -m enhanced --no-rom
 ;
 ; Enhanced Apple IIe specific test suite
 ; Tests 65C02 instructions and Enhanced IIe features
@@ -53,22 +54,22 @@ start:
     
     ; Test 5: PHX instruction (0xDA)
     inc test_num
-    ldx #$55
     tsx
     stx x_save              ; Save original stack pointer
-    .byte $DA               ; PHX
-    pla                     ; Pull the pushed value
-    cmp #$55                ; Should match X register
+    ldx #$55                ; Set X to test value
+    .byte $DA               ; PHX - push X register
+    pla                     ; Pull the pushed value into A
+    cmp #$55                ; Should match the X value we pushed
     bne test_fail
-    ldx x_save              ; Restore stack pointer
+    ldx x_save              ; Restore original stack pointer
     txs
     
     ; Test 6: PLY instruction (0x7A)
     inc test_num
-    ldy #$AA
-    pha                     ; Push test value
-    ldy #$00                ; Clear Y
-    .byte $7A               ; PLY
+    lda #$AA                ; Load test value into A
+    pha                     ; Push test value to stack
+    ldy #$00                ; Clear Y register
+    .byte $7A               ; PLY - pull from stack to Y
     cpy #$AA                ; Should have restored $AA to Y
     bne test_fail
     
