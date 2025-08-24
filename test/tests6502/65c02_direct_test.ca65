@@ -1,0 +1,27 @@
+;#options -m enhanced
+;
+; Direct test without macros to debug the hanging issue
+;
+
+        .CODE
+        .PC02
+        .org $0400
+start:  cld
+        ldx #$ff
+        txs
+        
+        ; Simple test - load a value
+        lda #$42
+        cmp #$42
+        bne failure
+        
+        ; If we get here, test passed
+        jmp $0002       ; Jump to success address
+
+failure:
+        jmp $0001       ; Jump to failure address
+
+        .segment "VECTORS"
+        .word   start     ; NMI vector  
+        .word   start     ; Reset vector
+        .word   start     ; IRQ/BRK vector

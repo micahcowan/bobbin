@@ -1,0 +1,61 @@
+;#options -m enhanced
+;
+; Minimal 65C02 test to debug the hanging issue
+;
+
+.include "65c02_test_common.inc"
+
+; Macros for flag handling
+        .if I_flag = 3
+            .macro  load_flag   p1
+            lda #p1             ;allow test to change I-flag (no mask)
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fao)&m8    ;expected flags + always on bits
+            .endmacro
+        .endif
+
+            .macro  next_test   ;make sure, tests don't jump the fence
+            lda test_case   ;previous test
+            cmp #test_num
+            trap_ne         ;test is out of sequence
+test_num .set test_num + 1
+            lda #test_num   ;*** next tests' number
+            sta test_case
+            .endmacro
+
+; Zero page variables  
+test_case:  .res  1           ;current test number
+
+        .DATA
+        .org data_segment
+data_bss:
+
+        .CODE
+        .PC02
+        .org code_segment
+start:  cld
+        ldx #$ff
+        txs
+        lda #0          ;*** test 0 = initialize
+        sta test_case
+test_num .set 0
+
+        next_test            
+
+; Just do a simple test - load a value into accumulator
+        lda #$42
+        cmp #$42
+        trap_ne         ; Should not trap
+
+        next_test
+
+; All tests completed successfully
+        success
+
+        .if ROM_vectors = 1
+        .segment "VECTORS"
+        .word   start     ; NMI vector  
+        .word   start     ; Reset vector
+        .word   start     ; IRQ/BRK vector
+        .endif

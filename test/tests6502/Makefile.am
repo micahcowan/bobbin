@@ -5,7 +5,9 @@ SRCS = \
 
 # 65C02 tests - only run on Enhanced Apple IIe
 SRCS_65C02 = \
-	65C02_extended_opcodes_test.ca65 \
+	65c02_stack_test.ca65 \
+	65c02_bra_test.ca65 \
+	65c02_stz_test.ca65 \
 	enhanced_iie_test.ca65
 
 OBJS = $(SRCS:%.ca65=%.bin)
@@ -13,7 +15,7 @@ OBJS_65C02 = $(SRCS_65C02:%.ca65=%.bin)
 
 CA65 = @CA65@
 LD65 = @LD65@
-EXTRA_DIST = $(SRCS) $(SRCS_65C02) example.cfg readme.txt test.rom
+EXTRA_DIST = $(SRCS) $(SRCS_65C02) 65c02_test_common.inc example.cfg readme.txt test.rom
 CLEANFILES = $(OBJS) $(OBJS_65C02) $(SRCS:%.ca65=%.lst) $(SRCS:%.ca65=%.map) $(SRCS:%.ca65=%.o) $(SRCS_65C02:%.ca65=%.lst) $(SRCS_65C02:%.ca65=%.map) $(SRCS_65C02:%.ca65=%.o) trace.log
 
 all:
@@ -41,6 +43,11 @@ check:
 	echo; echo '***' No ca65. Skipping opcode tests.; \
 	echo
 endif !HAVE_CA65
+
+# 65C02 tests depend on the common header
+65c02_stack_test.bin: 65c02_test_common.inc
+65c02_bra_test.bin: 65c02_test_common.inc
+65c02_stz_test.bin: 65c02_test_common.inc
 
 %.bin: %.ca65
 	$(CA65) -l $*.lst -o $*.o $<

@@ -1,0 +1,275 @@
+;#options -m enhanced --no-rom
+;
+; 65C02 Stack Operations Test (PHX, PHY, PLX, PLY)
+; Split from 65C02_extended_opcodes_test.ca65 by Klaus Dormann
+; Modified to use trap addresses and split into smaller tests
+;
+
+.include "65c02_test_common.inc"
+
+; Macros for flag handling based on I_flag setting
+        .if I_flag = 0
+            .macro  load_flag   p1
+            lda #p1&m8i          ;force enable interrupts (mask I)
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fao)&m8i   ;I_flag is always enabled + always on bits
+            .endmacro
+        .endif
+        .if I_flag = 1
+            .macro  load_flag   p1
+            lda #p1|intdis      ;force disable interrupts
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fai)&m8    ;I_flag is always disabled + always on bits
+            .endmacro
+        .endif
+        .if I_flag = 2
+            .macro  load_flag   p1
+            lda #p1
+            ora flag_I_on       ;restore I-flag
+            and flag_I_off
+            .endmacro
+            .macro  cmp_flag    p1
+            eor flag_I_on       ;I_flag is never changed
+            cmp #(p1|fao)&m8i   ;expected flags + always on bits, mask I
+            .endmacro
+        .endif
+        .if I_flag = 3
+            .macro  load_flag   p1
+            lda #p1             ;allow test to change I-flag (no mask)
+            .endmacro
+            .macro  cmp_flag    p1
+            cmp #(p1|fao)&m8    ;expected flags + always on bits
+            .endmacro
+        .endif
+
+; Macros for setting and testing registers with status
+            .macro      set_x       p1,p2       ;precharging index & status
+            load_flag p2
+            pha         ;use stack to load status
+            ldx #p1     ;precharge index x
+            plp
+            .endmacro
+
+            .macro      set_y       p1,p2       ;precharging index & status
+            load_flag p2
+            pha         ;use stack to load status
+            ldy #p1     ;precharge index y
+            plp
+            .endmacro
+
+            .macro      tst_x       p1,p2       ;testing result in x index & flags
+            php         ;save flags
+            cpx #p1     ;test result
+            trap_ne
+            pla         ;load status
+            pha
+            cmp_flag p2
+            trap_ne
+            plp         ;restore status
+            .endmacro
+
+            .macro      tst_y       p1,p2       ;testing result in y index & flags
+            php         ;save flags
+            cpy #p1     ;test result
+            trap_ne
+            pla         ;load status
+            pha
+            cmp_flag p2
+            trap_ne
+            plp         ;restore status
+            .endmacro
+
+            .macro  next_test   ;make sure, tests don't jump the fence
+            lda test_case   ;previous test
+            cmp #test_num
+            trap_ne         ;test is out of sequence
+test_num .set test_num + 1
+            lda #test_num   ;*** next tests' number
+            sta test_case
+            .endmacro
+
+; Zero page variables  
+irq_a:  .res  1               ;a register
+irq_x:  .res  1               ;x register
+    .if I_flag = 2
+flag_I_on:  .res  1           ;or mask to load flags
+flag_I_off: .res  1           ;and mask to load flags
+    .endif
+zpt:                          ;5 bytes store/modify test area
+test_case:  .res  1           ;current test number
+
+        .DATA
+        .org data_segment
+data_bss:
+
+        .CODE
+        .PC02
+        .org code_segment
+start:  cld
+        ldx #$ff
+        txs
+        lda #0          ;*** test 0 = initialize
+        sta test_case
+test_num .set 0
+
+;stop interrupts before initializing BSS
+    .if I_flag = 1
+        sei
+    .endif
+
+;retain status of interrupt flag
+    .if I_flag = 2
+        php
+        pla
+        and #4          ;isolate flag
+        sta flag_I_on   ;or mask
+        eor #<(~4)      ;reverse
+        sta flag_I_off  ;and mask
+    .endif
+
+        next_test            
+
+;testing stack operations PHX PHY PLX PLY
+        lda #$99        ;protect a
+        ldx #$ff        ;initialize stack
+        txs
+        ldx #$55
+        phx
+        ldx #$aa
+        phx
+        cpx $1fe        ;on stack ?
+        trap_ne
+        tsx
+        cpx #$fd        ;sp decremented?
+        trap_ne
+        ply
+        cpy #$aa        ;successful retreived from stack?
+        trap_ne
+        ply
+        cpy #$55
+        trap_ne
+        cpy $1ff        ;remains on stack?
+        trap_ne
+        tsx
+        cpx #$ff        ;sp incremented?
+        trap_ne
+        
+        ldy #$a5
+        phy
+        ldy #$5a
+        phy
+        cpy $1fe        ;on stack ?
+        trap_ne
+        tsx
+        cpx #$fd        ;sp decremented?
+        trap_ne
+        plx
+        cpx #$5a        ;successful retreived from stack?
+        trap_ne
+        plx
+        cpx #$a5
+        trap_ne
+        cpx $1ff        ;remains on stack?
+        trap_ne
+        tsx
+        cpx #$ff        ;sp incremented?
+        trap_ne
+        cmp #$99        ;unchanged?
+        trap_ne
+        next_test            
+        
+; test PHX does not alter flags or X but PLX does
+        ldy #$aa        ;protect y
+        set_x 1,$ff     ;push
+        phx
+        tst_x 1,$ff
+        set_x 0,0
+        phx
+        tst_x 0,0
+        set_x $ff,$ff
+        phx
+        tst_x $ff,$ff
+        set_x 1,0
+        phx
+        tst_x 1,0
+        set_x 0,$ff
+        phx
+        tst_x 0,$ff
+        set_x $ff,0
+        phx
+        tst_x $ff,0
+        set_x 0,$ff     ;pull
+        plx
+        tst_x $ff,$ff-zero
+        set_x $ff,0
+        plx
+        tst_x 0,zero
+        set_x $fe,$ff
+        plx
+        tst_x 1,$ff-zero-minus
+        set_x 0,0
+        plx
+        tst_x $ff,minus
+        set_x $ff,$ff
+        plx
+        tst_x 0,$ff-minus
+        set_x $fe,0
+        plx
+        tst_x 1,0
+        cpy #$aa        ;Y unchanged
+        trap_ne
+        next_test            
+ 
+; test PHY does not alter flags or Y but PLY does
+        ldx #$55        ;x & a protected
+        set_y 1,$ff     ;push
+        phy
+        tst_y 1,$ff
+        set_y 0,0
+        phy
+        tst_y 0,0
+        set_y $ff,$ff
+        phy
+        tst_y $ff,$ff
+        set_y 1,0
+        phy
+        tst_y 1,0
+        set_y 0,$ff
+        phy
+        tst_y 0,$ff
+        set_y $ff,0
+        phy
+        tst_y $ff,0
+        set_y 0,$ff     ;pull
+        ply
+        tst_y $ff,$ff-zero
+        set_y $ff,0
+        ply
+        tst_y 0,zero
+        set_y $fe,$ff
+        ply
+        tst_y 1,$ff-zero-minus
+        set_y 0,0
+        ply
+        tst_y $ff,minus
+        set_y $ff,$ff
+        ply
+        tst_y 0,$ff-minus
+        set_y $fe,0
+        ply
+        tst_y 1,0
+        cpx #$55        ;x unchanged?
+        trap_ne
+        next_test            
+
+; All stack operation tests completed successfully
+        success
+
+        .if ROM_vectors = 1
+        .segment "VECTORS"
+        .word   start     ; NMI vector  
+        .word   start     ; Reset vector
+        .word   start     ; IRQ/BRK vector
+        .endif
