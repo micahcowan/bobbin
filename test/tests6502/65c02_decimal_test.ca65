@@ -1,4 +1,4 @@
 ;#options --no-rom
 
-cputype = 0         ; 0 = 6502, 1 = 65C02, 2 = 65C816
+cputype = 1         ; 0 = 6502, 1 = 65C02, 2 = 65C816
 .include "decimal_test_common.inc"
