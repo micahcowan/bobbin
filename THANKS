@@ -1,8 +1,13 @@
 -= THANKS GO TO =-
 
-Steven Hugg (sehugg on Github), author, and creator of 8bitworkshop.com,
+Steven Hugg (sehugg on Github), author and creator of 8bitworkshop.com,
 whose responsively-reloading emulator paradigm directly inspired the
 creation of Bobbin, and the --watch feature.
+
+Seth Kushniryk <seth@kushniryk.com>, for contributing the 65C02 CPU and
+Enhanced Apple //e support to Bobbin, along with performing a lot of
+testing for it. Also for many tests and fixes for  graphical things in
+the tty interface (though these were ultiately not included in Bobbin)
 
 Kalus Dormann (Klaus2m5 on Github), for writing the exhaustive 6502 test
 battery that was critically important to verify Bobbin's functionality
