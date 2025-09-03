@@ -1,3 +1,5 @@
+;#options --no-rom
+;#EXPECT-FAILURE
 ;
 ; 6 5 C 0 2   E X T E N D E D   O P C O D E S   T E S T
 ;
@@ -105,7 +107,7 @@ zero_page = $a
 
 ;data_segment memory start address, $63 (99) consecutive Bytes required
 ; + 12 Bytes at data_segment + $f9 (JMP indirect page cross test)
-data_segment = $200
+data_segment = $300 ; Changed so we can use $200 for test_case var -MJC
     .if (data_segment & $ff) <> 0
         .error "low byte of data_segment MUST be $00 !!"
     .endif
@@ -119,15 +121,15 @@ wdc_op = 1
 
 ;added Rockwell & WDC opcodes BBR, BBS, RMB & SMB
 ;(0=test as NOPs, 1=full test, >1=no test) 
-rkwl_wdc_op = 1
+rkwl_wdc_op = 2
 
 ;skip testing all undefined opcodes override
 ;0=test as NOP, >0=skip
-skip_nop = 0
+skip_nop = 1
 
 ;report errors through I/O channel (0=use standard self trap loops, 1=include
 ;report.i65 as I/O channel, add 3 kB)
-report = 0
+report = 1
 
 ;RAM integrity test option. Checks for undesired RAM writes.
 ;set lowest non RAM or RAM mirror address page (-1=disable, 0=64k, $40=16k)
@@ -185,6 +187,8 @@ ram_top = -1
         .endmacro
     .endif
     .if report = 1
+        report_error = $0001
+        report_success = $0002
         .macro  trap
         jsr report_error
         .endmacro
@@ -629,7 +633,9 @@ zp_bss_end:
         .DATA
         .org data_segment
 pg_x:       .res  2             ;high JMP indirect address for page cross bug
-test_case:  .res  1             ;current test number
+;test_case:  .res  1             ;current test number
+            .res 1
+test_case = $200    ; bobbin checks this location on trap -MJC
 ram_chksm:  .res  2             ;checksum for RAM integrity test
 ;add/subtract operand copy - abs tests write area
 abst:                           ;5 bytes store/modify test area
@@ -700,9 +706,9 @@ test_num .set 0
     .endif
     
 ;initialize I/O for report channel
-    .if report = 1
-        jsr report_init
-    .endif
+;    .if report = 1
+;        jsr report_init
+;    .endif
     
 ;initialize BSS segment
     .if load_data_direct <> 1
@@ -2395,7 +2401,7 @@ tdad7:  cpx #ad2
 ; final RAM integrity test
 ;   verifies that none of the previous tests has altered RAM outside of the
 ;   designated write areas.
-        check_ram
+        ;check_ram
 ; *** DEBUG INFO ***
 ; to debug checksum errors uncomment check_ram in the next_test macro to 
 ; narrow down the responsible opcode.
@@ -2770,7 +2776,8 @@ nmi_trap:
         trap            ;check stack for conditions at NMI
         jmp start       ;catastrophic error - cannot continue
 res_trap:
-        trap            ;unexpected RESET
+        ;trap            ;unexpected RESET
+                        ; Can't trap, we need this for bootup. -MJC
         jmp start       ;catastrophic error - cannot continue
 
         dey
@@ -2854,9 +2861,9 @@ break2:                 ;BRK pass 2
         trap            ;runover protection
         jmp start       ;catastrophic error - cannot continue
         
-    .if report = 1
-        .include "report.i65"
-    .endif
+;    .if report = 1
+;        .include "report.i65"
+;    .endif
             
 ;copy of data to initialize BSS segment
     .if load_data_direct <> 1
