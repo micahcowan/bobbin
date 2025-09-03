@@ -6,6 +6,7 @@ SRCS_6502 = \
 # 65C02 tests - only run on Enhanced Apple IIe
 SRCS_65C02 = \
 	65C02_extended_opcodes_test.ca65 \
+	6502_functional_test.ca65 \
 	65c02_decimal_test.ca65 \
 	65c02_stack_test.ca65 \
 	65c02_bra_test.ca65 \
