@@ -435,27 +435,263 @@ static inline void do_cmp(byte a, byte b)
     PPUT(PCARRY, a >= b);
 }
 
-void cpu_step(void)
+// Called either for BRK (op == 0x00) or an unhandled illegal opcode
+void handle_brk_or_illegal(byte op) {
+    if (cfg.die_on_brk) {
+        DIE(0, "%s (--die-on-brk)\n",
+            op == 0? "BRK" : "ILLEGAL OP");
+        DIE(0, "  (CPU state follows.)\n");
+
+        fprintf(stderr, "Instr #: %ju\n", instr_count);
+        util_print_state(stderr, current_pc(), &theCpu.regs);
+        exit(3);
+    }
+    else if (cfg.debug_on_brk) {
+        WARN("%s (--debug-on-brk)\n",
+             op == 0? "BRK" : "ILLEGAL OP");
+        dbg_on();
+    }
+    else {
+        // XXX cycles and behavior not realistic
+        //  for non-break unsupported op-codes
+        PC_ADV;
+        cycle(); // end 2
+
+        stack_push(HI(PC));
+        cycle(); // 3
+        stack_push(LO(PC));
+        cycle(); // 4
+        stack_push_flags_or(PMASK(PBRK));
+        cycle(); // 5
+
+        byte pcL = peek(VEC_BRK);
+        cycle(); // 6
+        byte pcH = peek(VEC_BRK + 1);
+        go_to(WORD(pcL, pcH));
+        PPUT(PINT,1);
+        cycle(); // 7
+    }
+}
+
+bool cpu_step_65C02(byte op, byte immed)
 {
-    /* Cycle references taken from https://www.nesdev.org/6502_cpu.txt. */
-    byte op = pc_get_adv();
-    cycle(); // end 1
+    /* This function returns true if it found (and handled) an
+       extended 65C02 opcode. Returns false if caller should handle
+       opcode that also exists in 6502. */
 
-    byte immed = peek(PC);
+    switch (op) {
+        case 0x04: // TSB zp - Test and Set Bits, Zero Page (MOS 65C02 only)
+            OP_RMW_ZP(
+                PPUT(PZERO, (val & ACC) == 0);
+                val |= ACC;
+            );
+            break;
+        case 0x0C: // TSB abs - Test and Set Bits, Absolute (MOS 65C02 only)
+            OP_RMW_ABS(
+                PPUT(PZERO, (val & ACC) == 0);
+                val |= ACC;
+            );
+            break;
+        case 0x12: // ORA (zp) - OR with Accumulator, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                ff(ACC |= val);
+                cycle();
+            }
+            break;
+        case 0x14: // TRB zp - Test and Reset Bits, Zero Page (MOS 65C02 only)
+            OP_RMW_ZP(
+                PPUT(PZERO, (val & ACC) == 0);
+                val &= ~ACC;
+            );
+            break;
+        case 0x1A: // INC A (MOS 65C02) / NOP (6502) - ProDOS 2.4.2 uses this to distinguish CPU types
+            OP_RMW_IMPL(ff(++ACC));
+            break;
+        case 0x1C: // TRB abs - Test and Reset Bits, Absolute (MOS 65C02 only)
+            OP_RMW_ABS(
+                PPUT(PZERO, (val & ACC) == 0);
+                val &= ~ACC;
+            );
+            break;
+        case 0x32: // AND (zp) - AND with Accumulator, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                ff(ACC &= val);
+                cycle();
+            }
+            break;
+        case 0x34: // BIT zp,X - BIT Zero Page,X (MOS 65C02 only)
+            OP_READ_ZP_IDX(XREG, do_bit(val));
+            break;
+        case 0x3A: // DEC A (MOS 65C02) / NOP (6502)
+            OP_RMW_IMPL(ff(--ACC));
+            break;
+        case 0x3C: // BIT abs,X - BIT Absolute,X (MOS 65C02 only)
+            OP_READ_ABS_IDX(XREG, do_bit(val));
+            break;
+        case 0x52: // EOR (zp) - Exclusive OR, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                ff(ACC ^= val);
+                cycle();
+            }
+            break;
+        case 0x5A: // PHY (Push Y) - MOS 65C02 only
+            cycle();
+            stack_push(YREG);
+            cycle();
+            break;
+        case 0x64: // STZ zp - Store Zero, Zero Page (MOS 65C02 only)
+            OP_WRITE_ZP(0);
+            break;
+        case 0x72: // ADC (zp) - Add with Carry, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                do_adc(val);
+                cycle();
+            }
+            break;
+        case 0x74: // STZ zp,X - Store Zero, Zero Page,X (MOS 65C02 only)
+            OP_WRITE_ZP_IDX(XREG, 0);
+            break;
+        case 0x7A: // PLY (Pull Y) - MOS 65C02 only
+            {
+                cycle();
+                stack_inc();
+                cycle();
+                YREG = peek(STACK);
+                ff(YREG);
+                cycle();
+            }
+            break;
+        case 0x7C: // JMP (abs,X) - Jump Absolute Indirect Indexed (MOS 65C02 only)
+            {
+                byte lo = immed;
+                PC_ADV;
+                cycle();
+                byte hi = pc_get_adv();
+                cycle();
+                word base_addr = WORD(lo, hi);
+                word addr = base_addr + XREG;
+                cycle();
+                lo = peek(addr);
+                cycle();
+                hi = peek(addr + 1);
+                word dest = WORD(lo, hi);
+                go_to(dest);
+                cycle();
+            }
+            break;
+        case 0x80: // BRA (Branch Always) - MOS 65C02 only
+            OP_BRANCH(true);
+            break;
+        case 0x89: // BIT #imm - BIT Immediate (MOS 65C02 only)
+            OP_READ_IMM(PPUT(PZERO, (ACC & val) == 0));
+            break;
+        case 0x92: // STA (zp) - Store Accumulator, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                poke(WORD(lo, hi), ACC);
+                cycle();
+            }
+            break;
+        case 0x9C: // STZ abs - Store Zero, Absolute (MOS 65C02 only)
+            OP_WRITE_ABS(0);
+            break;
+        case 0x9E: // STZ abs,X - Store Zero, Absolute,X (MOS 65C02 only)
+            OP_WRITE_ABS_IDX(XREG, 0);
+            break;
+        case 0xB2: // LDA (zp) - Load Accumulator, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                ff(ACC = val);
+                cycle();
+            }
+            break;
+        case 0xDA: // PHX (Push X) - MOS 65C02 only
+            cycle();
+            stack_push(XREG);
+            cycle();
+            break;
+        case 0xF2: // SBC (zp) - Subtract with Borrow, Zero Page Indirect (MOS 65C02 only)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                do_sbc(val);
+                cycle();
+            }
+            break;
+        case 0xFA: // PLX (Pull X) - MOS 65C02 only
+            {
+                cycle();
+                stack_inc();
+                cycle();
+                XREG = peek(STACK);
+                ff(XREG);
+                cycle();
+            }
+            break;
+        default:   // UNRECOGNIZED OPCODE (treat as BRK)
+            return false; // We DID NOT handle
+    }
 
+    return true; // handled.
+}
+
+bool cpu_step_6502(byte op, byte immed)
+{
     switch (op) {
         case 0x01: // ORA, (MEM,x).
             OP_READ_INDX(ff(ACC |= val));
             break;
-        case 0x04: // TSB zp - Test and Set Bits, Zero Page (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_ZP(
-                    PPUT(PZERO, (val & ACC) == 0);
-                    val |= ACC;
-                );
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x05: // ORA, ZP
             OP_READ_ZP(ff(ACC |= val));
             break;
@@ -473,15 +709,6 @@ void cpu_step(void)
         case 0x0A: // ASL, impl.
             OP_RMW_IMPL(ACC = do_asl(ACC));
             break;
-        case 0x0C: // TSB abs - Test and Set Bits, Absolute (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_ABS(
-                    PPUT(PZERO, (val & ACC) == 0);
-                    val |= ACC;
-                );
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x0D: // ORA, abs
             OP_READ_ABS(ff(ACC |= val));
             break;
@@ -494,30 +721,6 @@ void cpu_step(void)
         case 0x11: // ORA, (MEM),y
             OP_READ_INDY(ff(ACC |= val));
             break;
-        case 0x12: // ORA (zp) - OR with Accumulator, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                ff(ACC |= val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
-        case 0x14: // TRB zp - Test and Reset Bits, Zero Page (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_ZP(
-                    PPUT(PZERO, (val & ACC) == 0);
-                    val &= ~ACC;
-                );
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x15: // ORA, ZP,x
             OP_READ_ZP_IDX(XREG, ff(ACC |= val));
             break;
@@ -530,32 +733,17 @@ void cpu_step(void)
         case 0x19: // ORA, MEM,y
             OP_READ_ABS_IDX(YREG, ff(ACC |= val));
             break;
-        case 0x1A: // INC A (MOS 65C02) / NOP (6502) - ProDOS 2.4.2 uses this to distinguish CPU types
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_IMPL(ff(++ACC));
-                break;
-            } else {
-                // On 6502, this is an undocumented NOP instruction
-                OP_RMW_IMPL(); // NOP behavior - empty statement
-                break;
-            }
-        case 0x1C: // TRB abs - Test and Reset Bits, Absolute (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_ABS(
-                    PPUT(PZERO, (val & ACC) == 0);
-                    val &= ~ACC;
-                );
-                break;
-            }
-            /* FALLTHROUGH */
+        case 0x1A: // UNDOCUMENTED nop (when 6502). ProDOS 2.4.2 uses it
+                   //  to distinguish CPU types...
+                   //  # cycles/order of ops may be wrong...
+            OP_RMW_IMPL(); // NOP behavior - empty statement
+            break;
         case 0x1D: // ORA, MEM,x
             OP_READ_ABS_IDX(XREG, ff(ACC |= val));
             break;
         case 0x1E: // ASL, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_asl(val));
             break;
-
-
         case 0x20: // JSR
             {
                 byte lo = immed;
@@ -617,27 +805,6 @@ void cpu_step(void)
         case 0x31: // AND, (MEM),y
             OP_READ_INDY(ff(ACC &= val));
             break;
-        case 0x32: // AND (zp) - AND with Accumulator, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                ff(ACC &= val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
-        case 0x34: // BIT zp,X - BIT Zero Page,X (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_READ_ZP_IDX(XREG, do_bit(val));
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x35: // AND, ZP,x
             OP_READ_ZP_IDX(XREG, ff(ACC &= val));
             break;
@@ -650,29 +817,15 @@ void cpu_step(void)
         case 0x39: // AND, MEM,y
             OP_READ_ABS_IDX(YREG, ff(ACC &= val));
             break;
-        case 0x3A: // DEC A (MOS 65C02) / NOP (6502)
-            if (machine_is_enhanced_iie()) {
-                OP_RMW_IMPL(ff(--ACC));
-                break;
-            } else {
-                // On 6502, this is an undocumented NOP instruction
-                OP_RMW_IMPL(); // NOP behavior - empty statement
-                break;
-            }
-        case 0x3C: // BIT abs,X - BIT Absolute,X (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_READ_ABS_IDX(XREG, do_bit(val));
-                break;
-            }
-            /* FALLTHROUGH */
+        case 0x3A: // On 6502, this is an undocumented NOP instruction
+            OP_RMW_IMPL(); // NOP behavior - empty statement
+            break;
         case 0x3D: // AND, MEM,x
             OP_READ_ABS_IDX(XREG, ff(ACC &= val));
             break;
         case 0x3E: // ROL, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_rol(val));
             break;
-
-
         case 0x40: // RTI
             {
                 cycle(); // end 2
@@ -732,21 +885,6 @@ void cpu_step(void)
         case 0x51: // EOR, (MEM),y
             OP_READ_INDY(ff(ACC ^= val));
             break;
-        case 0x52: // EOR (zp) - Exclusive OR, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                ff(ACC ^= val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x55: // EOR, ZP,x
             OP_READ_ZP_IDX(XREG, ff(ACC ^= val));
             break;
@@ -756,15 +894,6 @@ void cpu_step(void)
         case 0x58: // CLI
             OP_RMW_IMPL(PPUT(PINT, 0));
             break;
-        case 0x5A: // PHY (Push Y) - MOS 65C02 only
-            if (machine_is_enhanced_iie()) {
-                cycle();
-                stack_push(YREG);
-                cycle();
-                break;
-            }
-            // On 6502, this is an unimplemented opcode - fall through to default
-            /* FALLTHROUGH */
         case 0x59: // EOR, MEM,y
             OP_READ_ABS_IDX(YREG, ff(ACC ^= val));
             break;
@@ -774,8 +903,6 @@ void cpu_step(void)
         case 0x5E: // LSR, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_lsr(val));
             break;
-
-
         case 0x60: // RTS
             {
                 word orig = PC;
@@ -796,12 +923,6 @@ void cpu_step(void)
         case 0x61: // ADC, (MEM,x)
             OP_READ_INDX(do_adc(val));
             break;
-        case 0x64: // STZ zp - Store Zero, Zero Page (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_WRITE_ZP(0);
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x65: // ADC, ZP
             OP_READ_ZP(do_adc(val));
             break;
@@ -849,27 +970,6 @@ void cpu_step(void)
         case 0x71: // ADC, (MEM),y
             OP_READ_INDY(do_adc(val));
             break;
-        case 0x72: // ADC (zp) - Add with Carry, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                do_adc(val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
-        case 0x74: // STZ zp,X - Store Zero, Zero Page,X (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_WRITE_ZP_IDX(XREG, 0);
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x75: // ADC, ZP,x
             OP_READ_ZP_IDX(XREG, do_adc(val));
             break;
@@ -879,56 +979,15 @@ void cpu_step(void)
         case 0x78: // SEI
             OP_RMW_IMPL(PPUT(PINT, 1));
             break;
-        case 0x7A: // PLY (Pull Y) - MOS 65C02 only
-            if (machine_is_enhanced_iie()) {
-                cycle();
-                stack_inc();
-                cycle();
-                YREG = peek(STACK);
-                ff(YREG);
-                cycle();
-                break;
-            }
-            // On 6502, this is an unimplemented opcode - fall through to default
-            /* FALLTHROUGH */
         case 0x79: // ADC MEM,y
             OP_READ_ABS_IDX(YREG, do_adc(val));
             break;
-        case 0x7C: // JMP (abs,X) - Jump Absolute Indirect Indexed (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte lo = immed;
-                PC_ADV;
-                cycle();
-                byte hi = pc_get_adv();
-                cycle();
-                word base_addr = WORD(lo, hi);
-                word addr = base_addr + XREG;
-                cycle();
-                lo = peek(addr);
-                cycle();
-                hi = peek(addr + 1);
-                word dest = WORD(lo, hi);
-                go_to(dest);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x7D: // ADC, MEM,x
             OP_READ_ABS_IDX(XREG, do_adc(val));
             break;
         case 0x7E: // ROR, MEM,x
             OP_RMW_ABS_IDX(XREG, val = do_ror(val));
             break;
-
-        // MOS 65C02 instructions (Enhanced Apple IIe)
-        case 0x80: // BRA (Branch Always) - MOS 65C02 only
-            if (machine_is_enhanced_iie()) {
-                OP_BRANCH(true);
-                break;
-            }
-            // On 6502, this is an unimplemented opcode - fall through to default
-            /* FALLTHROUGH */
-
         case 0x81: // STA, (MEM,x)
             OP_WRITE_INDX(ACC);
             break;
@@ -944,12 +1003,6 @@ void cpu_step(void)
         case 0x88: // DEY
             OP_RMW_IMPL(ff(--YREG));
             break;
-        case 0x89: // BIT #imm - BIT Immediate (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_READ_IMM(PPUT(PZERO, (ACC & val) == 0));
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x8A: // TXA
             OP_RMW_IMPL(ff(ACC = XREG));
             break;
@@ -968,20 +1021,6 @@ void cpu_step(void)
         case 0x91: // STA, (MEM),y
             OP_WRITE_INDY(ACC);
             break;
-        case 0x92: // STA (zp) - Store Accumulator, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                poke(WORD(lo, hi), ACC);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x94: // STY, ZP,x
             OP_WRITE_ZP_IDX(XREG, YREG);
             break;
@@ -1000,23 +1039,9 @@ void cpu_step(void)
         case 0x9A: // TXS
             OP_RMW_IMPL(SP = XREG); // No flag changes!
             break;
-        case 0x9C: // STZ abs - Store Zero, Absolute (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_WRITE_ABS(0);
-                break;
-            }
-            /* FALLTHROUGH */
         case 0x9D: // STA, MEM,x
             OP_WRITE_ABS_IDX(XREG, ACC);
             break;
-        case 0x9E: // STZ abs,X - Store Zero, Absolute,X (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                OP_WRITE_ABS_IDX(XREG, 0);
-                break;
-            }
-            /* FALLTHROUGH */
-
-
         case 0xA0: // LDY, immed.
             OP_READ_IMM(ff(YREG = val));
             break;
@@ -1059,21 +1084,6 @@ void cpu_step(void)
         case 0xB1: // LDA, (MEM),y
             OP_READ_INDY(ff(ACC = val));
             break;
-        case 0xB2: // LDA (zp) - Load Accumulator, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                ff(ACC = val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
         case 0xB4: // LDY, ZP,x
             OP_READ_ZP_IDX(XREG, ff(YREG = val));
             break;
@@ -1101,8 +1111,6 @@ void cpu_step(void)
         case 0xBE: // LDX MEM,y
             OP_READ_ABS_IDX(YREG, ff(XREG = val));
             break;
-
-
         case 0xC0: // CPY, immed.
             OP_READ_IMM(do_cmp(YREG, val));
             break;
@@ -1156,15 +1164,6 @@ void cpu_step(void)
         case 0xD8: // CLD
             OP_RMW_IMPL(PPUT(PDEC, 0));
             break;
-        case 0xDA: // PHX (Push X) - MOS 65C02 only
-            if (machine_is_enhanced_iie()) {
-                cycle();
-                stack_push(XREG);
-                cycle();
-                break;
-            }
-            // On 6502, this is an unimplemented opcode - fall through to default
-            /* FALLTHROUGH */
         case 0xD9: // CMP, MEM,y
             OP_READ_ABS_IDX(YREG, do_cmp(ACC, val));
             break;
@@ -1174,8 +1173,6 @@ void cpu_step(void)
         case 0xDE: // DEC, MEM,x
             OP_RMW_ABS_IDX(XREG, ff(--val));
             break;
-
-
         case 0xE0: // CPX, immed.
             OP_READ_IMM(do_cmp(XREG, val));
             break;
@@ -1215,21 +1212,6 @@ void cpu_step(void)
         case 0xF1: // SBC, (MEM),y
             OP_READ_INDY(do_sbc(val));
             break;
-        case 0xF2: // SBC (zp) - Subtract with Borrow, Zero Page Indirect (MOS 65C02 only)
-            if (machine_is_enhanced_iie()) {
-                byte zp_addr = immed;
-                PC_ADV;
-                cycle();
-                byte lo = peek(zp_addr);
-                cycle();
-                byte hi = peek((zp_addr + 1) & 0xFF);
-                cycle();
-                byte val = peek(WORD(lo, hi));
-                do_sbc(val);
-                cycle();
-                break;
-            }
-            /* FALLTHROUGH */
         case 0xF5: // SBC, ZP,x
             OP_READ_ZP_IDX(XREG, do_sbc(val));
             break;
@@ -1239,18 +1221,6 @@ void cpu_step(void)
         case 0xF8: // SED
             OP_RMW_IMPL(PPUT(PDEC, 1));
             break;
-        case 0xFA: // PLX (Pull X) - MOS 65C02 only
-            if (machine_is_enhanced_iie()) {
-                cycle();
-                stack_inc();
-                cycle();
-                XREG = peek(STACK);
-                ff(XREG);
-                cycle();
-                break;
-            }
-            // On 6502, this is an unimplemented opcode - fall through to default
-            /* FALLTHROUGH */
         case 0xF9: // SBC, MEM,y
             OP_READ_ABS_IDX(YREG, do_sbc(val));
             break;
@@ -1260,47 +1230,32 @@ void cpu_step(void)
         case 0xFE: // INC, MEM,x
             OP_RMW_ABS_IDX(XREG, ff(++val));
             break;
-            
-
         case 0x00: // BRK
-        default:   // UNRECOGNIZED OPCODE (treat as BRK)
-            {
-                if (cfg.die_on_brk) {
-                    DIE(0, "%s (--die-on-brk)\n",
-                        op == 0? "BRK" : "ILLEGAL OP");
-                    DIE(0, "  (CPU state follows.)\n");
-
-                    fprintf(stderr, "Instr #: %ju\n", instr_count);
-                    util_print_state(stderr, current_pc(), &theCpu.regs);
-                    exit(3);
-                }
-                else if (cfg.debug_on_brk) {
-                    WARN("%s (--debug-on-brk)\n",
-                         op == 0? "BRK" : "ILLEGAL OP");
-                    dbg_on();
-                }
-                else {
-                    // XXX cycles and behavior not realistic
-                    //  for non-break unsupported op-codes
-                    PC_ADV;
-                    cycle(); // end 2
-
-                    stack_push(HI(PC));
-                    cycle(); // 3
-                    stack_push(LO(PC));
-                    cycle(); // 4
-                    stack_push_flags_or(PMASK(PBRK));
-                    cycle(); // 5
-
-                    byte pcL = peek(VEC_BRK);
-                    cycle(); // 6
-                    byte pcH = peek(VEC_BRK + 1);
-                    go_to(WORD(pcL, pcH));
-                    PPUT(PINT,1);
-                    cycle(); // 7
-                }
-            }
+            handle_brk_or_illegal(op);
             break;
+        default:
+            return false; // NOT handled.
+    }
+    return true; // handled.
+}
+
+void cpu_step(void)
+{
+    /* Cycle references taken from https://www.nesdev.org/6502_cpu.txt. */
+    byte op = pc_get_adv();
+    cycle(); // end 1
+
+    byte immed = peek(PC);
+
+    bool handled = false;
+    if (machine_is_enhanced_iie()) {
+        handled = cpu_step_65C02(op, immed);
+    }
+    if (!handled) {
+        handled = cpu_step_6502(op, immed);
+    }
+    if (!handled) {
+        handle_brk_or_illegal(op);
     }
 
     ++instr_count;
