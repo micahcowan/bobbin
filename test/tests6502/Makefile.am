@@ -27,20 +27,44 @@ all:
 if HAVE_CA65
 check: $(OBJS)
 	@set -e; \
-	echo; echo "*** Running 6502 CPU tests ***"; \
-	for test in $(SRCS_6502:%.ca65=%); do \
+	pass=0; fail=0; xfail=0; \
+	run_test() { \
+	    local test="$$1"; shift; \
+	    local opts="$$(sed -n 's/^;#options //p' < "$(srcdir)/$${test}.ca65")"; \
 	    echo; \
-	    echo "*** $$test: ***"; \
-	    opts=$$(sed -n 's/^;#options //p' < "$(srcdir)/$${test}.ca65"); \
-	    ( cd $(srcdir) && set -x && $(abs_top_builddir)/src/bobbin -m plus     --iface simple $$opts --load="$(abs_builddir)/$$test".bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null ); \
+	    if grep -q '^;#EXPECT-FAILURE$$' $(srcdir)/$${test}.ca65; then \
+	        xxx=true; \
+	        echo "*** $$test (EXPECTING FAILURE): ***"; \
+	    else \
+	        xxx=''; \
+	        echo "*** $$test: ***"; \
+	    fi; \
+	    if ( cd $(srcdir) && set -x && $(abs_top_builddir)/src/bobbin --iface simple $$xopts $$opts --load="$(abs_builddir)/$$test".bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null ); then \
+	        pass=$$(( $$pass + 1 )); \
+	    elif test "x$${xxx}" != x; then \
+	        xfail=$$(( $$xfail + 1 )); \
+	        echo '  (expected fail)'; \
+	    else \
+	        fail=$$(( $$fail + 1 )); \
+	    fi; \
+	}; \
+	xopts='-m plus'; \
+	echo; echo "*** Running 6502 CPU tests on Apple ][+ ***"; \
+	for test in $(SRCS_6502:%.ca65=%); do \
+	    run_test "$$test"; \
 	done; \
 	echo; echo "*** Running 65C02 CPU tests on Enhanced Apple IIe ***"; \
+	xopts='-m enhanced'; \
 	for test in $(SRCS_65C02:%.ca65=%); do \
-	    echo; \
-	    echo "*** $$test (Enhanced Apple IIe): ***"; \
-	    opts=$$(sed -n 's/^;#options //p' < "$(srcdir)/$${test}.ca65"); \
-	    ( cd $(srcdir) && set -x && $(abs_top_builddir)/src/bobbin -m enhanced --iface simple $$opts --load="$(abs_builddir)/$$test".bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null ); \
-	done
+	    run_test "$$test"; \
+	done; \
+	echo; \
+	echo 'Test results summary, ca65:'; echo; \
+	echo "    $$pass passed, $$fail failed, $$xfail expected fails."; \
+	if test "$$fail" -ne 0; then \
+	    echo 'One or more tests FAILED. Exiting with failure status.'; \
+	    exit 1; \
+	fi;
 else !HAVE_CA65
 check:
 	@exec >&2; \

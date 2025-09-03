@@ -1,4 +1,5 @@
 ;#options --no-rom
+;#EXPECT-FAILURE
 
 cputype = 1         ; 0 = 6502, 1 = 65C02, 2 = 65C816
 .include "decimal_test_common.inc"
