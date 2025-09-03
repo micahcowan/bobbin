@@ -2,6 +2,7 @@ from debug import *
 from basics import *
 from asoft import *
 from apple_iie import *
+from illegal_ops import *
 import pexpect
 import os
 import re
