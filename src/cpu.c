@@ -952,7 +952,12 @@ bool cpu_step_6502(byte op, byte immed)
                 cycle(); // 3
                 lo = peek(addr);
                 cycle(); // 4
-                hi = peek(WORD(LO(addr+1),HI(addr)));
+                if (machine_is_enhanced_iie()) {
+                    hi = peek(addr+1);
+                } else {
+                    // 6502 page-crossing BUG!!
+                    hi = peek(WORD(LO(addr+1),HI(addr)));
+                }
                 word dest = WORD(lo, hi);
                 go_to(dest);
                 cycle(); // 5
