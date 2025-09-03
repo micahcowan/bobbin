@@ -221,7 +221,7 @@ void machine_init(void)
         is_iie = true;
     }
     if (orig == ENHANCED_TAG) {
-        default_romfname = "Apple2e_Enhanced.rom";
+        default_romfname = "apple2e_enh.rom";
         expected_size = 16 * 1024;
         is_iie = true;
         is_enhanced_iie = true;
