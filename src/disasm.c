@@ -491,6 +491,9 @@ static void print_access(FILE *f, word pc, const Registers *regs,
                 pracc_abs(f, WORD(lo, hi));
             }
             break;
+        case T_JMP_IND:
+            pracc_abs(f, WORD(m[0], m[1]));
+            break;
         default:
             ;
     }
