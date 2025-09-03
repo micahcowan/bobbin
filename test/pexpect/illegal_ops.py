@@ -36,7 +36,6 @@ def make_illegal_op_test(op):
     the_test.__name__ = 'illegal_op_%02X' % op
     # Register the test with a bobbin invocation
     the_test = bobbin('--simple -m plus --die-on-brk --trap-success 3')(the_test)
-    the_test = only(the_test)
 
 # Create tests for each illegal op that should act like BRK:
 for n in [0x04, 0x0C, 0x12, 0x14, 0x1C, 0x32, 0x34, 0x3C, 0x52, 0x5A,
@@ -44,4 +43,4 @@ for n in [0x04, 0x0C, 0x12, 0x14, 0x1C, 0x32, 0x34, 0x3C, 0x52, 0x5A,
          0xB2, 0xDA, 0xF2, 0xFA]:
     make_illegal_op_test(n)
 
-# TODO: Create tests for $1A, $3A
+# TODO: Create tests for $1A, $3A, $C2
