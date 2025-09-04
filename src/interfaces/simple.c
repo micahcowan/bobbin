@@ -24,7 +24,11 @@ static byte last_char_consumed;
 static bool eof_found;
 static bool token_err_found;
 static bool suppress_input;
-static bool setup_list_return;
+static enum {
+    LIST_AWAITING_NXTCHR = 0,
+    LIST_FEEDING_CMD,
+    LIST_DOING_LIST,
+} detoken_state = LIST_AWAITING_NXTCHR;
 static bool exit_on_spindown;
 static int tokenfd;
 static int inputfd = 0;
@@ -216,9 +220,7 @@ int read_char(void)
 
 recheck:
     c = 0;
-    if (suppress_input) {
-        // no input
-    } else if (exit_on_spindown) {
+    if (exit_on_spindown) {
         // no input
     } else if (sigint_received) {
         c = 0x83; // Ctrl-C in Apple ][
@@ -257,6 +259,8 @@ recheck:
             if (c == 0x8D) // CR
                 set_noncanon(); // may have just finished a GETLN
         }
+    } else if (suppress_input) {
+        // no input
     } else if (debugging()) {
         // Don't try to read any characters
     } else {
@@ -582,14 +586,6 @@ static void iface_simple_prestep(void)
         byte lo = stack_pop_sneaky();
         byte hi = stack_pop_sneaky();
         go_to(WORD(lo, hi)+1);
-    } else if (cfg.detokenize && current_pc() == (MON_NXTCHR + 3)) {
-        // When we get here, the --load-basic-bin mechanism
-        // has just loaded the program into memory.
-        // Disable suppresson and run the LIST routine
-        output_suppressed = SUPPRESS_CR; // suppress the initial blank line
-        output_seen = true;
-        go_to(ZP_CHRGOT);
-        setup_list_return = true;
     }
 }
 
@@ -642,11 +638,6 @@ static void iface_simple_step(void)
     if (cfg.tokenize || cfg.runbasicfile) {
         strict_basic_step();
     }
-    if (setup_list_return) {
-        setup_list_return = false;
-        stack_push_sneaky(HI(FP_LIST-1));
-        stack_push_sneaky(LO(FP_LIST-1));
-    }
     switch (current_pc()) {
         // XXX these should check that firmware is active
         case MON_COUT1:
@@ -654,7 +645,19 @@ static void iface_simple_step(void)
             break;
         case MON_NXTCHR: // common part of GETLN used by
                      //  both AppleSoft and Woz basics
-            if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
+            if (cfg.detokenize && detoken_state == LIST_AWAITING_NXTCHR) {
+                // When we get here, the --load-basic-bin mechanism
+                // has just loaded the program into memory.
+                // Feed a LIST command.
+                output_seen = true;
+                detoken_state = LIST_FEEDING_CMD;
+
+                static const unsigned char cmd[] = "LIST\r";
+                lbuf_start = linebuf;
+                lbuf_end = linebuf + (sizeof cmd - 1);
+                memcpy(linebuf, cmd, sizeof cmd - 1);
+            }
+            else if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
                 // Don't want to echo the input when it's piped in.
                 suppress_output();
             }
@@ -679,8 +682,14 @@ static void iface_simple_step(void)
         case INT_SETPROMPT:
             prompt_wozbasic();
             break;
+        case FP_LIST:
+            if (cfg.detokenize) {
+                output_suppressed = SUPPRESS_CR;
+                detoken_state = LIST_DOING_LIST;
+            }
+            break;
         case FP_NEWSTT:
-            if (cfg.detokenize && output_suppressed == SUPPRESS_NONE) {
+            if (cfg.detokenize && detoken_state == LIST_DOING_LIST) {
                 exit(0); // done listing!
             }
             break;
