@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e -u
+
+timeout 5s "$BOBBIN" --detokenize < input 2>/dev/null
