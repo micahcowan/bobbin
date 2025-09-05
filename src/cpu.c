@@ -469,6 +469,12 @@ void handle_brk_or_illegal(byte op) {
         byte pcH = peek(VEC_BRK + 1);
         go_to(WORD(pcL, pcH));
         PPUT(PINT,1);
+        if (machine_is_enhanced_iie()) {
+            // 65C02, but not 6502, always clears the decimal flag
+            // before executing the interupt handler.
+            // http://www.6502.org/tutorials/65c02opcodes.html#:~:text=also%20clear%20the%20D%20flag
+            PPUT(PDEC,0);
+        }
         cycle(); // 7
     }
 }
