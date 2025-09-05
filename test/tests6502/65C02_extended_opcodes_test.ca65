@@ -1,5 +1,4 @@
 ;#options --no-rom
-;#EXPECT-FAILURE
 ;
 ; 6 5 C 0 2   E X T E N D E D   O P C O D E S   T E S T
 ;
