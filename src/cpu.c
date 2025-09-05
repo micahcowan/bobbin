@@ -375,6 +375,10 @@ static inline void do_adc(byte val)
         if (sumH > 9) sumH += 6;
         PPUT(PCARRY, sumH > 9);
         ACC = LO(((sumH << 4) | (sumL & 0xF)));
+        if (machine_is_enhanced_iie()) {
+            PPUT(PZERO, ACC == 0);
+            PPUT(PNEG, (ACC & 0x80) != 0);
+        }
     } else {
         word sum = ACC + val + PGET(PCARRY);
         PPUT(PNEG, sum & 0x80);
@@ -396,6 +400,19 @@ static void do_sbc_seq3(byte val, Registers *reg)
     reg->a = LO(((diffH << 4) | (diffL & 0xF)));
 }
 
+static void do_sbc_seq4(byte val, Registers *reg)
+{
+    unsigned int diffL = (reg->a & 0xF) - (val & 0xF) - !RPGET(reg->p, PCARRY);
+    unsigned int diff = (reg->a - val - !RPGET(reg->p, PCARRY));
+    if (diff > 255) {
+        diff -= 0x60;
+    }
+    if (diffL > 255) {
+        diff -= 0x06;
+    }
+    reg->a = diff & 0xFF;
+}
+
 static void do_sbc_bin(byte val, Registers *reg)
 {
     word diff = reg->a - val - !PGET(PCARRY);
@@ -415,13 +432,23 @@ static void do_sbc(byte val)
         //  http://www.6502.org/tutorials/decimal_mode.html
         //
         Registers decReg = theCpu.regs;
-        do_sbc_seq3(val, &decReg);
+        if (machine_is_enhanced_iie()) {
+            do_sbc_seq4(val, &decReg);
+        } else {
+            do_sbc_seq3(val, &decReg);
+        }
 
         Registers binReg = theCpu.regs;
         do_sbc_bin(val, &binReg);
 
         theCpu.regs.a = decReg.a;
         theCpu.regs.p = binReg.p;
+
+        if (machine_is_enhanced_iie()) {
+            // Fix up N, Z flags based on actual returned result
+            PPUT(PNEG, (ACC & 0x80) != 0);
+            PPUT(PZERO, ACC == 0);
+        }
     } else {
         do_sbc_bin(val, &theCpu.regs);
     }
