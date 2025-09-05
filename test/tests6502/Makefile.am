@@ -55,17 +55,17 @@ check: $(OBJS)
 	        fail=$$(( $$fail + 1 )); \
 	    fi; \
 	}; \
-	xopts='-m plus'; \
-	echo; echo "*** Running 6502 CPU tests on Apple ][+ ***"; \
-	for test in $(SRCS_6502:%.ca65=%); do \
-	    run_test "$$test"; \
-	done; \
 	echo; echo "*** Running 65C02 CPU tests on Enhanced Apple IIe ***"; \
 	xopts='-m enhanced'; \
 	for test in $(SRCS_65C02:%.ca65=%); do \
 	    run_test "$$test"; \
 	done; \
 	echo; \
+	echo; echo "*** Running 6502 CPU tests on Apple ][+ ***"; \
+	xopts='-m plus'; \
+	for test in $(SRCS_6502:%.ca65=%); do \
+	    run_test "$$test"; \
+	done; \
 	echo 'Test results summary, ca65:'; echo; \
 	echo "    $$pass passed, $$fail failed, $$xfail expected fails."; \
 	if test "$$fail" -ne 0; then \
