@@ -42,7 +42,12 @@ check: $(OBJS)
 	        echo "*** $$test: ***"; \
 	    fi; \
 	    if ( cd $(srcdir) && set -x && $(abs_top_builddir)/src/bobbin --iface simple $$xopts $$opts --load="$(abs_builddir)/$$test".bin --trap-failure 0x0001 --trap-success 0x0002 </dev/null ); then \
-	        pass=$$(( $$pass + 1 )); \
+	        if test "x$${xxx}" != x; then \
+	            echo '  (unexpected pass, treating as fail)'; \
+	            fail=$$(( $$fail + 1 )); \
+	        else \
+	            pass=$$(( $$pass + 1 )); \
+	        fi; \
 	    elif test "x$${xxx}" != x; then \
 	        xfail=$$(( $$xfail + 1 )); \
 	        echo '  (expected fail)'; \
