@@ -107,7 +107,7 @@ zero_page = $a
 
 ;data_segment memory start address, $63 (99) consecutive Bytes required
 ; + 12 Bytes at data_segment + $f9 (JMP indirect page cross test)
-data_segment = $300 ; Changed so we can use $200 for test_case var -MJC
+data_segment = $200
     .if (data_segment & $ff) <> 0
         .error "low byte of data_segment MUST be $00 !!"
     .endif
@@ -187,7 +187,7 @@ ram_top = -1
         .endmacro
     .endif
     .if report = 1
-        report_error = $0001
+        ;report_error = $0001
         report_success = $0002
         .macro  trap
         jsr report_error
@@ -633,9 +633,7 @@ zp_bss_end:
         .DATA
         .org data_segment
 pg_x:       .res  2             ;high JMP indirect address for page cross bug
-;test_case:  .res  1             ;current test number
-            .res 1
-test_case = $200    ; bobbin checks this location on trap -MJC
+test_case:  .res  1             ;current test number
 ram_chksm:  .res  2             ;checksum for RAM integrity test
 ;add/subtract operand copy - abs tests write area
 abst:                           ;5 bytes store/modify test area
@@ -2864,6 +2862,11 @@ break2:                 ;BRK pass 2
 ;    .if report = 1
 ;        .include "report.i65"
 ;    .endif
+report_error:
+        ; ensure bobbin finds the test number
+        lda test_case
+        sta $200; bobbin looks for it here
+        jmp $0001
             
 ;copy of data to initialize BSS segment
     .if load_data_direct <> 1
