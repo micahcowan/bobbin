@@ -656,6 +656,20 @@ bool cpu_step_65C02(byte op, byte immed)
                 cycle();
             }
             break;
+        case 0xD2: // CMP, (ZP)
+            {
+                byte zp_addr = immed;
+                PC_ADV;
+                cycle();
+                byte lo = peek(zp_addr);
+                cycle();
+                byte hi = peek((zp_addr + 1) & 0xFF);
+                cycle();
+                byte val = peek(WORD(lo, hi));
+                do_cmp(ACC, val);
+                cycle();
+            }
+            break;
         case 0xDA: // PHX (Push X) - MOS 65C02 only
             cycle();
             stack_push(XREG);
