@@ -370,7 +370,7 @@ Only meaningful in the `tty` interface (`simple` does not sound a bell).
 
 Run as fast as possible - don't throttle speed to 1.023 MHz.
 
-This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed.
+This is the default when the interface is `simple`, and you may use `--no-turbo` to disable it in that mode. By default, the `tty` interface runs at (approximately) normal Apple \]\[ speed, except that it runs at turbo speed while disks are spinning.
 
 ##### --no-lang-card
 
@@ -380,13 +380,13 @@ Disable the language card.
 
 Use the specified file as the firmware ROM.
 
-The file size must exactly match the expected size for the emulated machine. For `original` and `plus`, that means exactly 12kib. For `twoey` it means 16kib, and for `enhanced` it's 32kib.
+The file size must exactly match the expected size for the emulated machine. For `original` and `plus`, that means exactly 12kib. For `twoey` and `enhanced`, it means 16kib.
 
 ##### --no-rom
 
 Refrain from loading a ROM file into the upper address space.
 
-When this option is specified, `--load` *arg* must be used as well (else there is no code to be run), and the `-m`/`--machine` option is no longer required.
+When this option is specified, `--load` *arg* must be used as well (else there is no code to be run), and the `-m`/`--machine` option is no longer required. (If not specified, memory mapping, etc., will work like an original \]\[ or \]\[+.)
 
 Note that this option makes it possible to programatically change the contents of the `NMI`, `INT`, and `RESET` vectors at the extreme end of addressable space.
 
