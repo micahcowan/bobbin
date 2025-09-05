@@ -18,7 +18,7 @@ EXTRA_DIST = scripts/gen-help.awk scripts/gen-options.awk \
 	     scripts/gen-machines.awk scripts/check-options.awk \
 	     $(BUILT_SOURCES)
 NO_LICENSE_OK_FILES = sha-256.c sha-256.h apple2.h ac-config.h
-A2ROMS=roms/apple2.rom roms/apple2plus.rom roms/apple2e.rom
+A2ROMS=roms/apple2.rom roms/apple2plus.rom roms/apple2e.rom roms/apple2e_enh.rom
 dist_rom_DATA=$(A2ROMS)
 dist_cardrom_DATA=roms/cards/disk2.rom
 CLEANFILES = $(BUILT_SOURCES)
