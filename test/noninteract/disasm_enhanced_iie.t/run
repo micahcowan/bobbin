@@ -1,7 +1,8 @@
 #!/bin/sh
 # disasm_enhanced_iie
 
-bobbin --simple --die-on-brk --trace-to 95013 < input
+$BOBBIN --simple --die-on-brk --trace-to 95013 < input \
+    2>&1 | sed 's/^.*bobbin:/bobbin:/'
 echo '--------------------'
 echo ' TRACE:'
 echo '--------------------'

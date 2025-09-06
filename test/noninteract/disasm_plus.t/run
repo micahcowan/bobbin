@@ -4,7 +4,8 @@
 # The intention of the --trace-to line, here, is to produce
 # a disassembly trace of exactly the instructions that were fed in
 # via the "input" file (those beginning at $300).
-bobbin -m plus --simple --die-on-brk --trace-to 76466:195 < input
+$BOBBIN -m plus --simple --die-on-brk --trace-to 76466:195 < input \
+    2>&1 | sed 's/^.*bobbin:/bobbin:/'
 echo '--------------------'
 echo ' TRACE:'
 echo '--------------------'

@@ -1060,7 +1060,7 @@ STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
                                                                           95003
 ACC: 8D  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-030B:   80 F5       BRA $0302
+030B:   80 F5       BRA $0302        
                                                                           95004
 ACC: 8D  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
@@ -1094,7 +1094,7 @@ w @0001B $001B :03 MAIN
                                                                           95011
 ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0317:   92          STA ($1A)        
+0317:   92 1A       STA ($1A)        1A: 1C 03   031C:  EA C8 C5 CC CC
 w @0031C $031C :00 MAIN
                                                                           95012
 ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
