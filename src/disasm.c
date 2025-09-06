@@ -8,7 +8,75 @@
 
 #include <stdio.h>
 
-static const char *get_op_mnem(byte op)
+
+
+static const char *get_op_mnem_65C02(byte op)
+{
+    // Handles 65C02 extension opcodes, only.
+    // Opcodes in common with 6502 are handled in get_op_mnem_6502().
+
+    switch (op) {
+        case 0x04:
+            return "TSB";
+        case 0x0C:
+            return "TSB";
+        case 0x12:
+            return "ORA";
+        case 0x14:
+            return "TRB";
+        case 0x1A:
+            return "INC"; // consider "INC A"?
+        case 0x1C:
+            return "TRB";
+        case 0x32:
+            return "AND";
+        case 0x34:
+            return "BIT";
+        case 0x3A:
+            return "DEC"; // consider "DEC A"?
+        case 0x3C:
+            return "BIT";
+        case 0x52:
+            return "EOR";
+        case 0x5A:
+            return "PHY";
+        case 0x64:
+            return "STZ";
+        case 0x72:
+            return "ADC";
+        case 0x74:
+            return "STZ";
+        case 0x7A:
+            return "PLY";
+        case 0x7C:
+            return "JMP";
+        case 0x80:
+            return "BRA";
+        case 0x89:
+            return "BIT";
+        case 0x92:
+            return "STA";
+        case 0x9C:
+            return "STZ";
+        case 0x9E:
+            return "STZ";
+        case 0xB2:
+            return "LDA";
+        case 0xD2:
+            return "CMP";
+        case 0xDA:
+            return "PHX";
+        case 0xF2:
+            return "SBC";
+        case 0xFA:
+            return "PLX";
+
+        default:
+            return NULL; // We DID NOT handle
+    }
+}
+
+static const char *get_op_mnem_6502(byte op)
 {
     // O-okay. I know this looks like complete butt,
     // and I could probably make something both prettier and also
@@ -335,8 +403,25 @@ static const char *get_op_mnem(byte op)
             return "INC";
 
         default:
-            return "???";
+            return NULL;
     }
+}
+
+static const char *get_op_mnem(byte op)
+{
+    const char *mnem = NULL;
+
+    if (machine_is_enhanced_iie()) {
+        mnem = get_op_mnem_65C02(op);
+    }
+    if (mnem == NULL) {
+        mnem = get_op_mnem_6502(op);
+    }
+    if (mnem == NULL) {
+        mnem = "???";
+    }
+
+    return mnem;
 }
 
 #define T_UNKNOWN       0
@@ -352,9 +437,11 @@ static const char *get_op_mnem(byte op)
 #define T_ABS_X         10
 #define T_ZP_Y          11
 #define T_JMP_IND       12
+#define T_ZP_IND        13
+#define T_JMP_ABS_X_IND 14
 
 static const char n_oprnd[]
-    = {0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 1, 2};
+    = {0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 1, 2, 1, 2};
 
 #define PRA FILE *f, word pc, byte a[2]
 #define RP  return fprintf
@@ -369,6 +456,8 @@ int pr_zp_y(PRA) { RP(f, "$%02X,y", a[0]); }
 int pr_abs_x(PRA) { RP(f, "$%04X,x", WORD(a[0],a[1])); }
 int pr_abs_y(PRA) { RP(f, "$%04X,y", WORD(a[0],a[1])); }
 int pr_jmp_ind(PRA) { RP(f, "($%04X)", WORD(a[0],a[1])); }
+int pr_zp_ind(PRA) { RP(f, "($%02X)", a[0]); }
+int pr_jmp_abs_x_ind(PRA) { RP(f, "($%04X,X)", WORD(a[0],a[1])); }
 
 int pr_rel(PRA) {
     word offset = a[0];
@@ -391,9 +480,39 @@ int (* const handlers[])(PRA) = {
     pr_abs_x,
     pr_zp_y,
     pr_jmp_ind,
+    pr_zp_ind,
+    pr_jmp_abs_x_ind,
 };
 
-static int get_op_type(byte op)
+static int get_op_type_65C02(byte op)
+{
+    switch (op) {
+        case 0x04: case 0x14: case 0x64:
+            return T_ZP;
+        case 0x0C: case 0x1C: case 0x9C:
+            return T_ABSOLUTE;
+        case 0x12: case 0x32: case 0x52: case 0x72: case 0x92:
+        case 0xB2: case 0xD2: case 0xF2:
+            return T_ZP_IND;
+        case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA:
+        case 0xFA:
+            return T_IMPLIED;
+        case 0x34: case 0x74:
+            return T_ZP_X;
+        case 0x3C: case 0x9E:
+            return T_ABS_X;
+        case 0x7C: // JMP (abs,X) - Jump Absolute Indirect Indexed
+            return T_JMP_ABS_X_IND;
+        case 0x80:
+            return T_RELATIVE;
+        case 0x89:
+            return T_IMMEDIATE;
+        default:
+            return T_UNKNOWN;
+    }
+}
+
+static int get_op_type_6502(byte op)
 {
     if ((op & 3) == 3)
         return T_UNKNOWN;
@@ -433,6 +552,20 @@ static int get_op_type(byte op)
         case 0x9E:
             return (op == 0xBE)? T_ABS_Y : T_ABS_X;
     }
+}
+
+static int get_op_type(byte op)
+{
+    int t = T_UNKNOWN;
+
+    if (machine_is_enhanced_iie()) {
+        t = get_op_type_65C02(op);
+    }
+    if (t == T_UNKNOWN) {
+        t = get_op_type_6502(op);
+    }
+
+    return t;
 }
 
 static void pracc_abs(FILE *f, word addr)
@@ -493,6 +626,23 @@ static void print_access(FILE *f, word pc, const Registers *regs,
             break;
         case T_JMP_IND:
             pracc_abs(f, WORD(m[0], m[1]));
+            break;
+        case T_ZP_IND:
+            {
+                pracc_zp(f, m[0]);
+                byte lo = peek_sneaky(m[0]);
+                byte hi = peek_sneaky(m[0]+1);
+                pracc_abs(f, WORD(lo, hi));
+            }
+            break;
+        case T_JMP_ABS_X_IND:
+            {
+                word w = WORD(m[0], m[1]) + regs->x;
+                pracc_abs(f, w);
+                byte lo = peek_sneaky(w);
+                byte hi = peek_sneaky(w+1);
+                pracc_abs(f, WORD(lo, hi));
+            }
             break;
         default:
             ;
