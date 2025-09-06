@@ -1,0 +1,8 @@
+#!/bin/sh
+# disasm_enhanced_iie
+
+bobbin --simple --die-on-brk --trace-to 95013 < input
+echo '--------------------'
+echo ' TRACE:'
+echo '--------------------'
+cat trace.log
