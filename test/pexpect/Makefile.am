@@ -8,7 +8,9 @@ distclean-local:
 
 if HAVE_PEXPECT
 check:
-	BOBBIN_ROMDIR=$(top_srcdir)/src/roms PYTHONPATH=$(srcdir) $(PYTHON) $(srcdir)/run_tests.py $(CHECK_VERBOSE)
+	PYTHONPATH=$(srcdir)$${PYTHONPATH:+:}$${PYTHONPATH} \
+	    BOBBIN_ROMDIR=$(top_srcdir)/src/roms \
+	    $(PYTHON) $(srcdir)/run_tests.py $(CHECK_VERBOSE)
 else !HAVE_PEXPECT
 check:
 	@exec >&2; \
