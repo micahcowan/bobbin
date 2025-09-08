@@ -41,7 +41,7 @@ def m_plus_simple_v(p):
         fail("got EOF")
     global BOBBIN
     before = p.before
-    before = re.sub('[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus\.rom"\.\r\n', '- ELIDED -\r\n', before)
+    before = re.sub('[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus[.]rom"[.]\r\n', '- ELIDED -\r\n', before)
     return want_got(
 """\
 %(bobbin)s: Searching for ROM file apple2plus.rom...\r
@@ -64,7 +64,7 @@ def m_plus_simple_v_v(p):
     global BOBBIN
     before = p.before
     before = re.sub('[^\n]*bobbin: Looking for ROM named "apple2plus.rom" in [^\n]*/roms...\r\n', '- ELIDED -\r\n', before)
-    before = re.sub('[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus\.rom"\.\r\n', '- ELIDED -\r\n', before)
+    before = re.sub('[^\n]*bobbin: FOUND ROM file "[^"\n]*/roms/apple2plus[.]rom"[.]\r\n', '- ELIDED -\r\n', before)
     return want_got(
 """\
 %(bobbin)s: Searching for ROM file apple2plus.rom...\r

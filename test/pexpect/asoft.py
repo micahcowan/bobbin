@@ -97,7 +97,7 @@ def asoft_basic_infloop(p):
     p.expect("\r\nBREAK IN ")
     p.send('\x04') # EOF char
     p.expect(EOF)
-    if re.match('[12]0\r\n\]\r\n$', p.before) is None:
+    if re.match('[12]0\r\n[]]\r\n$', p.before) is None:
         want_got('10\r\n]\r\n', p.before)
         fail('No match') # failsafe
 
