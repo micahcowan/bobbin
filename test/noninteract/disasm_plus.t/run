@@ -9,4 +9,4 @@ $BOBBIN -m plus --simple --die-on-brk --trace-to 76466:195 < input \
 echo '--------------------'
 echo ' TRACE:'
 echo '--------------------'
-cat trace.log
+awk -f "$TESTDIR"/trace-filter.awk trace.log

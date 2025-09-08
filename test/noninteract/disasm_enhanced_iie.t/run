@@ -1,9 +1,9 @@
 #!/bin/sh
 # disasm_enhanced_iie
 
-$BOBBIN --simple --die-on-brk --trace-to 95013 < input \
+$BOBBIN --simple --die-on-brk --trace-to 101290:322 < input \
     2>&1 | sed 's/^.*bobbin:/bobbin:/'
 echo '--------------------'
 echo ' TRACE:'
 echo '--------------------'
-cat trace.log
+awk -f "$TESTDIR"/trace-filter.awk trace.log

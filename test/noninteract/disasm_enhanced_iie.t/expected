@@ -1,1106 +1,213 @@
 HELLO
 bobbin: BRK (--die-on-brk)
 bobbin:   (CPU state follows.)
-Instr #: 95013
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-031C:   00          BRK              
+Instr #: 101290
+ACC: 03  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0322:   00          BRK              
 --------------------
  TRACE:
 --------------------
-
-
-~~~ TRACING STARTED: Requested by user ~~~
-                                                                          94758
-ACC: C8  X: 00  Y: 00  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBF2:   91 28       STA ($28),y      28: A8 07   07A8:  A0 A0 A0 A0 A0
-w @007A8 $07A8 :C8 MAIN
-                                                                          94759
-ACC: C8  X: 00  Y: 00  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBF4:   E6 24       INC $24          0024:  00 0F 00 00 A8
-w @00024 $0024 :00 MAIN
-w @00024 $0024 :01 MAIN
-                                                                          94760
-ACC: C8  X: 00  Y: 00  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBF6:   A5 24       LDA $24          0024:  01 0F 00 00 A8
-                                                                          94761
-ACC: 01  X: 00  Y: 00  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBF8:   C5 21       CMP $21          0021:  28 00 18 01 0F
-                                                                          94762
-ACC: 01  X: 00  Y: 00  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBFA:   B0 66       BCS $FC62        
-                                                                          94763
-ACC: 01  X: 00  Y: 00  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  C8  09  03  84  FF  22  D8
-FBFC:   60          RTS              
-                                                                          94764
-ACC: 01  X: 00  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  C8  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          94765
-ACC: C8  X: 00  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C8)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          94766
-ACC: C8  X: 00  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (C8)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          94767
+                                                                         100969
+ACC: FF  X: 00  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  32  00  BB  (FE)  84  FF  22  D8  C1  F1  00  01  01
+0300:   A2 00       LDX #$00         
+                                                                         100970
+ACC: FF  X: 00  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+STK: $1F1:  32  00  BB  (FE)  84  FF  22  D8  C1  F1  00  01  01
+0302:   BD 23 03    LDA $0323,x      0323:  C8 C5 CC CC CF
+                                                                         100971
+ACC: C8  X: 00  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  32  00  BB  (FE)  84  FF  22  D8  C1  F1  00  01  01
+0305:   F0 06       BEQ $030D        
+                                                                         100972
+ACC: C8  X: 00  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  32  00  BB  (FE)  84  FF  22  D8  C1  F1  00  01  01
+0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
+[...]
+                                                                         101004
 ACC: C8  X: 00  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  C8  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          94768
+                                                                         101005
 ACC: C8  X: 01  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C8  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          94769
+                                                                         101006
 ACC: C8  X: 01  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C8  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      031E:  C5 CC CC CF 8D
-                                                                          94770
+0302:   BD 23 03    LDA $0323,x      0324:  C5 CC CC CF 8D
+                                                                         101007
 ACC: C5  X: 01  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C8  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          94771
+                                                                         101008
 ACC: C5  X: 01  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C8  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
-w @001F4 $01F4 :03 MAIN
-w @001F3 $01F3 :09 MAIN
-                                                                          94772
-ACC: C5  X: 01  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C8)  09  03  84  FF  22  D8  C1  F1  00
-FDED:   6C 36 00    JMP ($0036)      0036:  F0 FD 1B FD 00
-                                                                          94773
-ACC: C5  X: 01  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C8)  09  03  84  FF  22  D8  C1  F1  00
-FDF0:   48          PHA              
-w @001F2 $01F2 :C5 MAIN
-                                                                          94774
-ACC: C5  X: 01  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FDF1:   C9 A0       CMP #$A0         
-                                                                          94775
-ACC: C5  X: 01  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FDF3:   4C 95 FC    JMP $FC95        FC95:  90 02 25 32 4C
-                                                                          94776
-ACC: C5  X: 01  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FC95:   90 02       BCC $FC99        
-                                                                          94777
-ACC: C5  X: 01  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FC97:   25 32       AND $32          0032:  FF AA 04 00 F0
-                                                                          94778
-ACC: C5  X: 01  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FC99:   4C F7 FD    JMP $FDF7        FDF7:  84 35 A8 68 4C
-                                                                          94779
-ACC: C5  X: 01  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FDF7:   84 35       STY $35          0035:  00 F0 FD 1B FD
-w @00035 $0035 :00 MAIN
-                                                                          94780
-ACC: C5  X: 01  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FDF9:   A8          TAY              
-                                                                          94781
-ACC: C5  X: 01  Y: C5  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FDFA:   68          PLA              
-                                                                          94782
-ACC: C5  X: 01  Y: C5  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FDFB:   4C 46 FC    JMP $FC46        FC46:  2C 1F C0 10 04
-                                                                          94783
-ACC: C5  X: 01  Y: C5  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC46:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94784
-ACC: C5  X: 01  Y: C5  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC49:   10 04       BPL $FC4F        
-                                                                          94785
-ACC: C5  X: 01  Y: C5  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC4F:   98          TYA              
-                                                                          94786
-ACC: C5  X: 01  Y: C5  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC50:   48          PHA              
-w @001F2 $01F2 :C5 MAIN
-                                                                          94787
-ACC: C5  X: 01  Y: C5  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FC51:   20 78 FB    JSR $FB78        FB78:  C9 8D D0 18 AC
-w @001F1 $01F1 :FC MAIN
-w @001F0 $01F0 :53 MAIN
-                                                                          94788
-ACC: C5  X: 01  Y: C5  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FB78:   C9 8D       CMP #$8D         
-                                                                          94789
-ACC: C5  X: 01  Y: C5  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FB7A:   D0 18       BNE $FB94        
-                                                                          94790
-ACC: C5  X: 01  Y: C5  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FB94:   4C FD FB    JMP $FBFD        FBFD:  C9 A0 B0 EF A8
-                                                                          94791
-ACC: C5  X: 01  Y: C5  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBFD:   C9 A0       CMP #$A0         
-                                                                          94792
-ACC: C5  X: 01  Y: C5  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBFF:   B0 EF       BCS $FBF0        
-                                                                          94793
-ACC: C5  X: 01  Y: C5  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBF0:   A4 24       LDY $24          0024:  01 0F 00 00 A8
-                                                                          94794
-ACC: C5  X: 01  Y: 01  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBF2:   91 28       STA ($28),y      28: A8 07   07A9:  A0 A0 A0 A0 A0
-w @007A9 $07A9 :C5 MAIN
-                                                                          94795
-ACC: C5  X: 01  Y: 01  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBF4:   E6 24       INC $24          0024:  01 0F 00 00 A8
-w @00024 $0024 :01 MAIN
-w @00024 $0024 :02 MAIN
-                                                                          94796
-ACC: C5  X: 01  Y: 01  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBF6:   A5 24       LDA $24          0024:  02 0F 00 00 A8
-                                                                          94797
-ACC: 02  X: 01  Y: 01  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBF8:   C5 21       CMP $21          0021:  28 00 18 02 0F
-                                                                          94798
-ACC: 02  X: 01  Y: 01  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBFA:   B0 66       BCS $FC62        
-                                                                          94799
-ACC: 02  X: 01  Y: 01  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  C5  09  03  84  FF  22  D8
-FBFC:   60          RTS              
-                                                                          94800
-ACC: 02  X: 01  Y: 01  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  C5  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          94801
-ACC: C5  X: 01  Y: 01  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          94802
-ACC: C5  X: 01  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          94803
+[...]
+                                                                         101040
 ACC: C5  X: 01  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  C5  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          94804
+                                                                         101041
 ACC: C5  X: 02  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C5  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          94805
+                                                                         101042
 ACC: C5  X: 02  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C5  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      031F:  CC CC CF 8D 00
-                                                                          94806
+0302:   BD 23 03    LDA $0323,x      0325:  CC CC CF 8D 01
+                                                                         101043
 ACC: CC  X: 02  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C5  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          94807
+                                                                         101044
 ACC: CC  X: 02  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  C5  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
-w @001F4 $01F4 :03 MAIN
-w @001F3 $01F3 :09 MAIN
-                                                                          94808
-ACC: CC  X: 02  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FDED:   6C 36 00    JMP ($0036)      0036:  F0 FD 1B FD 00
-                                                                          94809
-ACC: CC  X: 02  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (C5)  09  03  84  FF  22  D8  C1  F1  00
-FDF0:   48          PHA              
-w @001F2 $01F2 :CC MAIN
-                                                                          94810
-ACC: CC  X: 02  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF1:   C9 A0       CMP #$A0         
-                                                                          94811
-ACC: CC  X: 02  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF3:   4C 95 FC    JMP $FC95        FC95:  90 02 25 32 4C
-                                                                          94812
-ACC: CC  X: 02  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC95:   90 02       BCC $FC99        
-                                                                          94813
-ACC: CC  X: 02  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC97:   25 32       AND $32          0032:  FF AA 04 00 F0
-                                                                          94814
-ACC: CC  X: 02  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC99:   4C F7 FD    JMP $FDF7        FDF7:  84 35 A8 68 4C
-                                                                          94815
-ACC: CC  X: 02  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF7:   84 35       STY $35          0035:  00 F0 FD 1B FD
-w @00035 $0035 :00 MAIN
-                                                                          94816
-ACC: CC  X: 02  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF9:   A8          TAY              
-                                                                          94817
-ACC: CC  X: 02  Y: CC  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDFA:   68          PLA              
-                                                                          94818
-ACC: CC  X: 02  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDFB:   4C 46 FC    JMP $FC46        FC46:  2C 1F C0 10 04
-                                                                          94819
-ACC: CC  X: 02  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC46:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94820
-ACC: CC  X: 02  Y: CC  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC49:   10 04       BPL $FC4F        
-                                                                          94821
-ACC: CC  X: 02  Y: CC  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC4F:   98          TYA              
-                                                                          94822
-ACC: CC  X: 02  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC50:   48          PHA              
-w @001F2 $01F2 :CC MAIN
-                                                                          94823
-ACC: CC  X: 02  Y: CC  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC51:   20 78 FB    JSR $FB78        FB78:  C9 8D D0 18 AC
-w @001F1 $01F1 :FC MAIN
-w @001F0 $01F0 :53 MAIN
-                                                                          94824
-ACC: CC  X: 02  Y: CC  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB78:   C9 8D       CMP #$8D         
-                                                                          94825
-ACC: CC  X: 02  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB7A:   D0 18       BNE $FB94        
-                                                                          94826
-ACC: CC  X: 02  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB94:   4C FD FB    JMP $FBFD        FBFD:  C9 A0 B0 EF A8
-                                                                          94827
-ACC: CC  X: 02  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFD:   C9 A0       CMP #$A0         
-                                                                          94828
-ACC: CC  X: 02  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFF:   B0 EF       BCS $FBF0        
-                                                                          94829
-ACC: CC  X: 02  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF0:   A4 24       LDY $24          0024:  02 0F 00 00 A8
-                                                                          94830
-ACC: CC  X: 02  Y: 02  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF2:   91 28       STA ($28),y      28: A8 07   07AA:  A0 A0 A0 A0 A0
-w @007AA $07AA :CC MAIN
-                                                                          94831
-ACC: CC  X: 02  Y: 02  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF4:   E6 24       INC $24          0024:  02 0F 00 00 A8
-w @00024 $0024 :02 MAIN
-w @00024 $0024 :03 MAIN
-                                                                          94832
-ACC: CC  X: 02  Y: 02  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF6:   A5 24       LDA $24          0024:  03 0F 00 00 A8
-                                                                          94833
-ACC: 03  X: 02  Y: 02  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF8:   C5 21       CMP $21          0021:  28 00 18 03 0F
-                                                                          94834
-ACC: 03  X: 02  Y: 02  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFA:   B0 66       BCS $FC62        
-                                                                          94835
-ACC: 03  X: 02  Y: 02  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFC:   60          RTS              
-                                                                          94836
-ACC: 03  X: 02  Y: 02  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          94837
-ACC: CC  X: 02  Y: 02  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          94838
-ACC: CC  X: 02  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          94839
+[...]
+                                                                         101076
 ACC: CC  X: 02  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          94840
+                                                                         101077
 ACC: CC  X: 03  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          94841
+                                                                         101078
 ACC: CC  X: 03  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      0320:  CC CF 8D 00 FF
-                                                                          94842
+0302:   BD 23 03    LDA $0323,x      0326:  CC CF 8D 01 00
+                                                                         101079
 ACC: CC  X: 03  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          94843
+                                                                         101080
 ACC: CC  X: 03  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
-w @001F4 $01F4 :03 MAIN
-w @001F3 $01F3 :09 MAIN
-                                                                          94844
-ACC: CC  X: 03  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDED:   6C 36 00    JMP ($0036)      0036:  F0 FD 1B FD 00
-                                                                          94845
-ACC: CC  X: 03  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDF0:   48          PHA              
-w @001F2 $01F2 :CC MAIN
-                                                                          94846
-ACC: CC  X: 03  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF1:   C9 A0       CMP #$A0         
-                                                                          94847
-ACC: CC  X: 03  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF3:   4C 95 FC    JMP $FC95        FC95:  90 02 25 32 4C
-                                                                          94848
-ACC: CC  X: 03  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC95:   90 02       BCC $FC99        
-                                                                          94849
-ACC: CC  X: 03  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC97:   25 32       AND $32          0032:  FF AA 04 00 F0
-                                                                          94850
-ACC: CC  X: 03  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC99:   4C F7 FD    JMP $FDF7        FDF7:  84 35 A8 68 4C
-                                                                          94851
-ACC: CC  X: 03  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF7:   84 35       STY $35          0035:  00 F0 FD 1B FD
-w @00035 $0035 :00 MAIN
-                                                                          94852
-ACC: CC  X: 03  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDF9:   A8          TAY              
-                                                                          94853
-ACC: CC  X: 03  Y: CC  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FDFA:   68          PLA              
-                                                                          94854
-ACC: CC  X: 03  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDFB:   4C 46 FC    JMP $FC46        FC46:  2C 1F C0 10 04
-                                                                          94855
-ACC: CC  X: 03  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC46:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94856
-ACC: CC  X: 03  Y: CC  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC49:   10 04       BPL $FC4F        
-                                                                          94857
-ACC: CC  X: 03  Y: CC  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC4F:   98          TYA              
-                                                                          94858
-ACC: CC  X: 03  Y: CC  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC50:   48          PHA              
-w @001F2 $01F2 :CC MAIN
-                                                                          94859
-ACC: CC  X: 03  Y: CC  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC51:   20 78 FB    JSR $FB78        FB78:  C9 8D D0 18 AC
-w @001F1 $01F1 :FC MAIN
-w @001F0 $01F0 :53 MAIN
-                                                                          94860
-ACC: CC  X: 03  Y: CC  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB78:   C9 8D       CMP #$8D         
-                                                                          94861
-ACC: CC  X: 03  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB7A:   D0 18       BNE $FB94        
-                                                                          94862
-ACC: CC  X: 03  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FB94:   4C FD FB    JMP $FBFD        FBFD:  C9 A0 B0 EF A8
-                                                                          94863
-ACC: CC  X: 03  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFD:   C9 A0       CMP #$A0         
-                                                                          94864
-ACC: CC  X: 03  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFF:   B0 EF       BCS $FBF0        
-                                                                          94865
-ACC: CC  X: 03  Y: CC  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF0:   A4 24       LDY $24          0024:  03 0F 00 00 A8
-                                                                          94866
-ACC: CC  X: 03  Y: 03  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF2:   91 28       STA ($28),y      28: A8 07   07AB:  A0 A0 A0 A0 A0
-w @007AB $07AB :CC MAIN
-                                                                          94867
-ACC: CC  X: 03  Y: 03  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF4:   E6 24       INC $24          0024:  03 0F 00 00 A8
-w @00024 $0024 :03 MAIN
-w @00024 $0024 :04 MAIN
-                                                                          94868
-ACC: CC  X: 03  Y: 03  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF6:   A5 24       LDA $24          0024:  04 0F 00 00 A8
-                                                                          94869
-ACC: 04  X: 03  Y: 03  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBF8:   C5 21       CMP $21          0021:  28 00 18 04 0F
-                                                                          94870
-ACC: 04  X: 03  Y: 03  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFA:   B0 66       BCS $FC62        
-                                                                          94871
-ACC: 04  X: 03  Y: 03  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CC  09  03  84  FF  22  D8
-FBFC:   60          RTS              
-                                                                          94872
-ACC: 04  X: 03  Y: 03  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CC  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          94873
-ACC: CC  X: 03  Y: 03  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          94874
-ACC: CC  X: 03  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          94875
+[...]
+                                                                         101112
 ACC: CC  X: 03  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          94876
+                                                                         101113
 ACC: CC  X: 04  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          94877
+                                                                         101114
 ACC: CC  X: 04  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      0321:  CF 8D 00 FF FF
-                                                                          94878
+0302:   BD 23 03    LDA $0323,x      0327:  CF 8D 01 00 00
+                                                                         101115
 ACC: CF  X: 04  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          94879
+                                                                         101116
 ACC: CF  X: 04  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CC  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
-w @001F4 $01F4 :03 MAIN
-w @001F3 $01F3 :09 MAIN
-                                                                          94880
-ACC: CF  X: 04  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDED:   6C 36 00    JMP ($0036)      0036:  F0 FD 1B FD 00
-                                                                          94881
-ACC: CF  X: 04  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CC)  09  03  84  FF  22  D8  C1  F1  00
-FDF0:   48          PHA              
-w @001F2 $01F2 :CF MAIN
-                                                                          94882
-ACC: CF  X: 04  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FDF1:   C9 A0       CMP #$A0         
-                                                                          94883
-ACC: CF  X: 04  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FDF3:   4C 95 FC    JMP $FC95        FC95:  90 02 25 32 4C
-                                                                          94884
-ACC: CF  X: 04  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FC95:   90 02       BCC $FC99        
-                                                                          94885
-ACC: CF  X: 04  Y: 00  SP: F1           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FC97:   25 32       AND $32          0032:  FF AA 04 00 F0
-                                                                          94886
-ACC: CF  X: 04  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FC99:   4C F7 FD    JMP $FDF7        FDF7:  84 35 A8 68 4C
-                                                                          94887
-ACC: CF  X: 04  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FDF7:   84 35       STY $35          0035:  00 F0 FD 1B FD
-w @00035 $0035 :00 MAIN
-                                                                          94888
-ACC: CF  X: 04  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FDF9:   A8          TAY              
-                                                                          94889
-ACC: CF  X: 04  Y: CF  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FDFA:   68          PLA              
-                                                                          94890
-ACC: CF  X: 04  Y: CF  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FDFB:   4C 46 FC    JMP $FC46        FC46:  2C 1F C0 10 04
-                                                                          94891
-ACC: CF  X: 04  Y: CF  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC46:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94892
-ACC: CF  X: 04  Y: CF  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC49:   10 04       BPL $FC4F        
-                                                                          94893
-ACC: CF  X: 04  Y: CF  SP: F2           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC4F:   98          TYA              
-                                                                          94894
-ACC: CF  X: 04  Y: CF  SP: F2          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC50:   48          PHA              
-w @001F2 $01F2 :CF MAIN
-                                                                          94895
-ACC: CF  X: 04  Y: CF  SP: F1          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FC51:   20 78 FB    JSR $FB78        FB78:  C9 8D D0 18 AC
-w @001F1 $01F1 :FC MAIN
-w @001F0 $01F0 :53 MAIN
-                                                                          94896
-ACC: CF  X: 04  Y: CF  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FB78:   C9 8D       CMP #$8D         
-                                                                          94897
-ACC: CF  X: 04  Y: CF  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FB7A:   D0 18       BNE $FB94        
-                                                                          94898
-ACC: CF  X: 04  Y: CF  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FB94:   4C FD FB    JMP $FBFD        FBFD:  C9 A0 B0 EF A8
-                                                                          94899
-ACC: CF  X: 04  Y: CF  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBFD:   C9 A0       CMP #$A0         
-                                                                          94900
-ACC: CF  X: 04  Y: CF  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBFF:   B0 EF       BCS $FBF0        
-                                                                          94901
-ACC: CF  X: 04  Y: CF  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBF0:   A4 24       LDY $24          0024:  04 0F 00 00 A8
-                                                                          94902
-ACC: CF  X: 04  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBF2:   91 28       STA ($28),y      28: A8 07   07AC:  A0 A0 A0 A0 A0
-w @007AC $07AC :CF MAIN
-                                                                          94903
-ACC: CF  X: 04  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBF4:   E6 24       INC $24          0024:  04 0F 00 00 A8
-w @00024 $0024 :04 MAIN
-w @00024 $0024 :05 MAIN
-                                                                          94904
-ACC: CF  X: 04  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBF6:   A5 24       LDA $24          0024:  05 0F 00 00 A8
-                                                                          94905
-ACC: 05  X: 04  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBF8:   C5 21       CMP $21          0021:  28 00 18 05 0F
-                                                                          94906
-ACC: 05  X: 04  Y: 04  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBFA:   B0 66       BCS $FC62        
-                                                                          94907
-ACC: 05  X: 04  Y: 04  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  CF  09  03  84  FF  22  D8
-FBFC:   60          RTS              
-                                                                          94908
-ACC: 05  X: 04  Y: 04  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  CF  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          94909
-ACC: CF  X: 04  Y: 04  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          94910
-ACC: CF  X: 04  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          94911
+[...]
+                                                                         101148
 ACC: CF  X: 04  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  CF  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          94912
+                                                                         101149
 ACC: CF  X: 05  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CF  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          94913
+                                                                         101150
 ACC: CF  X: 05  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CF  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      0322:  8D 00 FF FF 00
-                                                                          94914
+0302:   BD 23 03    LDA $0323,x      0328:  8D 01 00 00 FF
+                                                                         101151
 ACC: 8D  X: 05  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CF  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          94915
+                                                                         101152
 ACC: 8D  X: 05  Y: 00  SP: F4          [N]   V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  CF  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
-w @001F4 $01F4 :03 MAIN
-w @001F3 $01F3 :09 MAIN
-                                                                          94916
-ACC: 8D  X: 05  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FDED:   6C 36 00    JMP ($0036)      0036:  F0 FD 1B FD 00
-                                                                          94917
-ACC: 8D  X: 05  Y: 00  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (CF)  09  03  84  FF  22  D8  C1  F1  00
-FDF0:   48          PHA              
-w @001F2 $01F2 :8D MAIN
-                                                                          94918
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FDF1:   C9 A0       CMP #$A0         
-                                                                          94919
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FDF3:   4C 95 FC    JMP $FC95        FC95:  90 02 25 32 4C
-                                                                          94920
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FC95:   90 02       BCC $FC99        
-                                                                          94921
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FC99:   4C F7 FD    JMP $FDF7        FDF7:  84 35 A8 68 4C
-                                                                          94922
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FDF7:   84 35       STY $35          0035:  00 F0 FD 1B FD
-w @00035 $0035 :00 MAIN
-                                                                          94923
-ACC: 8D  X: 05  Y: 00  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FDF9:   A8          TAY              
-                                                                          94924
-ACC: 8D  X: 05  Y: 8D  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FDFA:   68          PLA              
-                                                                          94925
-ACC: 8D  X: 05  Y: 8D  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FDFB:   4C 46 FC    JMP $FC46        FC46:  2C 1F C0 10 04
-                                                                          94926
-ACC: 8D  X: 05  Y: 8D  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC46:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94927
-ACC: 8D  X: 05  Y: 8D  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC49:   10 04       BPL $FC4F        
-                                                                          94928
-ACC: 8D  X: 05  Y: 8D  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  09  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC4F:   98          TYA              
-                                                                          94929
-ACC: 8D  X: 05  Y: 8D  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  09  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC50:   48          PHA              
-w @001F2 $01F2 :8D MAIN
-                                                                          94930
-ACC: 8D  X: 05  Y: 8D  SP: F1          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EE:  CE  09  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FC51:   20 78 FB    JSR $FB78        FB78:  C9 8D D0 18 AC
-w @001F1 $01F1 :FC MAIN
-w @001F0 $01F0 :53 MAIN
-                                                                          94931
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB78:   C9 8D       CMP #$8D         
-                                                                          94932
-ACC: 8D  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB7A:   D0 18       BNE $FB94        
-                                                                          94933
-ACC: 8D  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB7C:   AC 00 C0    LDY $C000        C000:  FF FF 00 00 FF
-                                                                          94934
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB7F:   10 13       BPL $FB94        
-                                                                          94935
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB81:   C0 93       CPY #$93         
-                                                                          94936
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB83:   D0 0F       BNE $FB94        
-                                                                          94937
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FB94:   4C FD FB    JMP $FBFD        FBFD:  C9 A0 B0 EF A8
-                                                                          94938
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FBFD:   C9 A0       CMP #$A0         
-                                                                          94939
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FBFF:   B0 EF       BCS $FBF0        
-                                                                          94940
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC01:   A8          TAY              
-                                                                          94941
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC02:   10 EC       BPL $FBF0        
-                                                                          94942
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC04:   C9 8D       CMP #$8D         
-                                                                          94943
-ACC: 8D  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC06:   F0 5A       BEQ $FC62        
-                                                                          94944
-ACC: 8D  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC62:   A9 00       LDA #$00         
-                                                                          94945
-ACC: 00  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC64:   85 24       STA $24          0024:  05 0F 00 00 A8
-w @00024 $0024 :00 MAIN
-                                                                          94946
-ACC: 00  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]  [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC66:   E6 25       INC $25          0025:  0F 00 00 A8 07
-w @00025 $0025 :0F MAIN
-w @00025 $0025 :10 MAIN
-                                                                          94947
-ACC: 00  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC68:   A5 25       LDA $25          0025:  10 00 00 A8 07
-                                                                          94948
-ACC: 10  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I    Z   [C]
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC6A:   C5 23       CMP $23          0023:  18 00 10 00 00
-                                                                          94949
-ACC: 10  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC6C:   90 B6       BCC $FC24        
-                                                                          94950
-ACC: 10  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC24:   85 28       STA $28          0028:  A8 07 05 00 FF
-w @00028 $0028 :10 MAIN
-                                                                          94951
-ACC: 10  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC26:   98          TYA              
-                                                                          94952
-ACC: 8D  X: 05  Y: 8D  SP: EF          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC27:   A0 04       LDY #$04         
-                                                                          94953
-ACC: 8D  X: 05  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FC29:   D0 89       BNE $FBB4        
-                                                                          94954
-ACC: 8D  X: 05  Y: 04  SP: EF           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FBB4:   2C 15 C0    BIT $C015        C015:  00 00 00 00 00
-                                                                          94955
-ACC: 8D  X: 05  Y: 04  SP: EF           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EC:  0F  05  CE  (09)  53  FC  8D  09  03  84  FF  22  D8
-FBB7:   08          PHP              
-w @001EF $01EF :32 MAIN
-                                                                          94956
-ACC: 8D  X: 05  Y: 04  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-FBB8:   8D 07 C0    STA $C007        C007:  00 FF FF 00 00
-w @0C007 $C007 :8D SLOTS
-                                                                          94957
-ACC: 8D  X: 05  Y: 04  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-FBBB:   4C 00 C1    JMP $C100        C100:  4C 13 C2 A4 24
-                                                                          94958
-ACC: 8D  X: 05  Y: 04  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C100:   4C 13 C2    JMP $C213        C213:  88 30 BA 88 30
-                                                                          94959
-ACC: 8D  X: 05  Y: 04  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C213:   88          DEY              
-                                                                          94960
-ACC: 8D  X: 05  Y: 03  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C214:   30 BA       BMI $C1D0        
-                                                                          94961
-ACC: 8D  X: 05  Y: 03  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C216:   88          DEY              
-                                                                          94962
-ACC: 8D  X: 05  Y: 02  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C217:   30 A5       BMI $C1BE        
-                                                                          94963
-ACC: 8D  X: 05  Y: 02  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C219:   88          DEY              
-                                                                          94964
-ACC: 8D  X: 05  Y: 01  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C21A:   30 9A       BMI $C1B6        
-                                                                          94965
-ACC: 8D  X: 05  Y: 01  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C21C:   88          DEY              
-                                                                          94966
-ACC: 8D  X: 05  Y: 00  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C21D:   30 3D       BMI $C25C        
-                                                                          94967
-ACC: 8D  X: 05  Y: 00  SP: EE           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C21F:   88          DEY              
-                                                                          94968
-ACC: 8D  X: 05  Y: FF  SP: EE          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C220:   30 E2       BMI $C204        
-                                                                          94969
-ACC: 8D  X: 05  Y: FF  SP: EE          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C204:   A8          TAY              
-                                                                          94970
-ACC: 8D  X: 05  Y: 8D  SP: EE          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C205:   A5 28       LDA $28          0028:  10 07 05 00 FF
-                                                                          94971
-ACC: 10  X: 05  Y: 8D  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  A0  0F  05  (CE)  32  53  FC  8D  09  03  84  FF  22
-C207:   20 03 CE    JSR $CE03        CE03:  20 BA CA A5 20
-w @001EE $01EE :C2 MAIN
-w @001ED $01ED :09 MAIN
-                                                                          94972
-ACC: 10  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E9:  D1  A8  A0  (0F)  09  C2  32  53  FC  8D  09  03  84
-CE03:   20 BA CA    JSR $CABA        CABA:  48 4A 29 03 09
-w @001EC $01EC :CE MAIN
-w @001EB $01EB :05 MAIN
-                                                                          94973
-ACC: 10  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (A8)  05  CE  09  C2  32  53  FC  8D  09
-CABA:   48          PHA              
-w @001EA $01EA :10 MAIN
-                                                                          94974
-ACC: 10  X: 05  Y: 8D  SP: E9           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E6:  DE  FF  D0  (D1)  10  05  CE  09  C2  32  53  FC  8D
-CABB:   4A          LSR              
-                                                                          94975
-ACC: 08  X: 05  Y: 8D  SP: E9           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E6:  DE  FF  D0  (D1)  10  05  CE  09  C2  32  53  FC  8D
-CABC:   29 03       AND #$03         
-                                                                          94976
-ACC: 00  X: 05  Y: 8D  SP: E9           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1E6:  DE  FF  D0  (D1)  10  05  CE  09  C2  32  53  FC  8D
-CABE:   09 04       ORA #$04         
-                                                                          94977
-ACC: 04  X: 05  Y: 8D  SP: E9           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E6:  DE  FF  D0  (D1)  10  05  CE  09  C2  32  53  FC  8D
-CAC0:   85 29       STA $29          0029:  07 05 00 FF FF
-w @00029 $0029 :04 MAIN
-                                                                          94978
-ACC: 04  X: 05  Y: 8D  SP: E9           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E6:  DE  FF  D0  (D1)  10  05  CE  09  C2  32  53  FC  8D
-CAC2:   68          PLA              
-                                                                          94979
-ACC: 10  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CAC3:   29 18       AND #$18         
-                                                                          94980
-ACC: 10  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CAC5:   90 02       BCC $CAC9        
-                                                                          94981
-ACC: 10  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CAC9:   85 28       STA $28          0028:  10 04 05 00 FF
-w @00028 $0028 :10 MAIN
-                                                                          94982
-ACC: 10  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CACB:   0A          ASL              
-                                                                          94983
-ACC: 20  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CACC:   0A          ASL              
-                                                                          94984
-ACC: 40  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CACD:   05 28       ORA $28          0028:  10 04 05 00 FF
-                                                                          94985
-ACC: 50  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CACF:   85 28       STA $28          0028:  10 04 05 00 FF
-w @00028 $0028 :50 MAIN
-                                                                          94986
-ACC: 50  X: 05  Y: 8D  SP: EA           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E7:  FF  D0  D1  (10)  05  CE  09  C2  32  53  FC  8D  09
-CAD1:   60          RTS              
-                                                                          94987
-ACC: 50  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE06:   A5 20       LDA $20          0020:  00 28 00 18 00
-                                                                          94988
-ACC: 00  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE08:   2C 1F C0    BIT $C01F        C01F:  00 FF FF 00 00
-                                                                          94989
-ACC: 00  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE0B:   10 01       BPL $CE0E        
-                                                                          94990
-ACC: 00  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE0E:   18          CLC              
-                                                                          94991
-ACC: 00  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE0F:   65 28       ADC $28          0028:  50 04 05 00 FF
-                                                                          94992
-ACC: 50  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE11:   85 28       STA $28          0028:  50 04 05 00 FF
-w @00028 $0028 :50 MAIN
-                                                                          94993
-ACC: 50  X: 05  Y: 8D  SP: EC           N    V   [U]  [B]   D    I    Z    C 
-STK: $1E9:  D1  10  05  (CE)  09  C2  32  53  FC  8D  09  03  84
-CE13:   60          RTS              
-                                                                          94994
-ACC: 50  X: 05  Y: 8D  SP: EE           N    V   [U]  [B]   D    I    Z    C 
-STK: $1EB:  05  CE  09  (C2)  32  53  FC  8D  09  03  84  FF  22
-C20A:   28          PLP              
-                                                                          94995
-ACC: 50  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EC:  CE  09  C2  (32)  53  FC  8D  09  03  84  FF  22  D8
-C20B:   30 03       BMI $C210        
-                                                                          94996
-ACC: 50  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EC:  CE  09  C2  (32)  53  FC  8D  09  03  84  FF  22  D8
-C20D:   4C C5 FE    JMP $FEC5        FEC5:  8D 06 C0 60 EA
-                                                                          94997
-ACC: 50  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EC:  CE  09  C2  (32)  53  FC  8D  09  03  84  FF  22  D8
-FEC5:   8D 06 C0    STA $C006        C006:  00 00 FF FF 00
-w @0C006 $C006 :50 SLOTS
-                                                                          94998
-ACC: 50  X: 05  Y: 8D  SP: EF           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EC:  CE  09  C2  (32)  53  FC  8D  09  03  84  FF  22  D8
-FEC8:   60          RTS              
-                                                                          94999
-ACC: 50  X: 05  Y: 8D  SP: F1           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EE:  C2  32  53  (FC)  8D  09  03  84  FF  22  D8  C1  F1
-FC54:   68          PLA              
-                                                                          95000
-ACC: 8D  X: 05  Y: 8D  SP: F2          [N]   V   [U]  [B]   D    I    Z    C 
-STK: $1EF:  32  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC55:   A4 35       LDY $35          0035:  00 F0 FD 1B FD
-                                                                          95001
-ACC: 8D  X: 05  Y: 00  SP: F2           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1EF:  32  53  FC  (8D)  09  03  84  FF  22  D8  C1  F1  00
-FC57:   60          RTS              
-                                                                          95002
+[...]
+                                                                         101239
 ACC: 8D  X: 05  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030A:   E8          INX              
-                                                                          95003
+                                                                         101240
 ACC: 8D  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030B:   80 F5       BRA $0302        
-                                                                          95004
+                                                                         101241
 ACC: 8D  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0302:   BD 1D 03    LDA $031D,x      0323:  00 FF FF 00 00
-                                                                          95005
-ACC: 00  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+0302:   BD 23 03    LDA $0323,x      0329:  01 00 00 FF FF
+                                                                         101242
+ACC: 01  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0305:   F0 06       BEQ $030D        
-                                                                          95006
-ACC: 00  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+                                                                         101243
+ACC: 01  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
 STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-030D:   A9 00       LDA #$00         
-                                                                          95007
-ACC: 00  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0307:   20 ED FD    JSR $FDED        FDED:  6C 36 00 48 C9
+[...]
+                                                                         101276
+ACC: 01  X: 06  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+030A:   E8          INX              
+                                                                         101277
+ACC: 01  X: 07  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+030B:   80 F5       BRA $0302        
+                                                                         101278
+ACC: 01  X: 07  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0302:   BD 23 03    LDA $0323,x      032A:  00 00 FF FF 00
+                                                                         101279
+ACC: 00  X: 07  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0305:   F0 06       BEQ $030D        
+                                                                         101280
+ACC: 00  X: 07  Y: 00  SP: F4           N    V   [U]  [B]   D    I   [Z]   C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+030D:   A9 22       LDA #$22         
+                                                                         101281
+ACC: 22  X: 07  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 030F:   A2 03       LDX #$03         
-                                                                          95008
-ACC: 00  X: 03  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0311:   A0 1C       LDY #$1C         
-                                                                          95009
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+                                                                         101282
+ACC: 22  X: 03  Y: 00  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0311:   A0 2A       LDY #$2A         
+                                                                         101283
+ACC: 22  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0313:   84 1A       STY $1A          001A:  00 00 FF FF 00
-w @0001A $001A :1C MAIN
-                                                                          95010
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+                                                                         101284
+ACC: 22  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
 0315:   86 1B       STX $1B          001B:  00 FF FF 00 00
-w @0001B $001B :03 MAIN
-                                                                          95011
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0317:   92 1A       STA ($1A)        1A: 1C 03   031C:  EA C8 C5 CC CC
-w @0031C $031C :00 MAIN
-                                                                          95012
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-0319:   6C 1A 00    JMP ($001A)      001A:  1C 03 FF FF 00
-                                                                          95013
-ACC: 00  X: 03  Y: 1C  SP: F4           N    V   [U]  [B]   D    I    Z    C 
-STK: $1F1:  FC  8D  09  (03)  84  FF  22  D8  C1  F1  00  01  01
-031C:   00          BRK              
+                                                                         101285
+ACC: 22  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0317:   92 1A       STA ($1A)        1A: 2A 03   032A:  00 00 FF FF 00
+                                                                         101286
+ACC: 22  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0319:   E6 1A       INC $1A          001A:  2A 03 FF FF 00
+                                                                         101287
+ACC: 22  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+031B:   A9 03       LDA #$03         
+                                                                         101288
+ACC: 03  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+031D:   92 1A       STA ($1A)        1A: 2B 03   032B:  00 FF FF 00 00
+                                                                         101289
+ACC: 03  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+031F:   7C 27 03    JMP ($0327,X)    032A:  22 03 FF FF 000322:  00 C8 C5 CC CC
+                                                                         101290
+ACC: 03  X: 03  Y: 2A  SP: F4           N    V   [U]  [B]   D    I    Z    C 
+STK: $1F1:  FC  01  09  (03)  84  FF  22  D8  C1  F1  00  01  01
+0322:   00          BRK              

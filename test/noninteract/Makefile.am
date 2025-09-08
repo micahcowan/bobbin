@@ -1,4 +1,4 @@
-EXTRA_DIST = run_tests.sh $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/indisk*)
+EXTRA_DIST = run_tests.sh $(wildcard *.t/run) $(wildcard *.t/input) $(wildcard *.t/exstat) $(wildcard *.t/expected) $(wildcard *.t/indisk*) trace-filter.awk
 BTESTS = $(notdir $(wildcard $(srcdir)/*.t) )
 
 check:
