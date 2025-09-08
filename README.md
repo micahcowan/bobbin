@@ -20,7 +20,8 @@ And here's another video (clickable) that showcases additional features in a mor
 
 ### Current features
 
-- Emualates an Apple \]\[, \]\[+, or (unenhanced) \]\[e (with 80-column support)
+- Emualates an Apple \]\[, \]\[+, or (enhanced or unenhanced) //e (with 80-column support)
+- Supports disk images in `.dsk`, `.do`, `.po`, `.nib`, or `.hdv` format.
 - Two available interfaces, both for running within a Unix-style terminal program
  - Simplistic text-entry interface, roughly equivalent to using an Apple ][ via serial connection
  - Complete screen-contents emulation via the curses library (anyone up for Apple \]\[-over-telnet?)
@@ -34,8 +35,7 @@ And here's another video (clickable) that showcases additional features in a mor
 
 - `.woz` disk format, and 13-sector support
 - Full graphics (not to the terminal) and sound emulation, of course
-- Emulate an enhanced Apple //e by default
-- Scriptable, on-the-fly modifications (via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
+- Scriptable, on-the-fly modifications (possibly via Lua?) to the emulated address space and registers, in response to memory reads, PC value, external triggers...
 - Use **bobbin** as a command-line disk editor, using real DOS or ProDOS under emulation to change the contents of a disk image
 - Use **bobbin** as a command-line compiler or assembler, by loading in your sources, running your favorite assembler (or what have you) in the emulated Apple, and then save the results back out
 
@@ -53,6 +53,7 @@ And here's another video (clickable) that showcases additional features in a mor
 $ autoreconf --install # Only do this if ./configure doesn't exist (non-release sources)
 $ ./configure
 $ make
+$ sudo make install
 ```
 
 ### Build dependencies
@@ -61,7 +62,7 @@ Bobbin is written in SUSv4 / POSIX-compliant C (with some reasonable additional 
 
 You need to have GNU autoconf and automake installed, to run the `autoreconf` command shown above. This step is *not* necessary for the release source packages (the ones that are *not* named "Source Code", even though they do in fact consist of just the source code, with the `./configure` script included (no need for the GNU autotools).
 
-In addition, you will need the *development files* for a Unix **curses** or **nurses** implementation. This means header files (`<curses.h>`), and library-file symlinks suitable for development. Your system's packaging system may call it something like **libncurses-dev**, or **ncurses-devel**.
+In addition, you will need the *development files* for a Unix **curses** or **nurses** implementation. This means header files (`<curses.h>`), and library-file symlinks suitable for development. Your system's packaging system may call it something like **libncurses-dev**, or **ncurses-devel**. You *can* build **bobbin** without ncurses, in which case the `tty` interface will not be supported—only `--simple`.
 
 To run the included (as-yet incomplete) tests, you must also have available:
  - the ca65 assembler and ld65 linker, from [the cc65 project](https://cc65.github.io/).
@@ -71,10 +72,10 @@ To run the included (as-yet incomplete) tests, you must also have available:
 
 ### Simple boot-up
 
-Once it has built successfully, try:
+Once it has built and successfully, try:
 
 ```
-$ ./bobbin -m iie
+$ bobbin
 ```
 
 (To exit, type Control-C twice in a row, which will bring up a command interface, then type `q` followed by the Enter key.)
@@ -82,7 +83,7 @@ $ ./bobbin -m iie
 ### Run Bobbin in line-oriented ("simple") mode
 
 ```
-$ ./bobbin -m plus --simple
+$ bobbin --simple
 
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.
@@ -115,7 +116,7 @@ $ cat > input
 30 NEXT I
 RUN
 ^D
-$ ./bobbin -m plus < input > output # OR: -i input -o output
+$ bobbin < input > output # OR: -i input -o output
 $ cat output
  HIYA!
   HIYA!
@@ -127,7 +128,7 @@ $
 ### Read commands / BASIC programs from a file, and then remain running
 
 ```
-$ ./bobbin -m plus -i input --remain
+$ bobbin -i input --remain
 
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.
@@ -155,8 +156,8 @@ $ cat input
 10 FOR I=1 TO 3
 20 ? SPC(I);"HIYA!"
 30 NEXT I
-$ ./bobbin --tokenize < input > output
-./bobbin: Tokenized data written to standard output.
+$ bobbin --tokenize < input > output
+bobbin: Tokenized data written to standard output.
 $ hexdump -C output
 00000000  0c 08 0a 00 81 49 d0 31  c1 33 00 1d 08 14 00 ba  |.....I.1.3......|
 00000010  c3 49 29 3b 22 48 49 59  41 21 22 00 24 08 1e 00  |.I);"HIYA!".$...|
@@ -164,7 +165,7 @@ $ hexdump -C output
 00000025
 $ file output
 output: Applesoft BASIC program data, first line number 10
-$ ./bobbin --detokenize < output
+$ bobbin --detokenize < output
 10  FOR I = 1 TO 3
 20  PRINT  SPC( I);"HIYA!"
 30  NEXT I
@@ -176,8 +177,8 @@ $
 #### Load tokenized AppleSoft to be available in the emulator
 
 ```
-$ ./bobbin --tokenize < input > tokenized
-$ ./bobbin --load-basic-bin tokenized -m plus
+$ bobbin --tokenize < input > tokenized
+$ bobbin --load-basic-bin tokenized
 ```
 (try typing `LIST` or `RUN`)
 
@@ -188,7 +189,7 @@ $ hexdump -C hello.bin
 00000000  a2 00 bd 0e 03 f0 06 20  ed fd e8 d0 f5 60 c2 cf  |....... .....`..|
 00000010  c2 c2 c9 ce a1 8d 00 00                           |........|
 00000018
-$ ./bobbin -m plus --simple --load hello.bin --load-at 300
+$ bobbin --simple --load hello.bin --load-at 300
 
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.
@@ -208,7 +209,7 @@ $ hexdump -C hello.bin
 00000000  a2 00 bd 10 03 f0 06 20  ed fd e8 d0 f5 4c 03 e0  |....... .....L..|
 00000010  c2 cf c2 c2 c9 ce a1 8d  00                       |.........|
 00000019
-mcowan$ ./bobbin -m plus --simple --delay-until INPUT --load hello.bin --load-at 300 --jump-to 300
+mcowan$ bobbin --simple --delay-until INPUT --load hello.bin --load-at 300 --jump-to 300
 
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.
@@ -277,9 +278,9 @@ exits, so does **bobbin**.
 
 ##### -m, --machine, --mach *arg*
 
-The machine **bobbin** should emulate.
+The machine **bobbin** should emulate. Default: "//e".
 
-This is currently a required argument, to tell **bobbin** what type of Apple \]\[ it should be. It *does* have a default value (emulating an enahnced IIe, or `//e`), but that machine is not yet supported, and so you must choose something else&mdash;either `original` or `plus` (or their equivalents). See [Choosing what type of Apple to emulate](#choosing-what-type-of-apple--to-emulate), below.
+See [Choosing what type of Apple to emulate](#choosing-what-type-of-apple--to-emulate), below.
 
 Valid values are:
 <!--MACHINES-->
@@ -289,21 +290,19 @@ Valid values are:
    Selects an Apple \]\[+ (or, equivalently an original Apple \]\[ with the autostart, AppleSoft BASIC firmware). Boots into AppleSoft.
  - `twoey`. Aliases: `][e`, `IIe`.<br />
    An unenhanced Apple \]\[e.
+ - `enhanced`. Alias: `//e`.<br />
+   The enhanced Apple //e. This is the default, when `-m` is not specified.
 
 Note: some shells (notably zsh) will not allow you to type `][` as a bare string in a command invocation, you most wrap it with single-or-double-quotes (in which case it's probably easier to use one of the other aliases instead.)
-
-Planned future values:
- - `enhanced`. Alias: `//e`.<br />
-   The enhanced Apple //e. This will be the default `--machine` value, in future.
 <!--/MACHINES-->
-
-Note that while the Apple \]\[e provides a somewhat more powerful environment, Apple \]\[+ may be a more convenient choice in some cases, as neither \]\[+ nor \]\[e accept BASIC commands in lowercase, but since Apple \]\[e actually *has* lowercase characters, automatic conversion to uppercase is not performed on input, whereas on Apple \]\[ and \]\[+ (which have no lowercase), all input is automatically converted to uppercase.
 
 ##### --if, --interface, --iface *arg*
 
 Select the user interface.
 
 If standard input is from a terminal, then the default value is `tty`, which provides a full, in-terminal display of the emulated Apple \]\['s screen contents; if standard input is coming from something else (file or pipe), the `simple` interface, which uses a line-oriented I/O interface, is used instead.
+
+See [the section on User Interfaces](#user-interfaces---iface) for more information.
 
 ##### --simple
 
@@ -417,7 +416,9 @@ The *arg* must be a hexadecimal 16-bit value, optionally preceded by `$` or `0x`
 
 Load tokenized (binary) AppleSoft BASIC file at boot.
 
-This option is effectively the same as `--load `*arg*` --load-at 801`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are). If this option is not preceded by a  `--load`, `--load-at`, `--jump-to`, `--delay-until-pc`, or another `--load-basic-bin`, then it will automatically prefix itself with a `--delay-until-pc INPUT`, to ensure that the firmware finishes initializing before the basic program is loaded. If it *is* preceded by any of these options, then you may need to add the `--delay-until-pc INPUT` option yourself, depending on where execution will have reached before the `--load-basic-bin` option is honored.
+The file argument should have previously been generated by `bobbin --tokenize`.
+
+This option is effectively the same as `--load `*arg*` --load-at 801`, except that it does some additional "fixup" to connect it to the BASIC interpreter (to tell it where the program start and end are). If this option is not preceded by a  `--load`, `--load-at`, `--jump-to`, `--delay-until-pc`, or another `--load-basic-bin`, then it will automatically prefix itself with a `--delay-until-pc INPUT`, to ensure that the firmware finishes initializing before the basic program is loaded (otherwise, the basic program would be erased as part of initialization). If it *is* preceded by any of these options, then you may need to add the `--delay-until-pc INPUT` option yourself, depending on where execution will have reached before the `--load-basic-bin` option is honored.
 
 ##### --jump-to, --jump, --jmp *arg*
 
@@ -508,17 +509,15 @@ Unlike the other two `--trap-*` options, this does not cause **bobbin** to exit;
 <!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate
 
-The eventual plan is for **bobbin** to emulate an enhanced Apple //e as the default, but this is not yet supported. In order to prevent future confusion when the Apple //e does become a supported machine type, **bobbin** does not default to amy of the machine types that *are* currently supported: you must explicitly select the machine type via the `-m` switch.
+The machine types that are currently supported are: an Apple \]\[, an Apple \]\[+, or an enhanced or unenhanced Apple //e. If not specified, **bobbin** will emulate an enhanced //e. Since an (early) Apple \]\[+ is exactly equivalent to the original Apple \]\[ with the "autostart" ROM with AppleSoft (floating-point) BASIC built-in, the term "original Apple ][" is used here to mean that the original, "non-autostart" ROM that starts directly in the monitor program, and which included Integer BASIC, the ROM known as "Programmer's Aid #1", and the original mini-assembler that included the later-removed "trace" and "step" features. (The mini-assembler is entered by typing `F666G` (not `!`) from the monitor, and exited via `RESET`&mdash;note that the "monitor" we are referring to here is a program that is built into the Apple \]\[ ROM; we are not referring to a hardware display device in this context.) As a special feature of the `--simple` interface, **bobbin** does not actually drop you into the monitor with `-m \]\[ --simple`; instead it jumps you into Integer BASIC, as that's the more likely thing you might want to pipe a program into (you can still get to the monitor via `CALL-151`, of course!).
 
-The machine types that are currently supported are: an Apple \]\[, an Apple \]\[+, or an unenhanced Apple \]\[e. Since an (early) Apple \]\[+ is exactly equivalent to the original Apple \]\[ with the "autostart" ROM with AppleSoft (floating-point) BASIC built-in, the term "original Apple ][" is used here to mean that the original, "non-autostart" ROM that starts directly in the monitor program, and which included Integer BASIC, the ROM known as "Programmer's Aid #1", and the original mini-assembler that included the later-removed "trace" and "step" features. (The mini-assembler is entered by typing `F666G` (not `!`) from the monitor, and exited via `RESET`&mdash;note that the "monitor" we are referring to here is a program that is built into the Apple \]\[ ROM; we are not referring to a hardware display device in this context.) As a special feature of the `--simple` interface, **bobbin** does not actually drop you into the monitor with `-m \]\[ --simple`; instead it jumps you into Integer BASIC, as that's the more likely thing you might want to pipe a program into (you can still get to the monitor via `CALL-151`, of course!).
+(The original Apple \]\['s firmware includes a mini-assembler, as just mentioned. The \]\[+ and unenhanced \]\[e do *not* have a mini-assembler (though, you can load an Apple DOS 3.3 Master disk and type `INT` to load the original firmware into the language card, which gives you access to the mini-assembler once again. The enhanced //e includes a slightly-improved mini-assembler once again (in firmware, without needing to load it from DOS). It is not entered via `F666G`, but rather by typing `!` from the monitor.)
 
-Note, too, that the Apple \]\[ and Apple \]\[+ did not have lowercase characters, and so **bobbin** automatically translates lowercase typing into uppercase, for these two machines. However, the Apple \]\[e and later *does* support lowercase typing, so the translation is not performed. Even though the unenhanced Apple \]\[e supports lowercase characters, it will not recognize lowercase BASIC commands (unlike the Enhanced Apple //e, which does). For this reason, if you are primarily running *bobbin* to type in BASIC programs, we recommend you emulate a \]\[+ rather than a \]\[e, unless your program needs to print or accept lowercase characters (or there is some other reason you need an Apple \]\[e).
+Note, too, that the Apple \]\[ and Apple \]\[+ did not have lowercase characters, and so **bobbin** automatically translates lowercase typing into uppercase, for these two machines. However, the Apple \]\[e and later *does* support lowercase typing, so the translation is not performed. Even though the unenhanced Apple \]\[e (`-m twoey`) supports lowercase characters, it will not *recognize* lowercase BASIC commands (unlike the enhanced Apple //e, which does). For this reason, if you are primarily running *bobbin* to type in BASIC programs, we recommend you avoid emulating the unenhanced \]\[e, and emulate either an enhanced //e (default) or \]\[+ (`-m plus`) instead.
 
-To start **bobbin** in AppleSoft BASIC, emulating an Apple \]\[+, use `-m plus`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above).
+To start **bobbin** in AppleSoft BASIC, just leave the `-m` option out and let **bobbin** emulate the default enhanced Apple //e. You can also use `-m plus`, or `-m twoey`&mdash;but see above for caveats with the unenhanced \]\[e.
 
-To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above). Note that the `--simple` interface (the only interface currently available in **bobbin**) actually drops you directly into Integer BASIC, instead of the monitor. While this behavior is unrealistic to the original machine, it is thought to be more convenient for the purpose of redirected input (as you don't have to start your files with a Ctrl-B character).
-
-And finally, to start **bobbin** as an Apple \]\[e, use `-m twoey` or `-m iie` (or another alias, as given above).
+To start **bobbin** in the system monitor, with Integer BASIC available via Ctrl-B, use `-m original`, or one of its aliases (see [the description of the `--machine` option](#-m---machine---mach-arg), above). Note that the `--simple` interface (the only interface currently available in **bobbin**) actually drops you directly into Integer BASIC, instead of the monitor. While this behavior is unrealistic to the original machine, it is expected to be more convenient for the purpose of redirected input (as you don't have to figure out how to type a Ctrl-B character at the start of your input file).
 
 ## User Interfaces (--iface)
 
@@ -545,7 +544,7 @@ The `simple` interface is accessed via the `--iface simple` (or just `--simple`)
 The most straightforward way to use the `simple` interface is interactively. If you run **bobbin** like:
 
 ```
-$ ./bobbin -m plus --simple
+$ bobbin --simple
 ```
 
 You will immediately be dropped into an AppleSoft BASIC (`]`) prompt, and **bobbin** will inform you to type Ctrl-D at an input prompt when you wish to exit. This is a great mode for just messing around with BASIC on an Apple \]\[, or to "check something real quick" about how things work with an Apple \]\[ machine.
@@ -556,10 +555,7 @@ You can also just pipe some input into **bobbin**. **bobbin** will execute the c
 
 Example:
 ```
-$ cat ../examples/amazing-run.bas | ./bobbin -m plus
-./bobbin: Looking for ROM named "apple2plus.rom" in /usr/share/bobbin/roms...
-./bobbin: Looking for ROM named "apple2plus.rom" in ./roms...
-./bobbin: FOUND ROM file "./roms/apple2plus.rom".
+$ cat ../examples/amazing-run.bas | bobbin
                            AMAZING PROGRAM
               CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY
 
@@ -603,11 +599,7 @@ If you specify the `--remain` option, then **bobbin** will start in non-interact
 
 Example (note: `amazing.bas`, not `amazing-run.bas` as in the previous example):
 ```
-$ cat ../examples/amazing.bas | ./bobbin -m plus --remain
-./bobbin: Looking for ROM named "apple2plus.rom" in /usr/share/bobbin/roms...
-./bobbin: Looking for ROM named "apple2plus.rom" in ./roms...
-./bobbin: FOUND ROM file "./roms/apple2plus.rom".
-
+$ cat ../examples/amazing.bas | bobbin --remain
 [Bobbin "simple" interactive mode.
  Ctrl-D at input to exit.]
 
