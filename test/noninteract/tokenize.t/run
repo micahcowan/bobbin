@@ -2,4 +2,4 @@
 
 set -e -u
 
-timeout 5s "$BOBBIN" --tokenize < input 2>/dev/null
+"$BOBBIN" --tokenize < input 2>/dev/null

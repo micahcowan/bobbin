@@ -2,4 +2,4 @@
 
 set -e -u
 
-timeout 5s "$BOBBIN" --detokenize < input 2>/dev/null
+"$BOBBIN" --detokenize < input 2>/dev/null
