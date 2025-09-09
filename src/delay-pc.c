@@ -160,7 +160,7 @@ static void adjust_asoft_start(const char *fname, const byte **bufp,
 
     // From here on out, we know word zero was a valid file length!
 
-    long w1chain;
+    long w1chain = -1;
     bool w1valid =
         (*szp > 2 * sizeof (word)) // don't read word 1 if it doesn't exist
         && check_asoft_link(*bufp + sizeof (word), load_loc,
