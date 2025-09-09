@@ -1,6 +1,6 @@
 //  delay-pc.c
 //
-//  Copyright (c) 2024 Micah John Cowan.
+//  Copyright (c) 2024-2025 Micah John Cowan.
 //  This code is licensed under the MIT license.
 //  See the accompanying LICENSE file for details.
 
