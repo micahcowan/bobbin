@@ -1,0 +1,11 @@
+/SYSTEM                                                                        
+
+ NAME           TYPE  BLOCKS  MODIFIED         CREATED          ENDFILE SUBTYPE
+
+ PRODOS          SYS      35  19-SEP-07  1:09   6-MAY-93 17:10    17128        
+ TEST            BAS       1  19-SEP-07  1:09  19-SEP-07  1:09        2        
+ BASIC.SYSTEM    SYS      21  13-FEB-92  1:00  10-APR-93  0:00    10240        
+
+BLOCKS FREE:  216     BLOCKS USED:   64     TOTAL BLOCKS:  280                 
+
+

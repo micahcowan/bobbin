@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Apple's ProDOS 2.0.3 does not run on 6502 machines, only 65C02.
+# It uses specialized code to check for that. If we ever do something
+# to our emulation that causes the //e or the 65C02 not to be
+# recognized, we want to know about it. Hence this test.
+
+echo CATALOG | $BOBBIN -m //e --disk1 indisk.dsk --simple
