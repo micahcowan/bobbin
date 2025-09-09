@@ -181,35 +181,19 @@ static bool is_enhanced_iie = false;
 void machine_init(void)
 {
     const char *orig;
-    if (cfg.tokenize) {
-        // Unconditionally force machine type to ][+
-        orig = PLUS_TAG;
+    if (cfg.tokenize || cfg.detokenize) {
+        // Unconditionally force machine type to //e
+        orig = ENHANCED_TAG;
         if (cfg.machine_set) {
             const char *tag = find_alias(cfg.machine);
             if (tag != orig) {
-                WARN("WARNING: You specified \"-m %s\", but --tokenize"
-                     " forced to %s.\n", cfg.machine, orig);
+                WARN("WARNING: You specified \"-m %s\", but %s"
+                     " forced to %s.\n", cfg.machine,
+                     cfg.tokenize? "--tokenize" : "--detokenize", orig);
             }
         }
         orig = find_alias(orig);     // We have to run this
                                      // to set up `acceptable_sums`
-    } else if (cfg.detokenize) {
-        // Unconditionally force machine type to ][+
-        orig = TWOEY_TAG;
-        if (cfg.machine_set) {
-            const char *tag = find_alias(cfg.machine);
-            if (tag != orig) {
-                WARN("WARNING: You specified \"-m %s\", but --detokenize"
-                     " forced to %s.\n", cfg.machine, orig);
-            }
-        }
-        orig = find_alias(orig);     // We have to run this
-                                     // to set up `acceptable_sums`
-    } else if (!cfg.machine_set && cfg.runbasicfile) {
-        // If --run-basic was specified we default to enhanced Apple IIe
-        // because a #! line may not be able to accept multiple arguments (so, no way to specify -m)
-        // Enhanced Apple IIe supports lowercase and is more compatible
-        orig = find_alias(ENHANCED_TAG);
     } else if ((orig = find_alias(cfg.machine)) == NULL) {
         DIE(2, "Unrecognized machine name \"%s\".\n", cfg.machine);
     }
