@@ -365,6 +365,7 @@ void consume_char(void)
         // skip
     } else if (cfg.tokenize) {
         if (token_err_found) {
+            putchar('\n'); // to terminate e.g. "?SYNTAX" err from asoft
             DIE_CONT(1,"");
         } else {
             tokenize();
