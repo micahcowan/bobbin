@@ -611,26 +611,6 @@ static void strict_basic_step(void)
                     " than previous number\n", line_number, word_at(ZP_LINNUM));
             }
             break;
-        case MON_CAPTST1:
-            // Prevent monitor ROM from automatically uppercasing
-            //  in GETLN
-            PPUT(PCARRY, false);
-            break;
-        case FP_STORE_NONTOK:
-        case FP_LOAD_TOK_CHR1:
-        case FP_LOAD_TOK_CHR2:
-            // capitalize when input's being checked by tokenizer,
-            // or whenever we're not in REM, string literal, or DATA.
-            {
-                byte c = ACC;
-                if ((current_pc() != FP_STORE_NONTOK
-                     || (peek_sneaky(ZP_DATAFLG) & 0x40) == 0)
-                    && c >= 0x60 && c < 0x7f) {
-
-                    ACC ^= 0x20; // uppercase it
-                }
-            }
-            break;
     }
 }
 
