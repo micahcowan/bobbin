@@ -93,6 +93,7 @@
 #define MON_GETLN       0xFD6A
 #define MON_NXTCHR      0xFD75
 #define MON_COUT1       0xFDF0
+#define MON_GO          0xFEB6
 #define MON_MONZ        0xFF69
 
 #define VEC_NMI         0xFFFA

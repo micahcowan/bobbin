@@ -17,6 +17,8 @@
 static int saved_char = -1;
 static bool interactive;
 static bool output_seen;
+static unsigned int curlnsz;
+static bool ensure_line_start;
 static struct termios ios;
 static struct termios orig_ios;
 static byte last_char_read;
@@ -460,6 +462,7 @@ static void iface_simple_init(void)
 static void iface_simple_start(void)
 {
     line_number = 0;
+    curlnsz = 0;
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -510,7 +513,9 @@ void vidout(void)
     if (suppress == SUPPRESS_ALWAYS)
         return;
     if (suppress == SUPPRESS_LINE) {
-        if (c == '\r') output_suppressed = SUPPRESS_NONE;
+        if (c == '\r') {
+            output_suppressed = SUPPRESS_NONE;
+        }
         return;
     }
 
@@ -518,6 +523,13 @@ void vidout(void)
         || c == '\t' || c == '\b') {
 
         output_seen = true;
+        if (curlnsz > 0 && peek_sneaky(ZP_CH) == 0 && ensure_line_start) {
+            // If emulated Apple is at column 0, we should be, too.
+            putchar('\n');
+            curlnsz = 0;
+        }
+        ++curlnsz;
+        ensure_line_start = false;
         putchar(c);
     }
     else if (c == '\r') {
@@ -530,6 +542,8 @@ void vidout(void)
             // Don't emit
         }
         else if (interactive || output_seen) {
+            curlnsz = 0;
+            ensure_line_start = false;
             putchar('\n');
         }
     }
@@ -556,8 +570,9 @@ static void suppress_output(void)
     //
     // We could instead probably just suppress until the stack pointer
     // has increased beyond a saved value...
-    if (output_suppressed != SUPPRESS_ALWAYS)
+    if (output_suppressed != SUPPRESS_ALWAYS) {
         output_suppressed = SUPPRESS_LINE;
+    }
 }
 
 static void prompt(void)
@@ -566,6 +581,12 @@ static void prompt(void)
     if (!interactive || (runbasic_state == RB_LOAD_BASIC)) {
         // It's not a tty. Skip to line fetch.
         suppress_output();
+        if (peek_sneaky(ZP_CH) != 0
+            && current_pc() != MON_GETLNZ) {
+            // This is an input prompt that occurs in the middle of a line!
+            // Ensure the next-printed character starts a new line.
+            ensure_line_start = true;
+        }
     }
 }
 
@@ -681,6 +702,9 @@ static void iface_simple_step(void)
             break;
         case INT_SETPROMPT:
             prompt_wozbasic();
+            break;
+        case MON_GO:
+            ensure_line_start = true;
             break;
         case FP_LIST:
             if (cfg.detokenize) {
