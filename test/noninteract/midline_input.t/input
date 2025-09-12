@@ -1,0 +1,4 @@
+10 INPUT "NAME";A$:REM No newline here
+20 ? "Welcome, ";A$;"!"
+RUN
+Alice

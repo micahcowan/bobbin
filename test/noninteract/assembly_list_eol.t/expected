@@ -1,0 +1,8 @@
+   
+0300-   A0 09       LDY   #$09   
+0302-   B9 09 FF    LDA   $FF09,Y   
+0305-   20 ED FD    JSR   $FDED   
+0308-   88          DEY      
+0309-   D0 F7       BNE   $0302   
+030B-   60          RTS   
+e// elppA

@@ -1,0 +1,10 @@
+call-151
+!
+300:LDY #$09
+ LDA $FF09,Y
+ JSR FDED
+ DEY
+ BNE 302
+ RTS
+
+300G
