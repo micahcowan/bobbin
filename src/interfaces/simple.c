@@ -319,6 +319,9 @@ recheck:
                 // End of redirected input and not remaining after.
                 eof_found = true;
                 c = 0x8D; // fake "ready-to-read" chr: ensure consumption
+                if (cfg.bot_mode) {
+                    c = 0xD2; // 'R' of a potential final "RUN"
+                }
             }
         } else {
             lbuf_start = linebuf;
@@ -363,6 +366,16 @@ void consume_char(void)
 {
     if (!eof_found) {
         // skip
+    } else if (cfg.bot_mode && !output_seen) {
+        // User may have forgotten a "RUN"; add it on.
+        static const unsigned char run_cmd[] = "RUN\r";
+        lbuf_start = linebuf;
+        lbuf_end = linebuf + (sizeof run_cmd - 1);
+        memcpy(linebuf, run_cmd, sizeof run_cmd - 1);
+        // Switch off bot mode so we're sure to exit after RUN
+        cfg.bot_mode = false;
+        eof_found = false; // Need this to finish reading RUN cmd
+        // Now we'll fall through to normal consume_char() handling.
     } else if (cfg.tokenize) {
         if (token_err_found) {
             putchar('\n'); // to terminate e.g. "?SYNTAX" err from asoft

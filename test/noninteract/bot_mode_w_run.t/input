@@ -1,0 +1,4 @@
+10 for i=1 to 3
+20 ?spc(i);"Hiya!"
+30 next
+run
