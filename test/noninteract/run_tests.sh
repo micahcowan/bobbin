@@ -53,7 +53,7 @@ main() {
                 printf '[\033[1;32mPASS\033[m]\n'
                 exit 0
             else
-                printf '[\033[1;31mFAIL\033[m]\n'
+                printf 'Mismatched exit status (got %d, wanted %d) [\033[1;31mFAIL\033[m]\n' "$stat" "$exstat"
                 exit 1
             fi
         )

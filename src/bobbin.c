@@ -66,6 +66,10 @@ void bobbin_run(void)
             cpu_step();
         } while (cycle_count < CYCLES_PER_FRAME);
         frame_count += cycle_count / CYCLES_PER_FRAME;
+        if (cfg.max_frames != 0 && frame_count >= cfg.max_frames) {
+            fputc('\n', stderr);
+            DIE(3, "max runtime (%lu) exceeded.\n", cfg.max_frames);
+        }
         text_flash = frame_count % 30 >= 15;
         event_fire(EV_FRAME);
         cycle_count %= CYCLES_PER_FRAME;

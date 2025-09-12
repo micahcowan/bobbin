@@ -133,6 +133,8 @@ struct Config {
     word            trap_failure;
     bool            trap_print_on;
     word            trap_print;
+    unsigned long   max_frames;
+    bool            bot_mode;
 
     // special options
     bool            watch;

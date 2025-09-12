@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# If this command exits, and with status 3, test passes.
+{ exec $BOBBIN --max-frames 30 < input 2>&1; echo "Exit: $?"; } | sed 's/^[^ ]*bobbin/bobbin/'

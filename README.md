@@ -506,6 +506,18 @@ Print the ASCII char in ACC and return, if execution reaches this location.
 
 Unlike the other two `--trap-*` options, this does not cause **bobbin** to exit; only to print a character. Only works in the `simple` interface.
 
+##### --max-frames *arg*
+
+Execution will terminate if emulated runtime exceeds this time.
+
+The unit of measurement is in frames, or sixtieths of a second.
+
+##### --bot-mode
+
+If no emulator output at end of input, add a `RUN` command.
+
+Only in `simple` interface. This flag was added for the convenience of interfacing **bobbin** to chat servers, allowing users to message programs to it. In some instances, people may wish to feed direct commands, or interface with the firmware monitor program; often, they will wish to input an AppleSoft program. In the latter case, they may forget to add a `RUN` command after typing the program lines. This flag is meant to ensure the program still runs, despite the user failing to explicitly command it.
+
 <!--END-OPTIONS-->
 ### Choosing what type of Apple \]\[ to emulate
 

@@ -31,6 +31,7 @@ typedef enum {
     T_STRING_ARG,
     T_WORD_ARG,
     T_ULONG_ARG,
+    T_ULONG_DEC_ARG,
     T_FN_ARG,
     T_FUNCTION,
     T_INCREMENT,
@@ -139,6 +140,8 @@ const OptInfo options[] = {
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
     { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
     { DETOKENIZE_OPT_NAMES, T_BOOL, &cfg.detokenize },
+    { MAX_FRAMES_OPT_NAMES, T_ULONG_DEC_ARG, &cfg.max_frames },
+    { BOT_MODE_OPT_NAMES, T_BOOL, &cfg.bot_mode },
 };
 
 static const OptInfo *find_option(const char *opt)
@@ -167,7 +170,8 @@ void handle_numeric_arg(OptType type, const char *opt, void *argvar, const char 
         ++arg;
     }
     errno = 0;
-    unsigned long ul = strtoul(arg, &end, 16);
+    int base = type == T_ULONG_DEC_ARG? 10 : 16;
+    unsigned long ul = strtoul(arg, &end, base);
     if (*end != '\0') {
         DIE(2,"Garbage at end of arg to --%s.\n", opt);
     } else if (errno == ERANGE || errno == EINVAL) {
@@ -229,6 +233,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
             case T_FN_ARG:
             case T_WORD_ARG:
             case T_ULONG_ARG:
+            case T_ULONG_DEC_ARG:
             if (!arg) {
                 // See if there's a following arg
                 ++v;
@@ -275,6 +280,7 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
                 goto recheck;
             }
                 break;
+            case T_ULONG_DEC_ARG:
             case T_ULONG_ARG:
             case T_WORD_ARG:
             {
