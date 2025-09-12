@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo 'CALL-151' | $BOBBIN --bot-mode --max-frames 600 2>&1 | sed 's/^[^ ]*bobbin/bobbin/'

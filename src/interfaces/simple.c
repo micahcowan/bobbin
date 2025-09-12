@@ -367,13 +367,19 @@ void consume_char(void)
     if (!eof_found) {
         // skip
     } else if (cfg.bot_mode && !output_seen) {
+        cfg.bot_mode = false;
+        if (peek_sneaky(ZP_PROMPT) != 0xDD) {
+            // Prompt char isn't ']', we're not in AppleSoft.
+            // Just call consume_char() again to gracefully exit,
+            // and to avoid a loop/goto,
+            consume_char();
+        }
         // User may have forgotten a "RUN"; add it on.
         static const unsigned char run_cmd[] = "RUN\r";
         lbuf_start = linebuf;
         lbuf_end = linebuf + (sizeof run_cmd - 1);
         memcpy(linebuf, run_cmd, sizeof run_cmd - 1);
         // Switch off bot mode so we're sure to exit after RUN
-        cfg.bot_mode = false;
         eof_found = false; // Need this to finish reading RUN cmd
         // Now we'll fall through to normal consume_char() handling.
     } else if (cfg.tokenize) {

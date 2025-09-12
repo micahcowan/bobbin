@@ -17,6 +17,7 @@
 #define ZP_DATAFLG      0x13
 #define ZP_CH           0x24
 #define ZP_CV           0x25
+#define ZP_PROMPT       0x33
 #define ZP_LINNUM       0x50
 #define ZP_TXTTAB       0x67
 #define ZP_VARTAB       0x69 // LOMEM
