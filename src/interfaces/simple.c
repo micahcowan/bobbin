@@ -386,7 +386,8 @@ void consume_char(void)
         // Now we'll fall through to normal consume_char() handling.
     } else if (cfg.tokenize) {
         if (token_err_found) {
-            putchar('\n'); // to terminate e.g. "?SYNTAX" err from asoft
+            if (curlnsz > 0)
+                putchar('\n'); // to terminate e.g. "?SYNTAX" err from asoft
             DIE_CONT(1,"");
         } else {
             tokenize();
@@ -403,7 +404,8 @@ void consume_char(void)
             // ^ When "running as a Unix command",
             // we don't want to put any chars out that the
             // BASIC program didn't put out.
-            putchar('\n');
+            if (curlnsz > 0)
+                putchar('\n');
         }
         exit(0);
     }
@@ -687,7 +689,8 @@ static void iface_simple_step(void)
             // pre-prompt CR output in AppleSoft
             if (runbasic_state == RB_RUNNING) {
                 // --run-basic program is done running
-                putchar('\n');
+                if (curlnsz > 0)
+                    putchar('\n');
                 INFO("BASIC Program has exited. Done.\n");
                 exit(0);
             }
@@ -799,7 +802,8 @@ static void iface_simple_event(Event *e)
         case EV_DISK_ACTIVE:
             if (exit_on_spindown && e->val == 0) {
                 INFO("Disk inactive, exiting.\n");
-                putchar('\n');
+                if (curlnsz > 0)
+                    putchar('\n');
                 exit(0);
             }
             break;
