@@ -370,8 +370,9 @@ void consume_char(void)
         // skip
     } else if (cfg.bot_mode && !output_seen) {
         cfg.bot_mode = false;
-        if (peek_sneaky(ZP_PROMPT) != 0xDD) {
-            // Prompt char isn't ']', we're not in AppleSoft.
+        byte p = peek_sneaky(ZP_PROMPT);
+        if (p != 0xDD && p != 0xBE) {
+            // Prompt char isn't ']' or '>'; we're not in BASIC.
             // Just call consume_char() again to gracefully exit,
             // and to avoid a loop/goto,
             consume_char();
