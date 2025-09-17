@@ -506,11 +506,9 @@ Print the ASCII char in ACC and return, if execution reaches this location.
 
 Unlike the other two `--trap-*` options, this does not cause **bobbin** to exit; only to print a character. Only works in the `simple` interface.
 
-##### --max-frames *arg*
+##### --max-runtime *arg*
 
-Execution will terminate if emulated runtime exceeds this time.
-
-The unit of measurement is in frames, or sixtieths of a second.
+Execution will terminate if emulated runtime exceeds this time in seconds.
 
 ##### --bot-mode
 

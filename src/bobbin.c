@@ -68,7 +68,7 @@ void bobbin_run(void)
         frame_count += cycle_count / CYCLES_PER_FRAME;
         if (cfg.max_frames != 0 && frame_count >= cfg.max_frames) {
             fputc('\n', stderr);
-            DIE(3, "max runtime (%lu) exceeded.\n", cfg.max_frames);
+            DIE(3, "max emulated runtime (%lu secs) exceeded.\n", cfg.max_frames / 60);
         }
         text_flash = frame_count % 30 >= 15;
         event_fire(EV_FRAME);

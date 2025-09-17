@@ -140,7 +140,7 @@ const OptInfo options[] = {
     { WATCH_OPT_NAMES, T_BOOL, &cfg.watch },
     { TOKENIZE_OPT_NAMES, T_BOOL, &cfg.tokenize },
     { DETOKENIZE_OPT_NAMES, T_BOOL, &cfg.detokenize },
-    { MAX_FRAMES_OPT_NAMES, T_ULONG_DEC_ARG, &cfg.max_frames },
+    { MAX_RUNTIME_OPT_NAMES, T_ULONG_DEC_ARG, &cfg.max_frames },
     { BOT_MODE_OPT_NAMES, T_BOOL, &cfg.bot_mode },
 };
 
@@ -313,6 +313,10 @@ recheck:// Past this point, can't assume opt points at a real argv[] item
     // After all's done, do some fixup
     if (cfg.detokenize) {
         dlypc_load_basic(cfg.inputfile? cfg.inputfile : "/dev/stdin");
+    }
+    // User specifies runtime in secs, we want it in frames
+    if (cfg.max_frames != 0) {
+        cfg.max_frames *= 60;
     }
 } // do_config()
 
